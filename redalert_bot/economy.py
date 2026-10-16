@@ -157,6 +157,60 @@ def _place_at(v, item):
     return None
 
 
+def _guarded_third_refinery(v, power_margin):
+    """A narrow financing exception, not a guarantee of safety or payback.
+
+    Existing six-tank financing remains unchanged. Before that point, only
+    invest behind healthy home armor with a long remaining working window.
+    Missing terrain retains the native-placement fallback; supplied terrain
+    must not contradict a reachable, screened site and nearby resource hint.
+    Initial resource cells do not establish that any ore remains there.
+    """
+    facts = [b for b in v.buildings if _type(b) == 'fact']
+    refs = [b for b in v.buildings if _type(b) == 'proc']
+    if (getattr(v, 'profile', 'balanced') != 'eco_guard'
+            or len(facts) != 1 or len(refs) != 2 or v.remaining < 360
+            or sum(_type(u) == 'harv' and u.get('idle') is False for u in v.units) < 4
+            or (getattr(v, 'strategy', {}) or {}).get('recover_until', 0) > v.now):
+        return False
+    # Explicit activity avoids financing growth while the current ore line
+    # is idle. Activity alone still does not prove successful ore deliveries.
+    anchor = v.cell(facts[0])
+    cover = [u for u in v.units if _type(u) in TANKS
+             and u.get('hp', 0) >= 70 and _dist(v.cell(u), anchor) <= 22]
+    if len(cover) < 5:
+        return False
+    raw_power = v.item_rule('proc').get('power')
+    drain = max(0, -float(raw_power)) if isinstance(raw_power, (int, float)) else 30
+    if not power_margin >= drain + 10:
+        return False
+    site = _place_at(v, 'proc')
+    protected = [anchor] + [v.cell(b) for b in refs]
+    if site is not None:
+        protected.append(tuple(site))
+    # Engineers can capture and MCVs can establish forward production. They
+    # are support elsewhere, but still deny this discounted growth window.
+    growth_support = SUPPORT - {'e6', 'mcv'}
+    if any(_type(e) not in growth_support and any(_dist(v.cell(e), p) <= 30 for p in protected)
+           for e in v.enemies):
+        return False
+    if any(not safe_cell(v, p) or blockers(v, anchor, p) for p in protected):
+        return False
+    if v.map_info.get('layout') is not None:
+        # Adaptation validates and bounds the supplied terrain. No new BFS is
+        # needed on maps without known towers; at most eight resource routes
+        # are inspected when remembered towers require detailed screening.
+        from .maps import route_safe
+        ground = getattr(v, 'navigation', {}).get('parents', {})
+        if site is None or tuple(site) not in ground or not route_safe(v, site, start=anchor):
+            return False
+        ore = sorted((p for p in v.ore_cells if tuple(p) in ground and _dist(p, site) <= 12),
+                     key=lambda p: (_dist(p, site), p))[:8]
+        if not any(safe_cell(v, p) and route_safe(v, p, start=site) for p in ore):
+            return False
+    return True
+
+
 def _expansion_window(v, memory):
     """Experimental feasibility margin, NOT a measured return-on-investment.
 
@@ -373,10 +427,12 @@ def plan(v, memory: dict, emit) -> None:
                              or (construction == 'dome' and not fortified)
                              or (construction in {'tent', 'barr'} and rax_count > 0))
     optional_budget = v.cost(construction) + tank_budget
-    if construction == 'proc' and tanks >= 6:
+    if construction == 'proc' and (tanks >= 6 or _guarded_third_refinery(v, power_margin)):
         # After establishing the tank core, let a refinery use progressive
         # payment again. Otherwise a low-income base could postpone growth
-        # forever while every deposit funds its next tank.
+        # forever while every deposit funds its next tank. A screened third
+        # refinery may start one tank earlier; all other growth keeps the
+        # original full-cost reserve until the six-tank core is established.
         optional_budget = tank_budget
     if (armor_focus and tank_item and optional_construction
             and cash < optional_budget):
