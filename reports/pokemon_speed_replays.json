@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-16",
+  "purpose": "Qualitative replay review for joint type-matchup and Speed-control decisions",
+  "scope": {
+    "our_agent_replays": false,
+    "private_platform_replays_available": false,
+    "selected_public_replays": 3,
+    "replays_used_as_win_rate_estimate": false,
+    "platform_terastallization_enabled": false,
+    "observed_format_reference": "docs/POKEMON_RESEARCH.md",
+    "implementation_status": "Decision requirements; see the separate validation report for implemented changes and tests. Dynamic same-turn ordering already existed before this review."
+  },
+  "retrieval": {
+    "discovery": "Web search and public participant/team-post links",
+    "inspection": "Browser public replay player, Skip to end, complete rendered turn timeline, final URL verification",
+    "raw_log_downloaded": false,
+    "raw_log_failure": "Direct .log and .json requests for gen9vgc2025regi-2341079661 returned HTTP 403. Search open could not retrieve those endpoints.",
+    "raw_log_sha256": null,
+    "notes": "Timeline observations are paraphrases. No replay chat, account credential, private platform data or full third-party log is stored."
+  },
+  "replays": [
+    {
+      "id": "gen9vgc2025regi-2346346650",
+      "url": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2346346650",
+      "title": "Mircat222 vs. yuki",
+      "format": "Gen 9 VGC 2025 Regulation I",
+      "displayed_date": "2025-04-19",
+      "retrieved_date": "2026-10-16",
+      "discovery_url": "https://www.smogon.com/forums/threads/vgc-seasonal-round-2.3763289/page-2",
+      "raw_log_sha256": null,
+      "events": [
+        {
+          "turn": 1,
+          "sequence": [
+            "Whimsicott: Tailwind",
+            "Miraidon: Volt Switch",
+            "Sneasler: fainted before acting"
+          ]
+        },
+        {
+          "turn": 3,
+          "sequence": [
+            "Aqua Jet",
+            "Tailwind-boosted normal-priority attacks"
+          ]
+        },
+        {
+          "turn": 4,
+          "timing": "end_of_turn",
+          "sequence": [
+            "Tailwind expires",
+            "Lunala enters"
+          ]
+        },
+        {
+          "turn": 5,
+          "sequence": [
+            "Whimsicott: Tailwind",
+            "Lunala: Moongeist Beam",
+            "Calyrex-Shadow: fainted before acting"
+          ]
+        }
+      ],
+      "tera_exclusion": "Turn 2 Fairy Miraidon damage/resistances excluded.",
+      "limits": [
+        "No complete EV reconstruction or no-Tailwind counterfactual was performed.",
+        "This human match is not an AltruAgent draft match or a performance measurement of our policy."
+      ]
+    },
+    {
+      "id": "gen9vgc2025reggbo3-2305943594",
+      "url": "https://replay.pokemonshowdown.com/gen9vgc2025reggbo3-2305943594",
+      "title": "sheepie_sheep vs. breakfast enjoyer",
+      "format": "Gen 9 VGC 2025 Regulation G best-of-three game 1",
+      "displayed_date": "2025-02-22",
+      "retrieved_date": "2026-10-16",
+      "discovery_url": "https://fulllifegames.com/Tools/TournamentTeams/?thread=3760047",
+      "raw_log_sha256": null,
+      "events": [
+        {
+          "turn": 4,
+          "sequence": [
+            "Amoonguss: Rage Powder",
+            "opposing attackers: asleep",
+            "Calyrex-Ice: Trick Room"
+          ]
+        },
+        {
+          "turn": 5,
+          "sequence": [
+            "Amoonguss: Rage Powder",
+            "Calyrex-Ice: High Horsepower into Zacian",
+            "Zacian: redirected Behemoth Blade; Rocky Helmet recoil KO",
+            "Urshifu: Close Combat into Calyrex"
+          ]
+        },
+        {
+          "turn": 6,
+          "sequence": [
+            "forfeit"
+          ]
+        }
+      ],
+      "tera_exclusion": "Normal Entei and Water Amoonguss damage/resistances excluded.",
+      "limits": [
+        "The sleep turns and Tera-dependent resistance make this a qualitative support/ordering example, not a directly portable fixture.",
+        "One Regulation G match cannot establish performance in a Regulation I draft environment."
+      ]
+    },
+    {
+      "id": "gen9vgc2025regi-2341079661",
+      "url": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2341079661",
+      "title": "starboymclovin vs. ghotul",
+      "format": "Gen 9 VGC 2025 Regulation I",
+      "displayed_date": "2025-04-12",
+      "retrieved_date": "2026-10-16",
+      "discovery_url": "https://www.coupcritique.fr/entity/teams/7497",
+      "raw_log_sha256": null,
+      "events": [
+        {
+          "turn": 1,
+          "sequence": [
+            "Calyrex-Ice: Trick Room"
+          ]
+        },
+        {
+          "turn": 2,
+          "sequence": [
+            "Sableye: Encore",
+            "Calyrex: Trick Room removes field"
+          ]
+        },
+        {
+          "turn": 3,
+          "sequence": [
+            "Sableye: Prankster Disable fails on Dark Incineroar"
+          ]
+        },
+        {
+          "turn": 4,
+          "sequence": [
+            "Flutter Mane: sunlight Protosynthesis selects Special Attack"
+          ]
+        }
+      ],
+      "tera_exclusion": "Normal Calyrex and Fairy Flutter Mane damage/resistances excluded.",
+      "limits": [
+        "This low-ladder example establishes interactions rather than optimal play.",
+        "The linked team page's current fixed sets need not match the earlier replay's exact sets."
+      ]
+    }
+  ],
+  "independent_mechanic_reference": {
+    "package": "pokemon-showdown",
+    "version": "0.11.11",
+    "files": [
+      {
+        "path": "sim/battle.ts",
+        "source_url": "https://github.com/smogon/pokemon-showdown/blob/master/sim/battle.ts",
+        "sha256": "e3913db4a69c976c749c3633966f4c76e156248915f5859eb7563ec4df554834",
+        "inspected_behavior": "Generation 8+ updates Speed properties and re-sorts remaining queued moves after actions."
+      },
+      {
+        "path": "data/moves.ts",
+        "source_url": "https://github.com/smogon/pokemon-showdown/blob/master/data/moves.ts",
+        "sha256": "9cf8b3460829e76ed4a83cdde072cc7f4648fb224c4f566e5ffd7cbb3009bd7c",
+        "inspected_behavior": "Tailwind doubles Speed for four turns; Trick Room has -7 priority, lasts five turns, and toggles off on reuse; Icy Wind and Electroweb have 55 base power, 95% accuracy and a one-stage Speed-lowering secondary effect."
+      },
+      {
+        "path": "data/abilities.ts",
+        "source_url": "https://github.com/smogon/pokemon-showdown/blob/master/data/abilities.ts",
+        "sha256": "175067b1e827ca11ae4728169215c9bdd27ac4cb3e35d2e83eaaaee7e9e8c842",
+        "inspected_behavior": "Protosynthesis and Quark Drive persist the selected stat and apply a 1.5 multiplier only when that selected stat is Speed."
+      }
+    ],
+    "source_url_limit": "GitHub master URLs are navigable references, not pins; hashes identify the local source files actually inspected.",
+    "icy_wind_electroweb_replay_observed": false
+  },
+  "review_notes": [
+    "Additional candidate pages were screened but not selected when the timeline lacked useful Speed control, duplicated an existing example, or used a custom Metronome-heavy ruleset.",
+    "A candidate displayed a PRIVATE label; it was excluded without inspecting or recording its battle timeline.",
+    "No new policy win-rate claim is supported by this qualitative review."
+  ]
+}

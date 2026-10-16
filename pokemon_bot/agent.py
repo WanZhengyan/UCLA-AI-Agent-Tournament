@@ -16,7 +16,7 @@ LOG=logging.getLogger('pokemon_bot')
 
 
 class PokemonAgent:
-    strategy_version = "counterplay_v8"
+    strategy_version = "type_speed_v9"
 
     def __init__(self):
         self.memories={}

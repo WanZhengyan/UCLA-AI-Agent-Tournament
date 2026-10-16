@@ -51,8 +51,27 @@ teams.regi_room = [
  mk('Koraidon',['Collision Course','Flare Blitz','Dragon Claw','Protect'],'Orichalcum Pulse','Life Orb','Jolly'),
  teams.trickroom[4], teams.balanced[4], teams.balanced[0], teams.trickroom[3]
 ];
+// Authored speed-control fixture, not reconstructed private replay sets.
+// Psychic Seed gives Unburden a visible activation; all six items are distinct.
+teams.speed_unburden = [
+ mk('Sneasler',['Poison Jab','Close Combat','Acrobatics','Protect'],'Unburden','Psychic Seed','Jolly'),
+ {...mk('Indeedee-F',['Follow Me','Psychic','Helping Hand','Protect'],'Psychic Surge','Safety Goggles','Relaxed',{hp:252,def:252,spd:4}),ivs:{spe:0}},
+ teams.balanced[3], teams.balanced[2], teams.balanced[5], teams.trickroom[4]
+];
 function publicCard(set){const sp=Dex.species.get(set.species);return {...set,card_id:toID(set.species),name:set.species,species:sp.id,types:sp.types.map(x=>x.toUpperCase()),base_stats:sp.baseStats};}
-function mon(p, own=false){if(!p)return null; const set=p.set;return {...publicCard(set),name:p.name,species:p.baseSpecies.id,current_hp:own?p.hp:Math.ceil(100*p.hp/p.maxhp),max_hp:own?p.maxhp:100,current_hp_fraction:own?p.hp/p.maxhp:Math.ceil(100*p.hp/p.maxhp)/100,status:p.status,ability:p.ability,item:p.item,types:p.getTypes().map(t=>t.toUpperCase()),boosts:{...p.boosts},moves:set.moves,stats:own?{...p.storedStats,hp:p.maxhp}:undefined,fainted:p.fainted,active:p.isActive,revealed:true};}
+function publicSpeedEffects(p){
+ // Only public activation facts: Unburden follows visible item loss on the
+ // fixed public set; Paradox's selected stat is announced in the battle log.
+ // Never serialize the full engine volatile state or its internal counters.
+ const effects=[];
+ if(p.volatiles.unburden&&!p.item&&p.ability==='unburden')effects.push('unburden');
+ for(const name of ['protosynthesis','quarkdrive']){
+  const stat=p.volatiles[name]?.bestStat;
+  if(['atk','def','spa','spd','spe'].includes(stat))effects.push(name+stat);
+ }
+ return effects;
+}
+function mon(p, own=false){if(!p)return null; const set=p.set;return {...publicCard(set),name:p.name,species:p.baseSpecies.id,current_hp:own?p.hp:Math.ceil(100*p.hp/p.maxhp),max_hp:own?p.maxhp:100,current_hp_fraction:own?p.hp/p.maxhp:Math.ceil(100*p.hp/p.maxhp)/100,status:p.status,ability:p.ability,item:p.item,types:p.getTypes().map(t=>t.toUpperCase()),boosts:{...p.boosts},effects:publicSpeedEffects(p),moves:set.moves,stats:own?{...p.storedStats,hp:p.maxhp}:undefined,fainted:p.fainted,active:p.isActive,revealed:true};}
 function targetChoices(b,p,m){
  if(!['normal','any','adjacentAlly','adjacentAllyOrSelf','adjacentFoe'].includes(m.target))return [0];
  const a=[];for(const loc of [1,2,-1,-2])if(b.validTargetLoc(loc,p,m.target)){const t=p.getAtLoc(loc);if(t&&!t.fainted)a.push(loc);}return a.length?a:[1];

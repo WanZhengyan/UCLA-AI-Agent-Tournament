@@ -37,9 +37,10 @@ const usedSessions=new Set();
 const suite=process.env.COMPARE_SUITE||'core';
 const suites={
  core:[['balanced','rain'],['rain','balanced'],['trickroom','balanced'],['balanced','offense'],['offense','rain'],['trickroom','offense']],
- regi:[['regi_rain','regi_shadow'],['regi_shadow','regi_room'],['regi_room','regi_rain'],['regi_rain','rain']]
+ regi:[['regi_rain','regi_shadow'],['regi_shadow','regi_room'],['regi_room','regi_rain'],['regi_rain','rain']],
+ speed:[['speed_unburden','balanced'],['speed_unburden','offense'],['rain','offense'],['trickroom','speed_unburden']]
 };
-if(!suites[suite])throw new Error('Unknown COMPARE_SUITE; use core or regi');
+if(!suites[suite])throw new Error('Unknown COMPARE_SUITE; use core, regi, or speed');
 const pairs=suites[suite];
 async function game(pair,swap,n,reverseTeams=false){
   if(reverseTeams)pair=[...pair].reverse();

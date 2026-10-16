@@ -2,6 +2,8 @@
 
 These notes document public observations and implementation hypotheses. They are not a live win-rate estimate. No private match replay was available.
 
+The later [type and speed-control review](POKEMON_SPEED_RESEARCH.md) inspects three additional public timelines for v9. It records the distinction between type matchups, move priority, current effective Speed, and control duration. The v9 comparison adapter adds a narrow public Speed-effect whitelist; the policy can infer Tailwind/Trick Room age from uninterrupted observed activation, but leaves duration unknown when it first sees an already-active condition or misses turns. Other volatile effects and field durations remain approximate.
+
 ## Platform format
 
 Official guide: https://api.altruagent-game.com/skill/pokemon

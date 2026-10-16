@@ -79,24 +79,33 @@ def terrain(f):
 
 
 def speed(p, side, field):
-    v = getstat(p, "spe")
+    # Gen 9 floors the stat after stages, then rounds the combined modifier
+    # to the nearest integer (half down). Paralysis halves that result last.
+    # Keeping fractional Speed here invents advantages over real speed ties.
+    v = math.floor(getstat(p, "spe"))
+    modifier = 1.
     ab, it, w = ability(p), item(p), weather(field)
-    if it == "choicescarf": v *= 1.5
-    if it in {"ironball", "machobrace"}: v *= .5
-    if p.get("status") in {"par", "paralysis"} and ab != "quickfeet": v *= .5
-    if ab == "quickfeet" and p.get("status"): v *= 1.5
-    if field.get(("own_" if side == 0 else "foe_")+"tailwind"): v *= 2
-    if (ab == "swiftswim" and w in {"rain", "raindance", "primordialsea"}) or (ab == "chlorophyll" and w in {"sun", "sunnyday", "desolateland"}) or (ab == "sandrush" and w == "sandstorm") or (ab == "slushrush" and w in {"snow", "hail", "snowscape"}): v *= 2
-    if ab == "surgesurfer" and terrain(field) == "electricterrain": v *= 2
-    if p.get("_unburden"): v *= 2
-    if p.get("_quark_speed"): v *= 1.5
+    if it == "choicescarf": modifier *= 1.5
+    if it in {"ironball", "machobrace", "poweranklet", "powerband", "powerbelt", "powerbracer", "powerlens", "powerweight"}: modifier *= .5
+    if ab == "quickfeet" and p.get("status"): modifier *= 1.5
+    if field.get(("own_" if side == 0 else "foe_")+"tailwind"): modifier *= 2
+    if it=="utilityumbrella" and w in {"rain", "raindance", "primordialsea", "sun", "sunnyday", "desolateland"}: w=""
+    if (ab == "swiftswim" and w in {"rain", "raindance", "primordialsea"}) or (ab == "chlorophyll" and w in {"sun", "sunnyday", "desolateland"}) or (ab == "sandrush" and w == "sandstorm") or (ab == "slushrush" and w in {"snow", "hail", "snowscape"}): modifier *= 2
+    if ab == "surgesurfer" and terrain(field) == "electricterrain": modifier *= 2
     effects=p.get("effects",{})
-    if "protosynthesisspe" in effects or "quarkdrivespe" in effects:
-        v *= 1.5
-    elif (ab=="protosynthesis" and (w in {"sun","sunnyday","desolateland"} or it=="boosterenergy")) or (ab=="quarkdrive" and (terrain(field)=="electricterrain" or it=="boosterenergy")):
-        best=max(("atk","def","spa","spd","spe"),key=lambda k:getstat(p,k))
-        if best=="spe": v *= 1.5
-    return v
+    if ab=="unburden" and not it and (p.get("_unburden") or "unburden" in effects): modifier *= 2
+    # The activation fixes the selected stat. Later boosts do not change it.
+    # Public non-Speed activations must therefore override stat-based guesses.
+    known_paradox=next((k for k in ("atk","def","spa","spd","spe")
+                        if "protosynthesis"+k in effects or "quarkdrive"+k in effects),None)
+    if p.get("_quark_speed") or known_paradox=="spe":
+        modifier *= 1.5
+    elif known_paradox is None and ((ab=="protosynthesis" and (weather(field) in {"sun","sunnyday","desolateland"} or it=="boosterenergy")) or (ab=="quarkdrive" and (terrain(field)=="electricterrain" or it=="boosterenergy"))):
+        best=max(("atk","def","spa","spd","spe"),key=lambda k:math.floor(getstat(p,k)))
+        if best=="spe": modifier *= 1.5
+    v=(v*round(modifier*4096)+2047)//4096
+    if p.get("status") in {"par", "paralysis"} and ab != "quickfeet": v //= 2
+    return max(1,min(10000,int(v)))
 
 
 def priority(p, a, field):
@@ -558,7 +567,7 @@ def evaluate(board, benches, field, horizon=True):
         prefix="own_" if s==0 else "foe_"
         if field.get(prefix+"tailwind"):
             swings=sum(speed(p,s,field)/2 < speed(q,1-s,field) < speed(p,s,field) for p in board[s] if alive(p) for q in board[1-s] if alive(q))
-            score+=sign*(.14+.15*swings)
+            score+=sign*(.14+.15*swings)*(-1 if field.get("trickroom") else 1)
         for screen in ("reflect","lightscreen","auroraveil"):
             if field.get(prefix+screen): score+=sign*.14
     if field.get("trickroom"):
@@ -633,6 +642,8 @@ def _simulate(base, actions, horizon, tie_order):
             q=benches[side].pop(idx)
             if alive(p):
                 p["boosts"]={}; p["first_turn"]=True
+                p.pop("_unburden",None)
+                p["effects"]={k:v for k,v in p.get("effects",{}).items() if k!="unburden"}
                 if ability(p)=="regenerator": p["hp"]=min(1.,p["hp"]+1/3)
                 if ability(p)=="naturalcure": p["status"]=""
                 benches[side].append(p)
@@ -656,8 +667,14 @@ def _simulate(base, actions, horizon, tie_order):
         if mid=="helpinghand":
             if alive(board[side][1-slot]): board[side][1-slot]["_helping"]=True
             continue
-        if mid=="tailwind": field[prefix+"tailwind"]=True; continue
-        if mid=="trickroom": field["trickroom"]=not field.get("trickroom"); continue
+        if mid=="tailwind":
+            if not field.get(prefix+"tailwind"):
+                field[prefix+"tailwind"]=True; field[prefix+"tailwind_turns"]=4
+            continue
+        if mid=="trickroom":
+            field["trickroom"]=not field.get("trickroom")
+            field["trickroom_turns"]=5 if field["trickroom"] else 0
+            continue
         if mid in {"reflect","lightscreen","auroraveil"}:
             if mid!="auroraveil" or weather(field) in {"snow","snowscape","hail"}: field[prefix+mid]=True
             continue
@@ -758,7 +775,9 @@ def _simulate(base, actions, horizon, tie_order):
                 # A full-HP Sash cannot block later hits after the first consumes it.
                 if q["hp"]>=.999 and (item(q)=="focussash" or (ability(q)=="sturdy" and not bypass)):
                     amount=min(amount,q["hp"]-.006)
-                    if amount>=q["hp"]-.007 and item(q)=="focussash": q["item"]=""
+                    if amount>=q["hp"]-.007 and item(q)=="focussash":
+                        q["item"]=""
+                        if ability(q)=="unburden": q["_unburden"]=True
                 contact_cost=_contact_cost(p,q,d)
                 before=q["hp"]; q["hp"]=max(0,q["hp"]-amount)
                 hit_dealt=min(before,amount)*q.get("stats",{}).get("hp",180)
@@ -784,7 +803,9 @@ def _simulate(base, actions, horizon, tie_order):
             if secondaries and mid=="snarl": _setboost(q,{"spa":-1},opposing=ts!=side,bypass=bypass)
             if secondaries and mid=="breakingswipe": _setboost(q,{"atk":-1},opposing=ts!=side,bypass=bypass)
             if secondaries and mid=="acidspray": _setboost(q,{"spd":-2},opposing=ts!=side,bypass=bypass)
-            if mid=="knockoff": q["item"]=""
+            if mid=="knockoff":
+                if item(q) and ability(q)=="unburden": q["_unburden"]=True
+                q["item"]=""
             if mid=="clearsmog": q["boosts"]={}
             if mid in {"icespinner","steelroller"}: field["terrain"]=""
             if secondaries and mid=="nuzzle" and not q.get("status") and "electric" not in types(q):
@@ -820,6 +841,13 @@ def _simulate(base, actions, horizon, tie_order):
             if p.get("_yawn") and not p.get("status"): p["status"]="slp"
             _activate_cure(p,board[1-side])
             p["hp"]=max(0,p["hp"])
+    # Explicit counters include this turn. Expiring speed control still affects
+    # every action above, but must not be credited to next-turn opportunities.
+    for condition in ("own_tailwind","foe_tailwind","trickroom"):
+        counter=condition+"_turns"
+        if counter in field:
+            field[counter]=max(0,field[counter]-1)
+            if not field[counter]: field[condition]=False
     result=evaluate(board,benches,field,horizon)
     for s in (0,1):
         guards=sum(a.get("type")=="move" and idnorm(a.get("move_id","")) in PROTECT for a in actions[s])

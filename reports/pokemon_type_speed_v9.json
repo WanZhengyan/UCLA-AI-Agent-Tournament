@@ -1,0 +1,978 @@
+{
+  "schema_version": 1,
+  "revision": "v9",
+  "date": "2026-10-16",
+  "branch": "improve/pokemon-speed-v9",
+  "status": "development_candidate",
+  "candidate": {
+    "strategy_version": "type_speed_v9",
+    "base_commit": "0bc1aac9e24cdfd0fe6d2b1d4e9a1a3cd3a9521e",
+    "identity": "Frozen working-tree source, identified by the SHA-256 manifest; tested before its publication commit."
+  },
+  "baseline": {
+    "strategy_version": "counterplay_v8",
+    "commit": "0bc1aac9e24cdfd0fe6d2b1d4e9a1a3cd3a9521e"
+  },
+  "source_sha256": {
+    "pokemon_bot/agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+    "pokemon_bot/battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+    "pokemon_bot/draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+    "pokemon_bot/state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6",
+    "tests/showdown_compare.js": "1c53c46a8b27f74e38779900616f0df3f23a4a385b8ebaaebf0f648cfb7aefc0",
+    "tests/showdown_support.js": "f360fb51a586de869d93dcf80bd030028794eab1266c29649a116cfd59259e95",
+    "tests/bridge.py": "a5b15651a0a1162c29b44d6b91f6681a03636751428fea28308670b183b171ce",
+    "tests/test_pokemon_speed.py": "7daad1f7594d3be5a93ff14f37d4d421b5639dcc3d3c5400ee8ed0d0ecc61916",
+    "tests/test_pokemon_speed_draft.py": "58b671c07c2a8ab60250adf3254e2475798d2edc4c9a697b46df022abf55bf6c",
+    "tests/test_pokemon_speed_state.py": "f7ddc4f602c5e861167b2581f724868cb7f98ead6168265dd03663e1c0949f28",
+    "docs/POKEMON_SPEED_RESEARCH.md": "0e26513b799368e23b20043a08a537853990c505670287909e75a9723457a21e",
+    "reports/pokemon_speed_replays.json": "bd54fa62e32fc9955ffd146967dc57c01180b0d7e99f56d9e42545ed967c0315"
+  },
+  "change_scope": [
+    "Use integer effective Speed, public Unburden activation, and the selected Protosynthesis/Quark Drive stat when ordering type-aware attacks.",
+    "Keep current-turn Speed control active until its expiry, then remove expired bonuses from the next-turn evaluation; track only justified public duration information.",
+    "Compare both teams under the same weather and item effects in draft/preview evaluation; preserve Ability Shield-protected type immunities and resistances.",
+    "Retain the existing paired-action search and type-aware damage evaluation; no broad search-weight sweep or seed-based tuning was performed."
+  ],
+  "research": {
+    "document": "docs/POKEMON_SPEED_RESEARCH.md",
+    "evidence": "reports/pokemon_speed_replays.json",
+    "public_replays_reviewed": 3,
+    "our_agent_replays": false,
+    "private_platform_replays_available": false,
+    "raw_third_party_replay_logs_available": false,
+    "purpose": "Qualitative decision requirements, not a win-rate estimate."
+  },
+  "validation": {
+    "full_suite": {
+      "performed_by": "root integration run",
+      "command": "SHOWDOWN_NODE=node NODE_PATH=/workspace/scratch/1c100e393a01/showdown_modules python -m pytest tests -q",
+      "passed": 642,
+      "failed": 0,
+      "duration_seconds": 15.03
+    },
+    "runtime_self_test": {
+      "performed_by": "root integration run",
+      "command": "python exe_entry.py --self-test",
+      "passed": true,
+      "pokemon_seconds": 0.77,
+      "redalert_milliseconds": 0.07,
+      "werewolf_passed": true,
+      "runtime_checks": {
+        "worker": true,
+        "mcp": true,
+        "entry": true,
+        "tls": true
+      }
+    },
+    "new_regression_tests": {
+      "battle": {
+        "tests": 33,
+        "old_v8_failures": 28,
+        "old_v8_passes": 4,
+        "excluded_from_old_source_comparison": 1,
+        "independent_showdown_scenarios_within_one_test": 17,
+        "exclusion_reason": "The excluded test checks 17 independent Showdown engine scenarios and does not exercise the old policy, so counting it as an old-policy failure or pass would be misleading."
+      },
+      "draft": {
+        "tests": 38,
+        "old_v8_failures": 33,
+        "old_v8_passes": 5
+      },
+      "state": {
+        "tests": 11,
+        "old_v8_failures": 7,
+        "old_v8_passes": 4
+      },
+      "total_tests": 82,
+      "total_old_v8_failures": 68,
+      "total_old_v8_passes": 13,
+      "total_excluded_from_old_source_comparison": 1,
+      "reviewer_run": {
+        "passed": 82,
+        "duration_seconds": 1.26,
+        "remaining_blockers": 0
+      }
+    },
+    "adapter_checks": {
+      "performed_by": "root engine/log inspection",
+      "actual_psychic_seed_unburden_observation_verified": true,
+      "actual_booster_energy_speed_observation_verified": true
+    },
+    "diff_check_passed": true,
+    "post_run_editorial_change": "One regression test was renamed to clarify that Sneasler Poison Jab into Flutter Mane is a neutral STAB cleanup knockout, not super-effective. Its assertions and all policy/harness source were unchanged."
+  },
+  "ab_evaluation": {
+    "engine": "pokemon-showdown@0.11.11",
+    "protocol": {
+      "candidate_label": "A",
+      "baseline_label": "B",
+      "sequential_suites": true,
+      "seed_paired_blocks": 7,
+      "games_per_block": 4,
+      "team_assignments_swapped": true,
+      "player_seats_swapped": true,
+      "seeds_retuned_or_retried": false,
+      "code_unchanged_within_and_between_suites": true,
+      "strict_choices": true,
+      "same_public_fixed_sets_for_both_policies": true,
+      "private_engine_state_supplied_to_policies": false,
+      "opponent_hp_rounded_to_displayed_percent": true,
+      "terastallization_enabled": false,
+      "online_matchmaking": false,
+      "full_platform_snake_draft_tested": false
+    },
+    "combined": {
+      "games": 28,
+      "candidate_wins": 14,
+      "baseline_wins": 14,
+      "draws": 0,
+      "incomplete_games": 0,
+      "candidate_decisions": 251,
+      "baseline_decisions": 251,
+      "illegal_choices": 0,
+      "fallback_decisions": 0,
+      "bridge_errors": 0,
+      "policy_errors": 0,
+      "decision_timeouts": 0,
+      "candidate_max_decision_milliseconds": 1957.3483869999982,
+      "baseline_max_decision_milliseconds": 1877.331846000001
+    },
+    "interpretation": "The candidate tied v8 in both small handmade-roster suites. This run demonstrates successful integration and identifies no aggregate win advantage; it does not establish a higher platform or tournament win rate. Paired games are not independent observations for a naive binomial confidence interval.",
+    "experiments": [
+      {
+        "suite": "speed",
+        "requested_games": 16,
+        "seed_offset": 31000,
+        "command": "PYTHON=python NODE_PATH=/workspace/scratch/1c100e393a01/showdown_modules A_DIR=/workspace/scratch/1c100e393a01/UCLA-AI-Agent-Tournament B_DIR=/workspace/scratch/1c100e393a01/pokemon_before_speed_v9 RESULT_DIR=/workspace/scratch/1c100e393a01/pokemon_ab_speed_v9 COMPARE_SUITE=speed node tests/showdown_compare.js 16 31000",
+        "exit_code": 0,
+        "outcome": {
+          "candidate_wins": 8,
+          "baseline_wins": 8,
+          "draws": 0,
+          "incomplete_games": 0
+        },
+        "legal_and_runtime_checks": {
+          "illegal_choices": 0,
+          "fallback_decisions": 0,
+          "bridge_errors": 0,
+          "policy_errors": 0,
+          "decision_timeouts": 0,
+          "stderr_empty": true,
+          "decision_timeout_seconds": 15,
+          "method": "The harness aborts on any bridge/policy error, fallback result, rejected Showdown command or decision timeout. Both requested runs completed with exit code 0."
+        },
+        "latency_unit": "milliseconds",
+        "run_report_sha256": "620846219418bb534f1fd00d990c19a1e59a88436e01c4831326da5168f787e3",
+        "run_report": {
+          "dirs": [
+            "/workspace/scratch/1c100e393a01/UCLA-AI-Agent-Tournament",
+            "/workspace/scratch/1c100e393a01/pokemon_before_speed_v9"
+          ],
+          "suite": "speed",
+          "before": [
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+              "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+            },
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "72582e4966b35e0713b48d8217ecc30a31bc633e3f512d2087031d17ac4d0fde",
+              "battle.py": "9a077197ea0dc2ceb700f34c9cc376dcc323a915c4a69a36d8256edf9bb34d69",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+            }
+          ],
+          "after": [
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+              "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+            },
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "72582e4966b35e0713b48d8217ecc30a31bc633e3f512d2087031d17ac4d0fde",
+              "battle.py": "9a077197ea0dc2ceb700f34c9cc376dcc323a915c4a69a36d8256edf9bb34d69",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+            }
+          ],
+          "codeUnchanged": true,
+          "uniqueSessions": 32,
+          "engine": "pokemon-showdown@0.11.11",
+          "results": [
+            {
+              "pair": [
+                "speed_unburden",
+                "balanced"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                38123,
+                411193,
+                225917,
+                598341
+              ],
+              "winner": "B",
+              "turns": 6,
+              "steps": 10
+            },
+            {
+              "pair": [
+                "speed_unburden",
+                "balanced"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                38123,
+                411193,
+                225917,
+                598341
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "balanced",
+                "speed_unburden"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                38123,
+                411193,
+                225917,
+                598341
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "balanced",
+                "speed_unburden"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                38123,
+                411193,
+                225917,
+                598341
+              ],
+              "winner": "A",
+              "turns": 6,
+              "steps": 10
+            },
+            {
+              "pair": [
+                "speed_unburden",
+                "offense"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                38124,
+                411206,
+                225924,
+                598360
+              ],
+              "winner": "B",
+              "turns": 4,
+              "steps": 6
+            },
+            {
+              "pair": [
+                "speed_unburden",
+                "offense"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                38124,
+                411206,
+                225924,
+                598360
+              ],
+              "winner": "A",
+              "turns": 5,
+              "steps": 8
+            },
+            {
+              "pair": [
+                "offense",
+                "speed_unburden"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                38124,
+                411206,
+                225924,
+                598360
+              ],
+              "winner": "B",
+              "turns": 5,
+              "steps": 8
+            },
+            {
+              "pair": [
+                "offense",
+                "speed_unburden"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                38124,
+                411206,
+                225924,
+                598360
+              ],
+              "winner": "A",
+              "turns": 4,
+              "steps": 6
+            },
+            {
+              "pair": [
+                "rain",
+                "offense"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                38125,
+                411219,
+                225931,
+                598379
+              ],
+              "winner": "B",
+              "turns": 8,
+              "steps": 13
+            },
+            {
+              "pair": [
+                "rain",
+                "offense"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                38125,
+                411219,
+                225931,
+                598379
+              ],
+              "winner": "B",
+              "turns": 8,
+              "steps": 13
+            },
+            {
+              "pair": [
+                "offense",
+                "rain"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                38125,
+                411219,
+                225931,
+                598379
+              ],
+              "winner": "A",
+              "turns": 8,
+              "steps": 13
+            },
+            {
+              "pair": [
+                "offense",
+                "rain"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                38125,
+                411219,
+                225931,
+                598379
+              ],
+              "winner": "A",
+              "turns": 8,
+              "steps": 13
+            },
+            {
+              "pair": [
+                "trickroom",
+                "speed_unburden"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                38126,
+                411232,
+                225938,
+                598398
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "trickroom",
+                "speed_unburden"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                38126,
+                411232,
+                225938,
+                598398
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "speed_unburden",
+                "trickroom"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                38126,
+                411232,
+                225938,
+                598398
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "speed_unburden",
+                "trickroom"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                38126,
+                411232,
+                225938,
+                598398
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            }
+          ],
+          "summary": {
+            "B": 8,
+            "A": 8
+          },
+          "latency": [
+            {
+              "decisions": 145,
+              "median": 575.8840090000012,
+              "p95": 1303.5018310000014,
+              "max": 1655.7864120000013
+            },
+            {
+              "decisions": 145,
+              "median": 509.26626599999145,
+              "p95": 1170.9994910000023,
+              "max": 1327.8347919999942
+            }
+          ],
+          "stderr": [
+            "",
+            ""
+          ],
+          "limitations": [
+            "Handmade rosters, no online matchmaking or draft benchmark.",
+            "The same fixed sets are public to both policies; opponent HP is rounded to displayed percent.",
+            "Seed-paired team and seat swaps, but RNG can diverge after decisions diverge.",
+            "No Tera; the regi suite includes two-restricted archetypes, not the actual platform card pool."
+          ]
+        },
+        "game_artifacts": [
+          {
+            "filename": "game-31000-false-false.json",
+            "sha256": "315dd8262fcca8e9240e3184d39c9d38734abbab82b848a2f9b1412f7bf501fe"
+          },
+          {
+            "filename": "game-31000-false-true.json",
+            "sha256": "35340c84957e091a2f2975dc295960676800cbeb3a691fbc0376bae08fbb31b5"
+          },
+          {
+            "filename": "game-31000-true-false.json",
+            "sha256": "dcca03ad0adbc9e6e147ef242913639877da5fe0010cae8fd23278c5bfc36646"
+          },
+          {
+            "filename": "game-31000-true-true.json",
+            "sha256": "3032a6732f3c8b34aa6fbcdd9635a71a0cd1b89669183f8386152b09aec2eca6"
+          },
+          {
+            "filename": "game-31001-false-false.json",
+            "sha256": "32914c9f1f67e32320afd6bb58445f2687b43de742e419493372468e4a89751e"
+          },
+          {
+            "filename": "game-31001-false-true.json",
+            "sha256": "77ebb8f2ff183f5f19d78b402f2f7c1c748110c258cd0c28a410a48ec104986a"
+          },
+          {
+            "filename": "game-31001-true-false.json",
+            "sha256": "71087fb176d23875c84dd7c9a6a77197362aa9f010553e14540403171aa0320f"
+          },
+          {
+            "filename": "game-31001-true-true.json",
+            "sha256": "9f779a393b2de907369b72d39258fc6b56ddec7e5e8e92f009050e538b1a3931"
+          },
+          {
+            "filename": "game-31002-false-false.json",
+            "sha256": "b2e8aabf1f59bc60c6b0c14df77b9098626eb0d2d8ad6319dfc4be6a28311917"
+          },
+          {
+            "filename": "game-31002-false-true.json",
+            "sha256": "32d79cc0436f17e4033ada58c92b36ffabd48bd6159ae0688b6d0f2f776ade12"
+          },
+          {
+            "filename": "game-31002-true-false.json",
+            "sha256": "079253057aa24a92c1d26ea0a0f5998e98a9d9e6932589f4c5d0d950df483428"
+          },
+          {
+            "filename": "game-31002-true-true.json",
+            "sha256": "e5d49b93d00dfed527efd20dec8f83605fe8b66e3be5b8652e319696878b568d"
+          },
+          {
+            "filename": "game-31003-false-false.json",
+            "sha256": "6884dd9bb256c81635cb98fb3d0bf53030a84cb4d4e222e6fee471ba22ce6afa"
+          },
+          {
+            "filename": "game-31003-false-true.json",
+            "sha256": "7fd399a729d3998fe5f8875b78038c5d977c1eb4016567c997dd5ba50a86ccc6"
+          },
+          {
+            "filename": "game-31003-true-false.json",
+            "sha256": "cc3dc6dd7007979ef1700074f7e21048fef57e6da43d8bd32153b4a151628a33"
+          },
+          {
+            "filename": "game-31003-true-true.json",
+            "sha256": "b8c1b1fc32a12c9f6c8e5decd4f820f526a8e37f4746047bd1fd96b528678401"
+          }
+        ]
+      },
+      {
+        "suite": "regi",
+        "requested_games": 12,
+        "seed_offset": 32000,
+        "command": "PYTHON=python NODE_PATH=/workspace/scratch/1c100e393a01/showdown_modules A_DIR=/workspace/scratch/1c100e393a01/UCLA-AI-Agent-Tournament B_DIR=/workspace/scratch/1c100e393a01/pokemon_before_speed_v9 RESULT_DIR=/workspace/scratch/1c100e393a01/pokemon_ab_regi_v9 COMPARE_SUITE=regi node tests/showdown_compare.js 12 32000",
+        "exit_code": 0,
+        "outcome": {
+          "candidate_wins": 6,
+          "baseline_wins": 6,
+          "draws": 0,
+          "incomplete_games": 0
+        },
+        "legal_and_runtime_checks": {
+          "illegal_choices": 0,
+          "fallback_decisions": 0,
+          "bridge_errors": 0,
+          "policy_errors": 0,
+          "decision_timeouts": 0,
+          "stderr_empty": true,
+          "decision_timeout_seconds": 15,
+          "method": "The harness aborts on any bridge/policy error, fallback result, rejected Showdown command or decision timeout. Both requested runs completed with exit code 0."
+        },
+        "latency_unit": "milliseconds",
+        "run_report_sha256": "df5606cf272cdf6d5e67b8e7985b1bfadb4204ba47f622d7abd979b687aff8f2",
+        "run_report": {
+          "dirs": [
+            "/workspace/scratch/1c100e393a01/UCLA-AI-Agent-Tournament",
+            "/workspace/scratch/1c100e393a01/pokemon_before_speed_v9"
+          ],
+          "suite": "regi",
+          "before": [
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+              "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+            },
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "72582e4966b35e0713b48d8217ecc30a31bc633e3f512d2087031d17ac4d0fde",
+              "battle.py": "9a077197ea0dc2ceb700f34c9cc376dcc323a915c4a69a36d8256edf9bb34d69",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+            }
+          ],
+          "after": [
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+              "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+            },
+            {
+              "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+              "agent.py": "72582e4966b35e0713b48d8217ecc30a31bc633e3f512d2087031d17ac4d0fde",
+              "battle.py": "9a077197ea0dc2ceb700f34c9cc376dcc323a915c4a69a36d8256edf9bb34d69",
+              "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+              "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+              "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+              "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+              "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+              "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+            }
+          ],
+          "codeUnchanged": true,
+          "uniqueSessions": 24,
+          "engine": "pokemon-showdown@0.11.11",
+          "results": [
+            {
+              "pair": [
+                "regi_rain",
+                "regi_shadow"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                39123,
+                424193,
+                232917,
+                617341
+              ],
+              "winner": "B",
+              "turns": 5,
+              "steps": 8
+            },
+            {
+              "pair": [
+                "regi_rain",
+                "regi_shadow"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                39123,
+                424193,
+                232917,
+                617341
+              ],
+              "winner": "B",
+              "turns": 5,
+              "steps": 8
+            },
+            {
+              "pair": [
+                "regi_shadow",
+                "regi_rain"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                39123,
+                424193,
+                232917,
+                617341
+              ],
+              "winner": "A",
+              "turns": 5,
+              "steps": 8
+            },
+            {
+              "pair": [
+                "regi_shadow",
+                "regi_rain"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                39123,
+                424193,
+                232917,
+                617341
+              ],
+              "winner": "A",
+              "turns": 5,
+              "steps": 8
+            },
+            {
+              "pair": [
+                "regi_shadow",
+                "regi_room"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                39124,
+                424206,
+                232924,
+                617360
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_shadow",
+                "regi_room"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                39124,
+                424206,
+                232924,
+                617360
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_room",
+                "regi_shadow"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                39124,
+                424206,
+                232924,
+                617360
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_room",
+                "regi_shadow"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                39124,
+                424206,
+                232924,
+                617360
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_room",
+                "regi_rain"
+              ],
+              "swap": false,
+              "reverseTeams": false,
+              "seed": [
+                39125,
+                424219,
+                232931,
+                617379
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_room",
+                "regi_rain"
+              ],
+              "swap": true,
+              "reverseTeams": false,
+              "seed": [
+                39125,
+                424219,
+                232931,
+                617379
+              ],
+              "winner": "A",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_rain",
+                "regi_room"
+              ],
+              "swap": false,
+              "reverseTeams": true,
+              "seed": [
+                39125,
+                424219,
+                232931,
+                617379
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            },
+            {
+              "pair": [
+                "regi_rain",
+                "regi_room"
+              ],
+              "swap": true,
+              "reverseTeams": true,
+              "seed": [
+                39125,
+                424219,
+                232931,
+                617379
+              ],
+              "winner": "B",
+              "turns": 7,
+              "steps": 11
+            }
+          ],
+          "summary": {
+            "B": 6,
+            "A": 6
+          },
+          "latency": [
+            {
+              "decisions": 106,
+              "median": 626.8882319999975,
+              "p95": 1457.3249230000001,
+              "max": 1957.3483869999982
+            },
+            {
+              "decisions": 106,
+              "median": 596.252837,
+              "p95": 1451.066215999992,
+              "max": 1877.331846000001
+            }
+          ],
+          "stderr": [
+            "",
+            ""
+          ],
+          "limitations": [
+            "Handmade rosters, no online matchmaking or draft benchmark.",
+            "The same fixed sets are public to both policies; opponent HP is rounded to displayed percent.",
+            "Seed-paired team and seat swaps, but RNG can diverge after decisions diverge.",
+            "No Tera; the regi suite includes two-restricted archetypes, not the actual platform card pool."
+          ]
+        },
+        "game_artifacts": [
+          {
+            "filename": "game-32000-false-false.json",
+            "sha256": "0e7afd0aa34e4cc10f968d587fee1550f374a75251e5fd4aefb05237402bd995"
+          },
+          {
+            "filename": "game-32000-false-true.json",
+            "sha256": "0f2b22f4444b3f9ab71b99f8b8a593290462d289bd78c76b1167d37729b18327"
+          },
+          {
+            "filename": "game-32000-true-false.json",
+            "sha256": "0055a78547644c2e6113b2aeb84183d3f4f6cad33ce7e6c5d2165d55c6bc1214"
+          },
+          {
+            "filename": "game-32000-true-true.json",
+            "sha256": "64f60f4fefeb79c55fccda5f552cfa77d1a638fd313a91a967f42885b01185c8"
+          },
+          {
+            "filename": "game-32001-false-false.json",
+            "sha256": "809d9c96d134c595f727a046d000f5baba7431b9dfb9719c40402217c0832ab4"
+          },
+          {
+            "filename": "game-32001-false-true.json",
+            "sha256": "94885e15b32627ac61dade9b74eecaf80dedb4a4c73414c367c9c02b25f6b3ab"
+          },
+          {
+            "filename": "game-32001-true-false.json",
+            "sha256": "d560d35f7ac07bc358945e97fd0d50479424ed13ddda9836a20d6910c3493c06"
+          },
+          {
+            "filename": "game-32001-true-true.json",
+            "sha256": "add36df9ea828b3290b1942707217c47cac0d5ab2c87579b72fde9a3d0f30459"
+          },
+          {
+            "filename": "game-32002-false-false.json",
+            "sha256": "f77a2e05aea8cae4653d3dbd19c193d4e4872c8e59f350dc833aaca5015f188f"
+          },
+          {
+            "filename": "game-32002-false-true.json",
+            "sha256": "e41f51185afe48fc00e07f0359aaebcca18a3e5665534920be055281b31f0571"
+          },
+          {
+            "filename": "game-32002-true-false.json",
+            "sha256": "16e3318e348a307a04f1b0f321134b25cd0142db000df9906963ab85ba48a018"
+          },
+          {
+            "filename": "game-32002-true-true.json",
+            "sha256": "8bad1e01a794b517e69123f07d0b171403dd728f2a045a933aaefe429e495357"
+          }
+        ]
+      }
+    ],
+    "artifact_retention": "Complete original run summary objects are embedded above and their original file hashes are recorded. The synthetic per-game decision/engine-log artifacts remain in the experiment directories named by the commands; their hashes are included. No private platform data, credentials, or third-party replay chat is included.",
+    "fixture_diagnostics": {
+      "four_game_blocks": 7,
+      "blocks_with_one_winning_roster_under_both_policy_assignments": 6,
+      "mixed_winning_roster_block": "speed: speed_unburden vs offense",
+      "interpretation": "Six blocks had the same winning roster in all four games; the Unburden/offense block had wins for both rosters. These handmade fixtures provide limited discrimination between policy versions."
+    }
+  },
+  "limitations": [
+    "Only 28 fresh paired games over seven seed blocks and handmade rosters were evaluated; this is not a representative opponent population or a broad metagame benchmark.",
+    "The speed suite covers Unburden, rain, offense and Trick Room matchups. The Regulation I suite covers three two-restricted archetype pairs, not the actual AltruAgent 18-card draft pool.",
+    "Both policies select a lineup from fixed public six-Pokemon rosters. Full platform snake-draft performance was not measured.",
+    "RNG streams can diverge after policy decisions diverge despite matching initial seeds. Team and seat swaps reduce some assignment effects without making games independent.",
+    "The approximate policy simulator, heuristic opponent replies and battle scoring retain modeling limits; focused mechanism corrections do not imply optimal play.",
+    "The replay review used public human matches and excluded Tera-dependent damage claims. It did not include our live agent replays.",
+    "No live platform win rate, official tournament eligibility, deployment replacement or new formal submission is established by this report."
+  ]
+}
