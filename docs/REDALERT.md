@@ -1,4 +1,16 @@
-# Red Alert: defensive economy (`economy_guard_v14`)
+# Red Alert: defensive economy (`economy_guard_v14_search1`)
+
+## Small mining-search update
+
+Idle-miner recovery still checks safe resource hints within 24 cells of an
+operating refinery first. If none is usable, it now checks up to six additional
+patch/drop-off candidates out to 32 cells. Wider candidates must stay away from
+the enemy's starting side, pass the existing enemy/tower and connectivity checks,
+and have a delivery route no longer than 48 cardinal steps. Suspect/depleted-hint
+backoff and active-miner protection are unchanged. This changes no construction,
+combat or other-game policy; initial map hints still do not prove ore remains.
+
+## Inherited v14 policy
 
 The default profile remains `eco_guard`. This development candidate combines
 the inherited protected-mining revision with score-aware defense, productive

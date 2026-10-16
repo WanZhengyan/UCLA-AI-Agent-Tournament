@@ -16,6 +16,8 @@ from .strategy import STATIC, fortifications, radius, weapon_range
 RETRY_SECONDS = 12
 PATCH_RECHECK_SECONDS = 120
 MAX_TARGET_ORDERS = 4
+LOCAL_SEARCH_RADIUS = 24
+EXTENDED_SEARCH_RADIUS = 32
 DAMAGE_SAMPLE_SECONDS = 8
 DAMAGE_RETRY_SECONDS = 4
 ARMED_UNITS = frozenset({
@@ -163,7 +165,7 @@ def _escape(v, current, zones, preferred):
 
 
 def _choose(v, unit, record, refs, patches, memory, loads, hostiles):
-    candidates = []
+    candidates = [[], []]
     current = cell(unit)
     suspects = memory.get('suspect_until', {})
     for patch in patches:
@@ -173,23 +175,34 @@ def _choose(v, unit, record, refs, patches, memory, loads, hostiles):
         for refinery in refs:
             home = cell(refinery)
             target = min(patch['cells'], key=lambda p: (distance(p, home), distance(p, current), p))
-            # Do not assign a speculative cross-map trip with no nearby
-            # working drop-off. A newly placed refinery enables new patches.
-            if distance(home, target) > 24:
+            delivery_distance = distance(home, target)
+            if delivery_distance > EXTENDED_SEARCH_RADIUS:
+                continue
+            extended = delivery_distance > LOCAL_SEARCH_RADIUS
+            # Only broaden an idle miner's fallback search on our side of
+            # the map; an enemy-side resource hint is not controlled terrain.
+            if extended and distance(target, v.enemy_base) < delivery_distance + 8:
                 continue
             score = (distance(current, target) + 2*distance(home, target)
                      + 12*loads['patch'][ident] + 6*loads['ref'][refinery['id']])
-            candidates.append((score, ident, refinery['id'], target, home))
-    choices = []
-    for _, ident, ref_id, target, home in sorted(candidates)[:12]:
-        outbound = _safe_route(v, current, target, hostiles)
-        delivery = _safe_route(v, target, home, hostiles)
-        if outbound is None or delivery is None:
-            continue
-        score = (len(outbound)-1 + 2*(len(delivery)-1)
-                 + 12*loads['patch'][ident] + 6*loads['ref'][ref_id])
-        choices.append((score, ident, ref_id, target))
-    return min(choices) if choices else None
+            candidates[extended].append((score, ident, refinery['id'], target, home))
+    # Preserve local assignments first. Only if none passes the existing
+    # outbound/delivery checks, inspect at most six wider alternatives.
+    for extended, cap in ((False, 12), (True, 6)):
+        choices = []
+        for _, ident, ref_id, target, home in sorted(candidates[extended])[:cap]:
+            outbound = _safe_route(v, current, target, hostiles)
+            delivery = _safe_route(v, target, home, hostiles)
+            if outbound is None or delivery is None:
+                continue
+            if extended and len(delivery)-1 > 48:
+                continue  # A short radius can hide an excessive river detour.
+            score = (len(outbound)-1 + 2*(len(delivery)-1)
+                     + 12*loads['patch'][ident] + 6*loads['ref'][ref_id])
+            choices.append((score, ident, ref_id, target))
+        if choices:
+            return min(choices)
+    return None
 
 
 def plan(v, memory, emit):

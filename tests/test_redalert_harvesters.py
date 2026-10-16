@@ -55,6 +55,77 @@ def after_native_resume(v):
     return memory
 
 
+def wider_search_view(points):
+    original = view([actor(100, x=8, y=8)])
+    raw, config = deepcopy(original.raw), deepcopy(original.config)
+    raw['observation']['buildings'] = [actor(1, 'proc', 8, 8)]
+    rows = [list('.'*64) for _ in range(48)]
+    for x, y in points:
+        rows[y][x] = '$'
+    config['rules']['maps']['test']['layout']['rows'] = [''.join(r) for r in rows]
+    v = View(raw, config)
+    adapt(v, {})
+    return v
+
+
+@pytest.mark.parametrize('radius', [24, 25, 28, 32])
+def test_idle_miner_can_search_up_to_32_cells_from_working_refinery(radius):
+    v = wider_search_view([(8, 8+radius)])
+    memory = after_native_resume(v)
+    out, _ = collect(v, memory)
+    assert out == [{'cmd': 'harvest', 'units': [100], 'to': [8, 8+radius]}]
+    assert validate(out[0], v)
+
+
+def test_search_does_not_expand_past_32_cells():
+    v = wider_search_view([(8, 41)])
+    assert collect(v, after_native_resume(v))[0] == []
+
+
+def test_nearby_safe_patch_still_precedes_extended_search():
+    v = wider_search_view([(12, 8), (8, 36)])
+    assert collect(v, after_native_resume(v))[0][0]['to'] == [12, 8]
+
+
+def test_suspect_near_patch_allows_wider_safe_fallback():
+    v = wider_search_view([(12, 8), (8, 36)])
+    memory = after_native_resume(v)
+    memory['suspect_until'] = {'12,8': v.now+120}
+    assert collect(v, memory)[0][0]['to'] == [8, 36]
+
+
+@pytest.mark.parametrize('threat', ['3tnk', 'tsla'])
+def test_extended_patch_keeps_existing_enemy_and_tower_checks(threat):
+    v = wider_search_view([(8, 36)])
+    memory = after_native_resume(v)
+    enemy = actor(500, threat, 8, 32)
+    if threat == 'tsla':
+        v.enemy_buildings = [enemy]
+    else:
+        v.enemies = [enemy]
+    assert not collect(v, memory)[0]
+
+
+def test_extended_search_does_not_head_toward_enemy_home():
+    v = wider_search_view([(35, 24)])
+    assert not collect(v, after_native_resume(v))[0]
+
+
+def test_extended_search_rejects_long_detour_to_nearby_ore():
+    v = wider_search_view([(8, 36)])
+    rows = v.map_info['layout']['rows']
+    rows[25] = '~'*50 + '.'*14
+    adapt(v, {})
+    assert not collect(v, after_native_resume(v))[0]
+
+
+def test_extended_search_does_not_interrupt_a_working_miner():
+    v = wider_search_view([(8, 36)])
+    memory = after_native_resume(v)
+    v.units[0].update(idle=False, act='HarvestResource')
+    assert not collect(v, memory)[0]
+
+
 @pytest.mark.parametrize('activity', ['Move', 'HarvestResource', 'DeliverResources',
                                     'Unload', 'FindAndDeliverResources', 'UnknownActivity'])
 @pytest.mark.parametrize('idle_flag', [False, True])
