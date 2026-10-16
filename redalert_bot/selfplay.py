@@ -105,7 +105,7 @@ def make_policy(metadata, context, state):
 class RecordedAgent(RedAlertAgent):
     def __init__(self, directory, entry):
         super().__init__(profile=entry['profile'])
-        self.entry = entry
+        self.entry = dict(entry, strategy_version=self.strategy_version)
         stem = hashlib.sha256(entry['match_id'].encode()).hexdigest()[:20] + '-seat' + str(entry['seat'])
         self.path = directory / (stem + '.jsonl')
         self.final_path = directory / (stem + '-final.json')
@@ -224,6 +224,10 @@ class RecordedAgent(RedAlertAgent):
         score = result.get('your_return')
         if score is None:
             score = (getattr(state, 'returns', None) or result.get('returns') or {}).get(context.agent_id)
+        server_failed = bool(result.get('status') == 'failed' or result.get('failure_reason'))
+        # Failed sessions and invalid scalar types are not game outcomes.
+        if server_failed or type(score) not in (int, float) or score not in (0, .5, 1):
+            score = None
         snapshot = self.last_snapshot
         exact_observation = False
         snapshot_error = False
@@ -234,6 +238,7 @@ class RecordedAgent(RedAlertAgent):
         except (ValueError, TypeError, KeyError, AttributeError, IndexError):
             snapshot_error = True
         report = dict(kind='final', **self.entry, score=score,
+                      server_failed=server_failed,
                       termination_reason=getattr(state, 'termination_reason', None) or result.get('termination_reason'),
                       result_source='worker_terminal_callback',
                       exact_final_observation=exact_observation, snapshot_error=snapshot_error,
@@ -263,6 +268,8 @@ def summarize(root=ROOT):
             continue
         a, b = seats[0], seats[1]
         if ({a['profile'], b['profile']} != PROFILES or a['code_hash'] != b['code_hash']
+                or a.get('server_failed') or b.get('server_failed')
+                or type(a['score']) not in (int, float) or type(b['score']) not in (int, float)
                 or a['case'] != b['case'] or a['score'] not in (0, .5, 1)
                 or b['score'] not in (0, .5, 1) or a['score'] + b['score'] != 1):
             incomplete.append(match)

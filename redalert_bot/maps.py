@@ -4,7 +4,7 @@ Grid distances are cardinal, static estimates, not OpenRA travel times. The
 layout describes INITIAL resources, never current ore reserves or enemy state.
 No map-name-specific winner or learned win rate is claimed here.
 """
-from collections import deque
+from collections import OrderedDict, deque
 from math import hypot
 
 
@@ -90,7 +90,43 @@ def nearest_reachable(v, destination):
     return min(distances, key=lambda c: (hypot(c[0]-p[0], c[1]-p[1]), distances[c], c))
 
 
-def route_safe(v, destination):
+def _route_from(v, start, destination):
+    """A short cached static route from an actor's current cell.
+
+    Stop BFS when the goal is reached. Cache only bounded paths, rather than
+    keeping a second whole-map parent tree for every moving actor position.
+    Tower safety is checked separately on every observation.
+    """
+    nav = getattr(v, 'navigation', {})
+    ground = nav.get('parents', {})
+    start, destination = tuple(start), tuple(destination)
+    if start not in ground or destination not in ground:
+        return []
+    cache = nav.setdefault('actor_routes', OrderedDict())
+    key = (start, destination)
+    if key in cache:
+        cache.move_to_end(key)
+        return cache[key]
+    parents, todo = {start: None}, deque([start])
+    while todo and destination not in parents:
+        x, y = todo.popleft()
+        for p in ((x-1,y), (x+1,y), (x,y-1), (x,y+1)):
+            if p in ground and p not in parents:
+                parents[p] = (x,y)
+                todo.append(p)
+    route, p = [], destination
+    if p in parents:
+        while p is not None:
+            route.append(p)
+            p = parents[p]
+        route.reverse()
+    cache[key] = route
+    while len(cache) > 32:
+        cache.popitem(last=False)
+    return route
+
+
+def route_safe(v, destination, start=None):
     """Reject a static route crossing known towers; fog is NOT proof of safety."""
     from .strategy import fortifications, radius
     parents = getattr(v, 'navigation', {}).get('parents', {})
@@ -98,6 +134,15 @@ def route_safe(v, destination):
     if p not in parents:
         return False
     towers = tuple(sorted((b['x'], b['y'], radius(v,b)) for b in fortifications(v)))
+    if start is not None:
+        start = tuple(start)
+        if start not in parents:
+            return False
+        if not towers:
+            return True
+        route = _route_from(v, start, destination)
+        return bool(route) and all(hypot(point[0]-x, point[1]-y) > r
+                                   for point in route for x, y, r in towers)
     if not towers:
         return True
     signature = (id(parents), towers)
@@ -114,3 +159,45 @@ def route_safe(v, destination):
     for point in pending:
         cache[point] = safe
     return safe
+
+
+def escape_cell(v, start, preferred):
+    """Find nearby land that exits tower range without increasing exposure.
+
+    This is a conservative static escape estimate, not engine pathfinding.
+    In particular, it never plans a step deeper into another known tower's
+    radius merely because that tower is not the closest one.
+    """
+    from .strategy import fortifications, radius
+    ground = getattr(v, 'navigation', {}).get('parents', {})
+    start = tuple(start)
+    if start not in ground:
+        return None
+    towers = [(b['x'], b['y'], radius(v, b)) for b in fortifications(v)]
+
+    def exposure(p):
+        return tuple(max(0., r-hypot(p[0]-x, p[1]-y)+.01) for x,y,r in towers)
+
+    initial = exposure(start)
+    if not any(initial):
+        return start
+    todo, seen = deque([(start, initial, 0)]), {start}
+    goals, first_distance = [], None
+    while todo and len(seen) <= 4096:
+        p, risk, steps = todo.popleft()
+        if first_distance is not None and steps > first_distance:
+            break
+        if not any(risk):
+            goals.append(p)
+            first_distance = steps
+            continue
+        x, y = p
+        for nxt in ((x-1,y), (x+1,y), (x,y-1), (x,y+1)):
+            if nxt not in ground or nxt in seen:
+                continue
+            next_risk = exposure(nxt)
+            if any(after > before+1e-9 for before, after in zip(risk, next_risk)):
+                continue
+            seen.add(nxt)
+            todo.append((nxt, next_risk, steps+1))
+    return min(goals, key=lambda p: (hypot(p[0]-preferred[0], p[1]-preferred[1]), p)) if goals else None

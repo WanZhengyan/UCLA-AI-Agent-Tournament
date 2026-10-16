@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from collections import Counter, deque
 from math import hypot
-from .strategy import TANKS, fortifications, blockers, radius
+from .strategy import TANKS, fortifications, blockers, radius, safe_cell
 
 
 SUPPORT = {"harv", "mcv", "e6", "medi", "mech", "dog"}
@@ -188,6 +188,23 @@ def _expansion_window(v, memory):
     return v.remaining > seconds
 
 
+def _mcv_withdraw(v, mcv, emit):
+    """Do not turn an unsafe destination into an unsafe retreat order."""
+    ident, current = mcv['id'], v.cell(mcv)
+    destination = None
+    if getattr(v, 'map_plan', {}).get('active'):
+        from .maps import route_safe, escape_cell
+        if route_safe(v, v.base, start=current):
+            destination = v.base
+        elif not safe_cell(v, current):
+            destination = escape_cell(v, current, v.base)
+    elif not blockers(v, current, v.base):
+        destination = v.base
+    order = ({'cmd': 'move', 'units': [ident], 'to': v.clamp(destination)}
+             if destination is not None else {'cmd': 'stop', 'units': [ident]})
+    emit(order, key=f'mcv-safety-{ident}', cooldown=8)
+
+
 def _mcv_orders(v, memory, emit):
     mcvs = [u for u in v.units if _type(u) == "mcv"]
     for mcv in mcvs[:2]:
@@ -214,15 +231,24 @@ def _mcv_orders(v, memory, emit):
                 emit({"cmd": "deploy", "units": [ident]}, key=f"deploy-{ident}", cooldown=8)
             continue
         memory[f"mcv-site-{ident}"] = site
-        if blockers(v,v.cell(mcv),site):
+        # A per-MCV destination persists longer than the shared 25-second site
+        # cache. Recheck it against new contacts as well: a straight segment
+        # can miss a tower on the only traversable route around a river.
+        unsafe_route = False
+        if getattr(v, 'map_plan', {}).get('active'):
+            from .maps import route_safe
+            unsafe_route = not route_safe(v, site, start=v.cell(mcv))
+        unsafe_site = any(_dist(site, v.cell(e)) < 20 for e in _enemies(v))
+        if unsafe_route or unsafe_site or blockers(v,v.cell(mcv),site):
             memory.pop(f"mcv-site-{ident}",None)
+            memory.pop(f"mcv-moving-{ident}",None)
+            memory["expansion_site"] = None
             memory["site_checked_at"] = -1000
-            emit({"cmd":"move","units":[ident],"to":v.clamp(v.base)},
-                 key=f"mcv-safety-{ident}",cooldown=8)
+            _mcv_withdraw(v, mcv, emit)
             continue
         if any(_dist(v.cell(mcv), v.cell(e)) < 12 for e in _enemies(v) if _type(e) not in SUPPORT):
-            emit({"cmd": "move", "units": [ident], "to": v.clamp(v.base)},
-                 key=f"mcv-safety-{ident}", cooldown=8)
+            memory.pop(f"mcv-moving-{ident}", None)
+            _mcv_withdraw(v, mcv, emit)
             continue
         if _dist(v.cell(mcv), site) <= 3:
             emit({"cmd": "deploy", "units": [ident]}, key=f"deploy-{ident}", cooldown=6)
@@ -474,4 +500,7 @@ def plan(v, memory: dict, emit) -> None:
         direction = v.enemy_base
         length = max(1, _dist((x, y), direction))
         point = v.clamp((round(x + 6*(direction[0]-x)/length), round(y + 6*(direction[1]-y)/length)))
+        if map_plan.get('active'):
+            from .maps import nearest_reachable
+            point = list(nearest_reachable(v, point) or point)
         emit({"cmd": "rally", "building": b["id"], "to": point}, key=f"rally-{b['id']}", cooldown=20)

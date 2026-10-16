@@ -85,11 +85,13 @@ class MatchMonitor:
         self.fallbacks = 0
         self.last_flags = set()
         self.started = False
+        self.timeline_truncated = False
 
     def append(self, payload):
         line = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(',', ':')) + '\n'
         size = self.path.stat().st_size if self.path.exists() else 0
         if size + len(line.encode()) > LIMIT:
+            self.timeline_truncated = True
             return
         self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         fd = os.open(self.path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
@@ -98,12 +100,16 @@ class MatchMonitor:
 
     def save(self, row, terminal=False):
         # Independent sinks: a full/unwritable timeline cannot discard the result.
-        for save in (lambda: self.append(row),
-                     lambda: atomic_json(self.final if terminal else self.latest, row)):
-            try:
-                save()
-            except Exception:
-                pass
+        row['timeline_truncated'] = self.timeline_truncated
+        try:
+            self.append(row)
+        except Exception:
+            self.timeline_truncated = True
+        row['timeline_truncated'] = self.timeline_truncated
+        try:
+            atomic_json(self.final if terminal else self.latest, row)
+        except Exception:
+            pass
 
     def counters(self):
         return dict(decisions=self.decision_count, max_decision_seconds=self.max_decision_seconds,
@@ -138,8 +144,10 @@ class MatchMonitor:
         actor_fields = ('id', 'type', 'x', 'y', 'hp', 'idle')
         positions = lambda actors: [fields(a, actor_fields) for a in actors[:400]]
         return dict(seconds=v.now, remaining=v.remaining, map=v.map_id,
+                    state_version=fields(raw, ('state_version',)).get('state_version'),
+                    base=list(v.base),
                     max_minutes=(raw.get('time') or {}).get('max_minutes'),
-                    faction=v.obs.get('faction'),
+                    **fields(v.obs, ('faction', 'enemy_faction')),
                     economy=fields(v.econ, ('cash', 'ore', 'harvesters', 'power_provided', 'power_drained')),
                     military=fields(v.military, ('kills_cost', 'deaths_cost', 'assets_value', 'army_value')),
                     units=dict(Counter(a['type'] for a in v.units)),
@@ -269,6 +277,7 @@ class MatchMonitor:
             flags = ['snapshot_diagnostics_unavailable']
         row = dict(kind='final', **self.meta, updated_at=time.time(), outcome=outcome or 'unknown',
                    score=_score(state, self.agent_id),
+                   server_failed=bool(result.get('status') == 'failed' or result.get('failure_reason')),
                    termination_reason=getattr(state, 'termination_reason', None) or result.get('termination_reason'),
                    result_source='worker_terminal_callback', snapshot=snapshot,
                    exact_final_observation=exact, snapshot_parse_error=parse_error,

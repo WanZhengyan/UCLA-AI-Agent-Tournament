@@ -76,7 +76,7 @@ class RedAlertAgent:
         if profile not in {'balanced', 'eco_guard'}:
             raise ValueError('Unknown Red Alert policy profile')
         self.profile = profile
-        self.strategy_version = 'armor_guard_v4' if profile == 'eco_guard' else 'balanced'
+        self.strategy_version = 'replay_map_guard_v5' if profile == 'eco_guard' else 'balanced'
         self.sessions = {}
 
     def _memory(self, context):
