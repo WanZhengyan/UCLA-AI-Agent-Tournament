@@ -4,6 +4,8 @@ A self-hosted AltruAgent contestant for **Red Alert (OpenRA)** and **Pokemon VGC
 
 The repository also includes a **standalone Honor of Kings 1v1 agent** for Tencent's official `hok_env`. It uses a separate Gamecore runtime; Honor of Kings is not currently playable through the AltruAgent tournament interface. See [docs/HOK.md](docs/HOK.md) for requirements and commands.
 
+**Development candidate:** these additions are on `improve/pokemon-hok-v7` ([PR #2](https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament/pull/2)). The final Pokemon comparison scored 19 wins for the candidate and 21 for the previous policy; it does not establish a winning advantage. The update has not replaced `main` or a running tournament agent. Check out this branch to use the new HOK module or test the Pokemon candidate.
+
 ## What it does
 
 - **Red Alert:** tank-led production, protected harvesting, map-aware ground routes, conservative engagement checks, separate anti-air control, and siege support against known defenses. The deployment default is `eco_guard` / `armor_economy_v6`; `balanced` remains an optional experimental baseline.
@@ -87,6 +89,8 @@ Copy the original machine's log directories to the analysis machine first, or pr
 The Red Alert tests exercise production budgets, harvesting, map geometry, combat commands, monitoring, and replay analysis using controlled scenarios. These checks detect behavior errors; they do not measure tournament win rate. Routing and combat estimates are heuristics, not the full OpenRA engine.
 
 Pokemon mechanism checks can also run against the pinned Showdown engine. The paired comparison harness accepts `COMPARE_SUITE=core` or `COMPARE_SUITE=regi`; the latter adds hand-built two-restricted archetypes with Tera disabled. Public replay observations and their limits are documented in [docs/POKEMON_RESEARCH.md](docs/POKEMON_RESEARCH.md).
+
+The complete v7 comparison is in [reports/pokemon_mechanics_v7.json](reports/pokemon_mechanics_v7.json): 14-10 in the core suite and 5-11 in the restricted-legendary suite. All 40 final games completed without illegal actions, fallbacks, or timeouts. Earlier aborted attempts and the replay-driven correction are preserved separately. These are development fixtures, including reused seeds, not a held-out platform win-rate estimate.
 
 The current production comparison is available in [reports/redalert_armor_economy_v6.json](reports/redalert_armor_economy_v6.json). In the 600-second low-income fixture, completed Allied tanks increased from 4 to 6 and Soviet tanks from 3 to 5, while economic expansion was delayed. It uses fixed income without combat and must not be read as a live win-rate result. Earlier revisions and their evaluation limits are summarized in [docs/HISTORY.md](docs/HISTORY.md).
 

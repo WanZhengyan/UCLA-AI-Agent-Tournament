@@ -1,0 +1,1190 @@
+{
+  "schema_version": 1,
+  "strategy_version": "mechanics_v7",
+  "evaluation_date": "2026-10-16",
+  "candidate_commit": "8bfe81f4200d272a451f2e4f5edd7adb8dc23f18",
+  "baseline_commit": "444a9f7c29d0bb8b388bfe80dea706b459cefe67",
+  "recommendation": "Keep as a development candidate; these results do not support replacing the formal tournament baseline.",
+  "summary": {
+    "games": 40,
+    "candidate_wins": 19,
+    "baseline_wins": 21,
+    "candidate_win_fraction": 0.475,
+    "incomplete_games": 0,
+    "final_run_timeouts": 0,
+    "earlier_attempt_timeouts": 1,
+    "empirical_overall_advantage_demonstrated": false
+  },
+  "validation": {
+    "full_pytest_passed": 468,
+    "new_python_scenarios": 30,
+    "baseline_failures_on_new_python_scenarios": 22,
+    "new_python_scenarios_passed": 30,
+    "new_independent_showdown_scenarios": 9,
+    "existing_independent_showdown_scenarios": 8,
+    "launcher_self_test": {
+      "command": "python exe_entry.py --self-test",
+      "passed": true,
+      "pokemon_seconds": 1.242,
+      "checks": [
+        "Pokemon",
+        "Red Alert",
+        "worker",
+        "MCP",
+        "entry point",
+        "TLS"
+      ],
+      "reported_by": "root final-source verification"
+    }
+  },
+  "design": {
+    "candidate_label": "A",
+    "baseline_label": "B",
+    "policy_budget_seconds": 2.0,
+    "harness_decision_timeout_seconds": 15,
+    "core_games_prespecified": 24,
+    "core_seed_offset": 7000,
+    "regi_games_prespecified": 16,
+    "regi_seed_offset": 8000,
+    "pairing": "Each four-game block swaps both teams and player seats under a fixed seed. All final prespecified games were retained.",
+    "public_observation": "Fixed sets public to both policies; opponent HP rounded to displayed percentage; Tera disabled."
+  },
+  "source_sha256": {
+    "candidate": {
+      "pokemon_bot/__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+      "pokemon_bot/agent.py": "8c19a8228aad9696bf1139eecdf98213dd3cbc6cf73e8c35de353f8f3e0891a6",
+      "pokemon_bot/battle.py": "62491f0e0137b2d083cb2d4b518be25ebc38d1b2e35f5250e52d378caf045fe8",
+      "pokemon_bot/dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+      "pokemon_bot/dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+      "pokemon_bot/draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+      "pokemon_bot/legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+      "pokemon_bot/selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+      "pokemon_bot/state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+    },
+    "baseline": {
+      "pokemon_bot/__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+      "pokemon_bot/agent.py": "3b11b64b0a81ebdb7b83355c31411c42d182d0959370cee52d7c2596ede9cb7e",
+      "pokemon_bot/battle.py": "7b2fcf367000e4e512c940ca8e3c1a7ebe786c660dd92575d5a1b61f4243c4e1",
+      "pokemon_bot/dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+      "pokemon_bot/dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+      "pokemon_bot/draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+      "pokemon_bot/legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+      "pokemon_bot/selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+      "pokemon_bot/state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+    }
+  },
+  "harness_sha256": {
+    "tests/showdown_compare.js": "3c24cfd14f7b9c4000671f7c15ef7e8536adc9accf2a6bf89a0ae0ba0dd10dd0",
+    "tests/showdown_support.js": "ce5050dfebb61c6876cc83f8099a4ff0c33fc049a9a4d7d8561dd08945a77e8d",
+    "tests/bridge.py": "a5b15651a0a1162c29b44d6b91f6681a03636751428fea28308670b183b171ce",
+    "tests/test_pokemon_upgrade.py": "522cc262fd823c24807d5c4bfe59848a58bae826c4e7e72bd972b6b57ebf27de",
+    "package.json": "f1c661304b07ffa138b798be28de56470ced6d3e80321f6404418db268a82a9d"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "node": "v24.19.0",
+    "rules_engine": "pokemon-showdown@0.11.11"
+  },
+  "suites": {
+    "core": {
+      "completed_games": 24,
+      "unique_sessions": 48,
+      "candidate_wins": 14,
+      "baseline_wins": 10,
+      "incomplete_games": 0,
+      "code_unchanged": true,
+      "latency_ms": {
+        "candidate": {
+          "decisions": 213,
+          "median": 606.6254159999662,
+          "p95": 2004.9899309999964,
+          "max": 2165.651154
+        },
+        "baseline": {
+          "decisions": 214,
+          "median": 529.3106459999981,
+          "p95": 2029.4780549999996,
+          "max": 2369.258619
+        }
+      },
+      "stderr": {
+        "candidate": "",
+        "baseline": ""
+      },
+      "paired_blocks": [
+        {
+          "teams": [
+            "balanced",
+            "rain"
+          ],
+          "seed": [
+            14123,
+            99193,
+            57917,
+            142341
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "rain",
+            "balanced"
+          ],
+          "seed": [
+            14124,
+            99206,
+            57924,
+            142360
+          ],
+          "candidate_wins": 4,
+          "baseline_wins": 0,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "trickroom",
+            "balanced"
+          ],
+          "seed": [
+            14125,
+            99219,
+            57931,
+            142379
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "balanced",
+            "offense"
+          ],
+          "seed": [
+            14126,
+            99232,
+            57938,
+            142398
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "offense",
+            "rain"
+          ],
+          "seed": [
+            14127,
+            99245,
+            57945,
+            142417
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "trickroom",
+            "offense"
+          ],
+          "seed": [
+            14128,
+            99258,
+            57952,
+            142436
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        }
+      ],
+      "games": [
+        {
+          "pair": [
+            "balanced",
+            "rain"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            14123,
+            99193,
+            57917,
+            142341
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "balanced",
+            "rain"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            14123,
+            99193,
+            57917,
+            142341
+          ],
+          "winner": "B",
+          "turns": 9,
+          "steps": 15
+        },
+        {
+          "pair": [
+            "rain",
+            "balanced"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            14123,
+            99193,
+            57917,
+            142341
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "rain",
+            "balanced"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            14123,
+            99193,
+            57917,
+            142341
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "rain",
+            "balanced"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            14124,
+            99206,
+            57924,
+            142360
+          ],
+          "winner": "A",
+          "turns": 8,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "rain",
+            "balanced"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            14124,
+            99206,
+            57924,
+            142360
+          ],
+          "winner": "A",
+          "turns": 8,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "balanced",
+            "rain"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            14124,
+            99206,
+            57924,
+            142360
+          ],
+          "winner": "A",
+          "turns": 8,
+          "steps": 14
+        },
+        {
+          "pair": [
+            "balanced",
+            "rain"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            14124,
+            99206,
+            57924,
+            142360
+          ],
+          "winner": "A",
+          "turns": 8,
+          "steps": 14
+        },
+        {
+          "pair": [
+            "trickroom",
+            "balanced"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            14125,
+            99219,
+            57931,
+            142379
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "trickroom",
+            "balanced"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            14125,
+            99219,
+            57931,
+            142379
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "balanced",
+            "trickroom"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            14125,
+            99219,
+            57931,
+            142379
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "balanced",
+            "trickroom"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            14125,
+            99219,
+            57931,
+            142379
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "balanced",
+            "offense"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            14126,
+            99232,
+            57938,
+            142398
+          ],
+          "winner": "A",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "balanced",
+            "offense"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            14126,
+            99232,
+            57938,
+            142398
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "offense",
+            "balanced"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            14126,
+            99232,
+            57938,
+            142398
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "offense",
+            "balanced"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            14126,
+            99232,
+            57938,
+            142398
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "offense",
+            "rain"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            14127,
+            99245,
+            57945,
+            142417
+          ],
+          "winner": "A",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "offense",
+            "rain"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            14127,
+            99245,
+            57945,
+            142417
+          ],
+          "winner": "A",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "rain",
+            "offense"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            14127,
+            99245,
+            57945,
+            142417
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "rain",
+            "offense"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            14127,
+            99245,
+            57945,
+            142417
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "trickroom",
+            "offense"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            14128,
+            99258,
+            57952,
+            142436
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "trickroom",
+            "offense"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            14128,
+            99258,
+            57952,
+            142436
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "offense",
+            "trickroom"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            14128,
+            99258,
+            57952,
+            142436
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "offense",
+            "trickroom"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            14128,
+            99258,
+            57952,
+            142436
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 8
+        }
+      ]
+    },
+    "regi": {
+      "completed_games": 16,
+      "unique_sessions": 32,
+      "candidate_wins": 5,
+      "baseline_wins": 11,
+      "incomplete_games": 0,
+      "code_unchanged": true,
+      "latency_ms": {
+        "candidate": {
+          "decisions": 144,
+          "median": 694.0413709999993,
+          "p95": 2069.023813000007,
+          "max": 2154.4926239999913
+        },
+        "baseline": {
+          "decisions": 143,
+          "median": 594.3494910000009,
+          "p95": 2026.8951050000032,
+          "max": 2114.1935220000014
+        }
+      },
+      "stderr": {
+        "candidate": "",
+        "baseline": ""
+      },
+      "paired_blocks": [
+        {
+          "teams": [
+            "regi_rain",
+            "regi_shadow"
+          ],
+          "seed": [
+            15123,
+            112193,
+            64917,
+            161341
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "regi_shadow",
+            "regi_room"
+          ],
+          "seed": [
+            15124,
+            112206,
+            64924,
+            161360
+          ],
+          "candidate_wins": 1,
+          "baseline_wins": 3,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "regi_room",
+            "regi_rain"
+          ],
+          "seed": [
+            15125,
+            112219,
+            64931,
+            161379
+          ],
+          "candidate_wins": 0,
+          "baseline_wins": 4,
+          "incomplete": 0,
+          "games": 4
+        },
+        {
+          "teams": [
+            "regi_rain",
+            "rain"
+          ],
+          "seed": [
+            15126,
+            112232,
+            64938,
+            161398
+          ],
+          "candidate_wins": 2,
+          "baseline_wins": 2,
+          "incomplete": 0,
+          "games": 4
+        }
+      ],
+      "games": [
+        {
+          "pair": [
+            "regi_rain",
+            "regi_shadow"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            15123,
+            112193,
+            64917,
+            161341
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "regi_rain",
+            "regi_shadow"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            15123,
+            112193,
+            64917,
+            161341
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "regi_shadow",
+            "regi_rain"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            15123,
+            112193,
+            64917,
+            161341
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "regi_shadow",
+            "regi_rain"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            15123,
+            112193,
+            64917,
+            161341
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 8
+        },
+        {
+          "pair": [
+            "regi_shadow",
+            "regi_room"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            15124,
+            112206,
+            64924,
+            161360
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 14
+        },
+        {
+          "pair": [
+            "regi_shadow",
+            "regi_room"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            15124,
+            112206,
+            64924,
+            161360
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 14
+        },
+        {
+          "pair": [
+            "regi_room",
+            "regi_shadow"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            15124,
+            112206,
+            64924,
+            161360
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 11
+        },
+        {
+          "pair": [
+            "regi_room",
+            "regi_shadow"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            15124,
+            112206,
+            64924,
+            161360
+          ],
+          "winner": "A",
+          "turns": 6,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "regi_room",
+            "regi_rain"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            15125,
+            112219,
+            64931,
+            161379
+          ],
+          "winner": "B",
+          "turns": 8,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "regi_room",
+            "regi_rain"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            15125,
+            112219,
+            64931,
+            161379
+          ],
+          "winner": "B",
+          "turns": 8,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "regi_rain",
+            "regi_room"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            15125,
+            112219,
+            64931,
+            161379
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "regi_rain",
+            "regi_room"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            15125,
+            112219,
+            64931,
+            161379
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "regi_rain",
+            "rain"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            15126,
+            112232,
+            64938,
+            161398
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "regi_rain",
+            "rain"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            15126,
+            112232,
+            64938,
+            161398
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "rain",
+            "regi_rain"
+          ],
+          "swap": false,
+          "reverseTeams": true,
+          "seed": [
+            15126,
+            112232,
+            64938,
+            161398
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "rain",
+            "regi_rain"
+          ],
+          "swap": true,
+          "reverseTeams": true,
+          "seed": [
+            15126,
+            112232,
+            64938,
+            161398
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 10
+        }
+      ]
+    }
+  },
+  "earlier_attempts": [
+    {
+      "attempt": "pokemon_ab_core_v7",
+      "status": "invalidated_source_changed",
+      "completed_games": 24,
+      "candidate_wins": 16,
+      "baseline_wins": 8,
+      "reason": "Superseded for reviewer corrections to drain/contact and item interactions. This process continued to completion while source files changed, so its code-unchanged check failed and its results are invalidated, not counted as a fixed-version experiment.",
+      "included_in_final_40": false,
+      "source_sha256_before": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "6ee978041841a6547ab5c14ed3f58d23986bc82f0c2357f25c21a238aeeade40",
+          "battle.py": "d9f39e81eccac18d6f6e5e50b0bf1c5b7467ecce1ea8af9d97216941282a07ff",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "3b11b64b0a81ebdb7b83355c31411c42d182d0959370cee52d7c2596ede9cb7e",
+          "battle.py": "7b2fcf367000e4e512c940ca8e3c1a7ebe786c660dd92575d5a1b61f4243c4e1",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+        }
+      ],
+      "latency_ms": [
+        {
+          "decisions": 212,
+          "median": 600.2153509999916,
+          "p95": 1846.8261009999987,
+          "max": 2047.246331000002
+        },
+        {
+          "decisions": 215,
+          "median": 538.5411029999996,
+          "p95": 1680.8626920000097,
+          "max": 2894.7463299999945
+        }
+      ],
+      "code_unchanged": false
+    },
+    {
+      "attempt": "pokemon_ab_regi_v7",
+      "status": "invalidated_source_changed",
+      "completed_games": 16,
+      "candidate_wins": 6,
+      "baseline_wins": 10,
+      "reason": "Superseded for reviewer corrections to drain/contact and item interactions. This process continued to completion while source files changed, so its code-unchanged check failed and its results are invalidated, not counted as a fixed-version experiment.",
+      "included_in_final_40": false,
+      "source_sha256_before": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "6ee978041841a6547ab5c14ed3f58d23986bc82f0c2357f25c21a238aeeade40",
+          "battle.py": "d9f39e81eccac18d6f6e5e50b0bf1c5b7467ecce1ea8af9d97216941282a07ff",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "3b11b64b0a81ebdb7b83355c31411c42d182d0959370cee52d7c2596ede9cb7e",
+          "battle.py": "7b2fcf367000e4e512c940ca8e3c1a7ebe786c660dd92575d5a1b61f4243c4e1",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+        }
+      ],
+      "latency_ms": [
+        {
+          "decisions": 154,
+          "median": 608.3449629999959,
+          "p95": 1886.418915999995,
+          "max": 2960.868988999995
+        },
+        {
+          "decisions": 154,
+          "median": 583.3055759999997,
+          "p95": 2025.8723039999895,
+          "max": 2104.3799909999943
+        }
+      ],
+      "code_unchanged": false
+    },
+    {
+      "attempt": "pokemon_ab_core_v7_final",
+      "status": "superseded_or_aborted",
+      "completed_games": 0,
+      "candidate_wins": 0,
+      "baseline_wins": 0,
+      "reason": "Aborted at the unchanged 15-second decision limit during concurrent full-suite tests and Reg I comparison; policy and phase were not logged, so they remain unknown. CPU contention is possible but not established.",
+      "included_in_final_40": false,
+      "error": "Decision exceeded 15 seconds",
+      "policy": null,
+      "phase": null
+    },
+    {
+      "attempt": "pokemon_ab_regi_v7_final",
+      "status": "completed_pre_correction",
+      "completed_games": 16,
+      "candidate_wins": 6,
+      "baseline_wins": 10,
+      "reason": "Completed pre-correction experiment. A 6-10 result prompted inspection of generated game logs, which exposed missing Koraidon switch weather handling.",
+      "included_in_final_40": false,
+      "source_sha256_before": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "8c19a8228aad9696bf1139eecdf98213dd3cbc6cf73e8c35de353f8f3e0891a6",
+          "battle.py": "be114e8254dab4ddd852ab48b7445fa5483ad496c33046833181730704163d13",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "3b11b64b0a81ebdb7b83355c31411c42d182d0959370cee52d7c2596ede9cb7e",
+          "battle.py": "7b2fcf367000e4e512c940ca8e3c1a7ebe786c660dd92575d5a1b61f4243c4e1",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "0a941609fffab5c358aaa6576188ed669e168edd32bd9ad87e2bd5a1f6cd3197",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "894d951fcd17c26a79a80c47cc529cd655c6f261578096100d36980ae6905597"
+        }
+      ],
+      "latency_ms": [
+        {
+          "decisions": 153,
+          "median": 512.486828000001,
+          "p95": 1526.2667130000045,
+          "max": 2180.758795
+        },
+        {
+          "decisions": 153,
+          "median": 543.8406450000184,
+          "p95": 1581.5670930000051,
+          "max": 9914.864493000001
+        }
+      ],
+      "code_unchanged": true
+    },
+    {
+      "attempt": "pokemon_ab_core_v7_sequential",
+      "status": "superseded_or_aborted",
+      "completed_games": 6,
+      "candidate_wins": 5,
+      "baseline_wins": 1,
+      "reason": "Interrupted for the narrowly scoped Orichalcum Pulse/Hadron Engine correction before the final prespecified comparison.",
+      "included_in_final_40": false
+    }
+  ],
+  "limitations": [
+    "Small handmade roster sample; no online matchmaking, official tournament, or actual draft-card-pool benchmark.",
+    "Reg I archetype fixtures yielded 5 wins and 11 losses for this candidate, versus 14 wins and 10 losses in core fixtures. A higher core score is not a demonstrated overall improvement.",
+    "Paired games are dependent and do not justify a simple independent-binomial confidence claim. RNG paths can diverge after policies choose different moves.",
+    "The policy uses a bounded approximate one-turn evaluator and a heuristic opponent prior. Random multihit counts and damage accuracy are approximations; pivot selection, hidden-information tracking and some volatile effects are not an exhaustive Showdown model.",
+    "The observation adapter and handbuilt sets are not a full platform reproduction. No result here establishes live win rate.",
+    "Wall-clock search budgets can change candidate coverage under CPU contention. One earlier attempt hit 15 seconds with unknown policy/phase. All final runs completed under the same limit.",
+    "The weather fix was motivated by generated offline replay evidence, then the full prespecified suites were rerun; the earlier 6-10 Reg I result remains recorded separately."
+  ],
+  "sources": [
+    "https://github.com/smogon/pokemon-showdown/blob/master/data/abilities.ts",
+    "https://github.com/smogon/pokemon-showdown/blob/master/data/items.ts",
+    "https://github.com/smogon/pokemon-showdown/blob/master/data/moves.ts",
+    "https://www.smogon.com/dex/sv/pokemon/archaludon/vgc/",
+    "https://www.smogon.com/dex/sv/pokemon/urshifu-rapid-strike/vgc25-regulation-i/",
+    "https://replay.pokemonshowdown.com/gen9vgc2025regg-2290695151"
+  ],
+  "reproduce": {
+    "notes": "Run from a checkout of candidate_commit with Python dependencies installed. The baseline worktree is read-only for evaluation. Output directories must not already exist. Run tests before benchmarks to avoid concurrent CPU-heavy work. Shell paths below are portable examples.",
+    "commands": [
+      "python -m pip install -r requirements.txt pytest",
+      "npm install --ignore-scripts",
+      "git worktree add --detach ../pokemon-baseline 444a9f7c29d0bb8b388bfe80dea706b459cefe67",
+      "SHOWDOWN_NODE=\"$(command -v node)\" NODE_PATH=\"$PWD/node_modules\" python -m pytest tests -q",
+      "NODE_PATH=\"$PWD/node_modules\" A_DIR=\"$PWD\" B_DIR=\"../pokemon-baseline\" RESULT_DIR=\"validation/pokemon-v7-core\" PYTHON=\"$(command -v python)\" node tests/showdown_compare.js 24 7000",
+      "NODE_PATH=\"$PWD/node_modules\" COMPARE_SUITE=regi A_DIR=\"$PWD\" B_DIR=\"../pokemon-baseline\" RESULT_DIR=\"validation/pokemon-v7-regi\" PYTHON=\"$(command -v python)\" node tests/showdown_compare.js 16 8000"
+    ],
+    "output_files": [
+      "report.json",
+      "game-<seed-index>-<seat-swap>-<team-swap>.json",
+      "failure.json (only if the experiment aborts)"
+    ]
+  }
+}
