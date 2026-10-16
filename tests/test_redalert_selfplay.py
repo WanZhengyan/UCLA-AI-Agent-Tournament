@@ -250,3 +250,33 @@ def test_counterbalanced_pair_requires_same_source_version(tmp_path,change_versi
     summary = summarize(tmp_path)
     assert summary['completed_comparisons'] == 2
     assert summary['complete_same_version_swapped_pairs'] == (0 if change_version else 1)
+
+
+@pytest.mark.parametrize('invalid', ['failure', 'failure_reason', 'boolean'])
+def test_invalid_terminal_results_never_become_selfplay_evidence(tmp_path, invalid):
+    settings(tmp_path)
+    for seat in (0, 1):
+        directory, entry = allocate(tmp_path, {'match_id': 'one'}, ctx(seat), raw(), 'code')
+        bot = RecordedAgent(directory, entry)
+        result = {'your_return': seat}
+        if invalid == 'failure':
+            result['status'] = 'failed'
+        elif invalid == 'failure_reason':
+            result['failure_reason'] = 'private failure details need not be stored'
+        else:
+            result['your_return'] = bool(seat)
+        bot.on_game_end(SimpleNamespace(raw={}, final_result=result, returns={},
+                                       termination_reason='time_limit'), ctx(seat))
+        report = json.loads(bot.final_path.read_text())
+        assert report['score'] is None
+        assert 'private failure details' not in bot.final_path.read_text()
+        assert report['strategy_version'] == bot.strategy_version
+    assert summarize(tmp_path)['completed_comparisons'] == 0
+
+
+def test_summary_rejects_legacy_boolean_score_files(tmp_path):
+    settings(tmp_path)
+    for seat in (0, 1):
+        directory, entry = allocate(tmp_path, {'match_id': 'one'}, ctx(seat), raw(), 'code')
+        (directory / f'seat{seat}-final.json').write_text(json.dumps(dict(entry, score=bool(seat))))
+    assert summarize(tmp_path)['completed_comparisons'] == 0

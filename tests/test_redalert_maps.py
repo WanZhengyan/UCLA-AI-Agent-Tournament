@@ -7,7 +7,8 @@ from altruagent.models import DecisionContext, GameState
 from redalert_bot.agent import RedAlertAgent, validate
 from redalert_bot.common import View
 from redalert_bot.maps import adapt, route_safe, nearest_reachable
-from redalert_bot.economy import plan as economy, _expansion_window, _expansion_site
+from redalert_bot.economy import plan as economy, _expansion_window, _expansion_site, _mcv_orders
+from redalert_bot.strategy import blockers, safe_cell
 from redalert_bot.combat import plan as combat
 from test_redalert_balance import actor
 
@@ -140,6 +141,99 @@ def collect(planner,v,memory=None):
         return True
     planner(v,memory,emit)
     return orders, memory
+
+
+def test_rally_projects_water_destination_to_reachable_land():
+    v = mapped()
+    layout = v.map_info['layout']
+    rows = list(layout['rows'])
+    # The old direct six-cell rally point is water, but land surrounds it.
+    rows[10] = rows[10][:16] + '~' + rows[10][17:]
+    layout['rows'] = rows
+    adapt(v, {})
+    v.buildings.append(actor(800, 'barr', 10, 12))
+    orders, _ = collect(economy, v)
+    rally = next(o for o in orders if o['cmd'] == 'rally')
+    assert rally['to'] != [16, 10]
+    assert tuple(rally['to']) in v.navigation['distances']
+
+
+def test_assigned_mcv_rechecks_new_tower_on_terrain_detour():
+    v = mapped()
+    layout = v.map_info['layout']
+    layout['rows'] = [row[:15] + ('~' if y < 45 else '.') + row[16:]
+                      for y, row in enumerate(layout['rows'])]
+    adapt(v, {})
+    v.units = [dict(actor(400, 'mcv', 10, 10), idle=False)]
+    site = (30, 10)
+    memory = {'mcv-site-400': site, 'mcv-moving-400': True,
+              'expansion_site': site, 'site_checked_at': v.now}
+    assert route_safe(v, site)
+    # A tower discovered after assignment covers the only land crossing,
+    # while the naive straight line from MCV to destination looks safe.
+    v.enemy_buildings = [actor(200, 'tsla', 15, 45)]
+    assert not blockers(v, (10, 10), site)
+    assert not route_safe(v, site)
+    orders, memory = collect(_mcv_orders, v, memory)
+    assert orders == [{'cmd': 'move', 'units': [400], 'to': [10, 10]}]
+    assert 'mcv-site-400' not in memory and 'mcv-moving-400' not in memory
+    assert memory['expansion_site'] is None
+    assert memory['site_checked_at'] == -1000
+
+
+def test_assigned_mcv_rechecks_enemy_at_destination_before_arrival():
+    v = mapped()
+    v.units = [dict(actor(400, 'mcv', 10, 10), idle=False)]
+    site = (40, 10)
+    memory = {'mcv-site-400': site, 'mcv-moving-400': True}
+    v.obs['visible_enemies'] = [actor(200, '3tnk', *site)]
+    orders, memory = collect(_mcv_orders, v, memory)
+    assert orders == [{'cmd': 'move', 'units': [400], 'to': [10, 10]}]
+    assert 'mcv-site-400' not in memory
+
+
+def test_safe_assigned_mcv_keeps_existing_movement():
+    v = mapped()
+    v.units = [dict(actor(400, 'mcv', 10, 10), idle=False)]
+    memory = {'mcv-site-400': (30, 10), 'mcv-moving-400': True}
+    orders, memory = collect(_mcv_orders, v, memory)
+    assert not orders
+    assert memory['mcv-site-400'] == (30, 10)
+
+
+def test_mcv_past_new_tower_keeps_safe_remaining_route():
+    v = mapped()
+    v.units = [dict(actor(400, 'mcv', 35, 10), idle=False)]
+    v.enemy_buildings = [actor(200, 'tsla', 20, 10)]
+    memory = {'mcv-site-400': (40, 10), 'mcv-moving-400': True}
+    assert not route_safe(v, (40, 10))
+    assert route_safe(v, (40, 10), start=(35, 10))
+    orders, memory = collect(_mcv_orders, v, memory)
+    assert not orders
+    assert memory['mcv-site-400'] == (40, 10)
+
+
+def test_mcv_does_not_recall_through_tower_when_destination_is_lost():
+    v = mapped()
+    v.units = [dict(actor(400, 'mcv', 35, 10), idle=False)]
+    v.enemy_buildings = [actor(200, 'tsla', 20, 10)]
+    v.obs['visible_enemies'] = [actor(201, '3tnk', 45, 10)]
+    memory = {'mcv-site-400': (45, 10), 'mcv-moving-400': True}
+    orders, memory = collect(_mcv_orders, v, memory)
+    assert orders == [{'cmd': 'stop', 'units': [400]}]
+    assert 'mcv-site-400' not in memory
+
+
+def test_mcv_inside_tower_range_escapes_away_from_blocked_home_route():
+    v = mapped()
+    v.units = [dict(actor(400, 'mcv', 27, 10), idle=False)]
+    v.enemy_buildings = [actor(200, 'tsla', 20, 10)]
+    memory = {'mcv-site-400': (40, 10), 'mcv-moving-400': True}
+    orders, _ = collect(_mcv_orders, v, memory)
+    assert len(orders) == 1 and orders[0]['cmd'] == 'move'
+    destination = tuple(orders[0]['to'])
+    assert orders[0]['units'] == [400] and destination[0] > 27
+    assert destination in v.navigation['distances'] and safe_cell(v, destination)
 
 
 def opening(separation):

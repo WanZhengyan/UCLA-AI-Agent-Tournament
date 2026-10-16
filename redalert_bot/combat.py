@@ -304,6 +304,19 @@ def plan(v, memory: dict, emit) -> None:
         if rockets:
             target = min(home_air, key=lambda e: distance(cell(e), v.base))
             _issue(v, state, emit, rockets, cell(target), 'anti-air', urgent=True)
+            # Keep both newly submitted and still-active AA orders separate
+            # from ground groups. The shared emitter rejects an entire group
+            # if even one actor already received movement in this batch.
+            # Retain the assignment on following frames too, until the
+            # aircraft leaves, so an unchanged AA order is not recalled home.
+            aa_ids = {a['id'] for a in rockets
+                      if state.get('unit_orders', {}).get(str(a['id']), {}).get('mode') == 'anti-air'}
+            army = [a for a in army if a['id'] not in aa_ids]
+            wave_ids -= aa_ids
+            state['wave_ids'] = list(wave_ids)
+            if not army:
+                state.update(mode='defend against aircraft', last_mode='anti-air')
+                return
     balance = float(v.military.get('kills_cost', 0)) - float(v.military.get('deaths_cost', 0))
     if (0 < v.remaining <= 75 and balance > 0 and not home_threats
             and getattr(v, 'profile', 'balanced') != 'eco_guard'):
@@ -339,7 +352,7 @@ def plan(v, memory: dict, emit) -> None:
         return
     if state.get('retreat_until', -1) > v.now:
         state['mode'] = 'regroup'
-        _issue(v, state, emit, army, state.get('retreat_goal', _stage(v)), 'regroup')
+        _issue(v, state, emit, army, state.get('retreat_goal', _stage(v)), 'regroup', command='move')
         return
 
     if getattr(v, 'profile', 'balanced') == 'eco_guard':

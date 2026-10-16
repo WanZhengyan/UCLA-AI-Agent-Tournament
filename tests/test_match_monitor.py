@@ -90,6 +90,7 @@ def test_server_failure_not_loss_even_with_zero_score(tmp_path):
     mon.finish(state(result={'status': 'failed', 'your_return': 0}), ctx(), None)
     assert read(mon.final)['outcome'] == 'no result'
     assert not read(mon.final)['review_needed']
+    assert read(mon.final)['server_failed'] is True
 
 
 def test_bad_terminal_observation_cannot_discard_authoritative_result(tmp_path):
@@ -128,6 +129,19 @@ def test_timeline_size_bound_does_not_block_final(tmp_path):
         mon.finish(state(result={'your_return': 1}), ctx(), None)
     assert not mon.path.exists()
     assert read(mon.final)['outcome'] == 'won'
+    assert read(mon.final)['timeline_truncated'] is True
+
+
+def test_red_snapshot_records_public_map_context_and_version(tmp_path):
+    mon, game = mm.MatchMonitor(tmp_path, ctx(), red_agent()), state()
+    game.raw['state_version'] = 123
+    game.raw['observation'].update(base_center=[20, 25], faction='allies', enemy_faction='soviet')
+    mon.observe(game, ctx(), WAIT, red_agent(), .01)
+    snapshot = read(mon.latest)['snapshot']
+    assert snapshot['base'] == [20, 25]
+    assert snapshot['state_version'] == 123
+    assert snapshot['enemy_faction'] == 'soviet'
+    assert read(mon.latest)['timeline_truncated'] is False
 
 
 def test_isolated_seats_and_modes(tmp_path):

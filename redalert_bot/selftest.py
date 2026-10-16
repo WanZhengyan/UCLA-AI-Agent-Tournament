@@ -52,5 +52,5 @@ def run():
     started = perf_counter()
     for _ in range(100): bot.choose_action(GameState.from_mcp_state(raw),ctx)
     elapsed = (perf_counter()-started)*10
-    print(f'离线策略自检通过；本机示例平均决策 {elapsed:.2f} ms。此结果不代表实战胜率。')
+    print(f'Offline policy checks passed; sample decisions averaged {elapsed:.2f} ms on this machine. This is not a live win-rate test.')
     return 0
