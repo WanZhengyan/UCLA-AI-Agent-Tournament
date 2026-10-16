@@ -1,0 +1,806 @@
+{
+  "revision": "paradox_damage_v10",
+  "date": "2026-10-16",
+  "base_commit": "a547681e6acd073b2c9367818973c0823076b8b1",
+  "branch": "improve/pokemon-paradox-v10",
+  "status": "development candidate; no live deployment or formal submission changed",
+  "validation": {
+    "full_suite": "663 passed in 20.98s",
+    "focused_tests": 21,
+    "old_policy": {
+      "failed": 16,
+      "passed": 4,
+      "engine_test_excluded": 1
+    },
+    "independent_engine_checks": 19,
+    "shared_runtime_self_test": "passed for Pokemon, Red Alert, Werewolf and worker/mcp/entry/tls"
+  },
+  "engine": {
+    "version": "pokemon-showdown@0.11.11",
+    "sources_sha256": {
+      "data/abilities.ts": "175067b1e827ca11ae4728169215c9bdd27ac4cb3e35d2e83eaaaee7e9e8c842",
+      "sim/battle-actions.ts": "a30408e2f9a53a43333bf4a865366d6adbe26d3d91a836ba51042accce4d9437"
+    }
+  },
+  "experiments": [
+    {
+      "name": "six-member mirrors",
+      "harness_sha256": {
+        "tests/showdown_compare.js": "f9207000e39e7eca8e98765073b6c9af3e56891c3c8ac870e001cc1a1e08a2a5",
+        "tests/showdown_support.js": "1fc17d82c597a9eb91a6e403c933c4c604d2c94b13e50538e78532d1b6033dec"
+      },
+      "dirs": [
+        "/workspace/scratch/1c100e393a01/UCLA-AI-Agent-Tournament",
+        "/workspace/scratch/1c100e393a01/pokemon_before_paradox_v10"
+      ],
+      "suite": "mirror",
+      "before": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "cb3d2c2603ec31665501df48d5482020c5d5ba6a26e75d4a20dfd0855e17cd89",
+          "battle.py": "f155c0356ca0da958dd8ac6d7a461134e94167c6b10727fca95f9af5fdb4da6c",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+          "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        }
+      ],
+      "after": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "cb3d2c2603ec31665501df48d5482020c5d5ba6a26e75d4a20dfd0855e17cd89",
+          "battle.py": "f155c0356ca0da958dd8ac6d7a461134e94167c6b10727fca95f9af5fdb4da6c",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+          "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        }
+      ],
+      "codeUnchanged": true,
+      "uniqueSessions": 32,
+      "engine": "pokemon-showdown@0.11.11",
+      "results": [
+        {
+          "pair": [
+            "power_booster",
+            "power_booster"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49123,
+            554193,
+            302917,
+            807341
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "power_booster",
+            "power_booster"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49123,
+            554193,
+            302917,
+            807341
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "power_quark",
+            "power_quark"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49124,
+            554206,
+            302924,
+            807360
+          ],
+          "winner": "B",
+          "turns": 9,
+          "steps": 13
+        },
+        {
+          "pair": [
+            "power_quark",
+            "power_quark"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49124,
+            554206,
+            302924,
+            807360
+          ],
+          "winner": "A",
+          "turns": 9,
+          "steps": 13
+        },
+        {
+          "pair": [
+            "offense",
+            "offense"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49125,
+            554219,
+            302931,
+            807379
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 11
+        },
+        {
+          "pair": [
+            "offense",
+            "offense"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49125,
+            554219,
+            302931,
+            807379
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 11
+        },
+        {
+          "pair": [
+            "rain",
+            "rain"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49126,
+            554232,
+            302938,
+            807398
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "rain",
+            "rain"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49126,
+            554232,
+            302938,
+            807398
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 12
+        },
+        {
+          "pair": [
+            "power_booster",
+            "power_booster"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49127,
+            554245,
+            302945,
+            807417
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 11
+        },
+        {
+          "pair": [
+            "power_booster",
+            "power_booster"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49127,
+            554245,
+            302945,
+            807417
+          ],
+          "winner": "A",
+          "turns": 6,
+          "steps": 11
+        },
+        {
+          "pair": [
+            "power_quark",
+            "power_quark"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49128,
+            554258,
+            302952,
+            807436
+          ],
+          "winner": "A",
+          "turns": 9,
+          "steps": 13
+        },
+        {
+          "pair": [
+            "power_quark",
+            "power_quark"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49128,
+            554258,
+            302952,
+            807436
+          ],
+          "winner": "B",
+          "turns": 9,
+          "steps": 13
+        },
+        {
+          "pair": [
+            "offense",
+            "offense"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49129,
+            554271,
+            302959,
+            807455
+          ],
+          "winner": "B",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "offense",
+            "offense"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49129,
+            554271,
+            302959,
+            807455
+          ],
+          "winner": "A",
+          "turns": 5,
+          "steps": 9
+        },
+        {
+          "pair": [
+            "rain",
+            "rain"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            49130,
+            554284,
+            302966,
+            807474
+          ],
+          "winner": "B",
+          "turns": 6,
+          "steps": 11
+        },
+        {
+          "pair": [
+            "rain",
+            "rain"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            49130,
+            554284,
+            302966,
+            807474
+          ],
+          "winner": "A",
+          "turns": 6,
+          "steps": 11
+        }
+      ],
+      "summary": {
+        "A": 8,
+        "B": 8
+      },
+      "latency": [
+        {
+          "decisions": 165,
+          "median": 1140.3102769999823,
+          "p95": 2013.2233040000137,
+          "max": 2081.4396900000283
+        },
+        {
+          "decisions": 165,
+          "median": 1038.5898129999987,
+          "p95": 2015.7416649999795,
+          "max": 2395.7016669999866
+        }
+      ],
+      "stderr": [
+        "",
+        ""
+      ],
+      "limitations": [
+        "Handmade rosters, no online matchmaking or draft benchmark.",
+        "The same fixed sets are public to both policies; opponent HP is rounded to displayed percent.",
+        "Seed-paired team and seat swaps, but RNG can diverge after decisions diverge.",
+        "No Tera; the regi suite includes two-restricted archetypes, not the actual platform card pool."
+      ],
+      "coverage": [
+        {
+          "file": "game-42000-false-false.json",
+          "sha256": "acb18339b8ff944b8ed243d4cd8f48b26e1f0fffa2956cc3db7a783981c15da7",
+          "activations": []
+        },
+        {
+          "file": "game-42000-true-false.json",
+          "sha256": "f3366efbdd9ae91e7b8afdd6216c8b4726d41740edad9a064cfabfba057aead9",
+          "activations": []
+        },
+        {
+          "file": "game-42001-false-false.json",
+          "sha256": "9e622b063743d4e20b6241206b6e978a3703581a8c41b56557b0668d65c670ef",
+          "activations": []
+        },
+        {
+          "file": "game-42001-true-false.json",
+          "sha256": "4697d4896ec0aa96ca9ddaf49f62a41b4df8f5cd821aec9dc8093851215aee8d",
+          "activations": []
+        },
+        {
+          "file": "game-42002-false-false.json",
+          "sha256": "f0e5e0864138880c63b2690434e8b75ba97663e64be9894c08d8f62934889be6",
+          "activations": [
+            "|-start|p2a: Flutter Mane|protosynthesisspe",
+            "|-start|p1a: Flutter Mane|protosynthesisspe"
+          ]
+        },
+        {
+          "file": "game-42002-true-false.json",
+          "sha256": "d838c822378a6729a464e83f926e9b8c279a46332e9a8b2a93e113a256d848f9",
+          "activations": [
+            "|-start|p2a: Flutter Mane|protosynthesisspe",
+            "|-start|p1a: Flutter Mane|protosynthesisspe"
+          ]
+        },
+        {
+          "file": "game-42003-false-false.json",
+          "sha256": "71e7e338f376705d3717a95f7910d519f7e529fd38207badd759eba99056870c",
+          "activations": []
+        },
+        {
+          "file": "game-42003-true-false.json",
+          "sha256": "51d376a9c29e0f241125710ce7c57112e5ba8332e5f5d383403591e0d518b50d",
+          "activations": []
+        },
+        {
+          "file": "game-42004-false-false.json",
+          "sha256": "99753b4e39bd04e94a02e4cd053530d6ff33031607c84076887816eaaa3b62f3",
+          "activations": []
+        },
+        {
+          "file": "game-42004-true-false.json",
+          "sha256": "89a7bc22f4637d61892d9115d268fe80b48324fa2a0e26473cd40998cf1d172a",
+          "activations": []
+        },
+        {
+          "file": "game-42005-false-false.json",
+          "sha256": "c33df0e16e59e3739202016c047b4e59fdc721ba8c02d6248167eee9ec2c5878",
+          "activations": []
+        },
+        {
+          "file": "game-42005-true-false.json",
+          "sha256": "fd89859d4deed4a32b2f120bb8dd651eadebe5ac7209e22107b32482763fa8a8",
+          "activations": []
+        },
+        {
+          "file": "game-42006-false-false.json",
+          "sha256": "8cc2c4069e86f43cc733ea61a283d74ddbfeb8fb7147e5feafb70c58623665e4",
+          "activations": [
+            "|-start|p1a: Flutter Mane|protosynthesisspe",
+            "|-start|p2a: Flutter Mane|protosynthesisspe"
+          ]
+        },
+        {
+          "file": "game-42006-true-false.json",
+          "sha256": "b625d2d7683173e6f04dedcb3a8e0f079de988d2889fa2401df16e6660757981",
+          "activations": [
+            "|-start|p1a: Flutter Mane|protosynthesisspe",
+            "|-start|p2a: Flutter Mane|protosynthesisspe"
+          ]
+        },
+        {
+          "file": "game-42007-false-false.json",
+          "sha256": "0c1389106622864ae8a0b9c3d39b43d6a88453641ccbe9556967483385e64a09",
+          "activations": []
+        },
+        {
+          "file": "game-42007-true-false.json",
+          "sha256": "9f1fb3461a527bfa1cf10fd1393d4f9c4d925f33c54629594488c4fb11db1e70",
+          "activations": []
+        }
+      ],
+      "reproduction": "PYTHON=python NODE_PATH=<pinned-modules> A_DIR=<v10> B_DIR=<v9> RESULT_DIR=<new-directory> COMPARE_SUITE=mirror node tests/showdown_compare.js 16 42000"
+    },
+    {
+      "name": "coverage-driven four-member mirrors",
+      "harness_sha256": {
+        "tests/showdown_compare.js": "0fd65b3a881e52b1045fcb2dceb2d33f4f2b682cecc25c96295ea08f46977af8",
+        "tests/showdown_support.js": "cfea03dbba43fec78057d3edeb6afbf758cb1c6e5f265e10a65b152832e92a3b"
+      },
+      "dirs": [
+        "/workspace/scratch/1c100e393a01/UCLA-AI-Agent-Tournament",
+        "/workspace/scratch/1c100e393a01/pokemon_before_paradox_v10"
+      ],
+      "suite": "paradox_mirror",
+      "before": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "cb3d2c2603ec31665501df48d5482020c5d5ba6a26e75d4a20dfd0855e17cd89",
+          "battle.py": "f155c0356ca0da958dd8ac6d7a461134e94167c6b10727fca95f9af5fdb4da6c",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+          "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        }
+      ],
+      "after": [
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "cb3d2c2603ec31665501df48d5482020c5d5ba6a26e75d4a20dfd0855e17cd89",
+          "battle.py": "f155c0356ca0da958dd8ac6d7a461134e94167c6b10727fca95f9af5fdb4da6c",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        },
+        {
+          "__init__.py": "8f63a0e30627958bc2989246bc0ceeab091d627ef6fd173fca6cb8eca178b7e1",
+          "agent.py": "530666ad2e8b331d08130b1524a4cf0d53574a55318a7af4edd5db673ae55aaf",
+          "battle.py": "38ff4fc52fb6b87cdd5d70e3cf4b54bd4cf7f6a206cac3cc10c81a19a38113c0",
+          "dex.py": "8151424be3ba3ed766cbf9cbf647e36ff4f2a0e0ac060f0c7e21c783bc25ba07",
+          "dex_data.json": "66b3b5086def94e54a306885a0099eafc47b2de28ea6f955132bbd53481e5aa8",
+          "draft.py": "6dc161f305171a848b9bfb08ef4f3640d54030e70e3bf2beb1d99dc8c3627523",
+          "legal.py": "9985600247521cac63e134d6c7b20d80f1631b77204ce4edc5c3b123cfcd04d5",
+          "selftest.py": "83696bc1ce470f6c88367f7bf7d23322a87683671e684d850af9330eb17354c9",
+          "state.py": "019b7df1d0a6cbefc0c350a3b41e644b54feac08290b1d1b077813e4c0ca24b6"
+        }
+      ],
+      "codeUnchanged": true,
+      "uniqueSessions": 16,
+      "engine": "pokemon-showdown@0.11.11",
+      "results": [
+        {
+          "pair": [
+            "power_booster4",
+            "power_booster4"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            50123,
+            567193,
+            309917,
+            826341
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 14
+        },
+        {
+          "pair": [
+            "power_booster4",
+            "power_booster4"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            50123,
+            567193,
+            309917,
+            826341
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 14
+        },
+        {
+          "pair": [
+            "power_quark4",
+            "power_quark4"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            50124,
+            567206,
+            309924,
+            826360
+          ],
+          "winner": "A",
+          "turns": 7,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "power_quark4",
+            "power_quark4"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            50124,
+            567206,
+            309924,
+            826360
+          ],
+          "winner": "B",
+          "turns": 7,
+          "steps": 10
+        },
+        {
+          "pair": [
+            "power_booster4",
+            "power_booster4"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            50125,
+            567219,
+            309931,
+            826379
+          ],
+          "winner": "A",
+          "turns": 8,
+          "steps": 15
+        },
+        {
+          "pair": [
+            "power_booster4",
+            "power_booster4"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            50125,
+            567219,
+            309931,
+            826379
+          ],
+          "winner": "B",
+          "turns": 8,
+          "steps": 15
+        },
+        {
+          "pair": [
+            "power_quark4",
+            "power_quark4"
+          ],
+          "swap": false,
+          "reverseTeams": false,
+          "seed": [
+            50126,
+            567232,
+            309938,
+            826398
+          ],
+          "winner": "B",
+          "turns": 8,
+          "steps": 13
+        },
+        {
+          "pair": [
+            "power_quark4",
+            "power_quark4"
+          ],
+          "swap": true,
+          "reverseTeams": false,
+          "seed": [
+            50126,
+            567232,
+            309938,
+            826398
+          ],
+          "winner": "A",
+          "turns": 8,
+          "steps": 12
+        }
+      ],
+      "summary": {
+        "B": 4,
+        "A": 4
+      },
+      "latency": [
+        {
+          "decisions": 85,
+          "median": 1115.9495659999957,
+          "p95": 2030.7013110000007,
+          "max": 2096.5650689999893
+        },
+        {
+          "decisions": 86,
+          "median": 1097.0818,
+          "p95": 2050.386834000001,
+          "max": 2354.0657279999996
+        }
+      ],
+      "stderr": [
+        "",
+        ""
+      ],
+      "limitations": [
+        "Handmade rosters, no online matchmaking or draft benchmark.",
+        "The same fixed sets are public to both policies; opponent HP is rounded to displayed percent.",
+        "Seed-paired team and seat swaps, but RNG can diverge after decisions diverge.",
+        "No Tera; the regi suite includes two-restricted archetypes, not the actual platform card pool."
+      ],
+      "coverage": [
+        {
+          "file": "game-43000-false-false.json",
+          "sha256": "b4b0bb63b699949be491f57ccd6c7654e3b1816fc86770743526d3b34d292dcf",
+          "activations": [
+            "|-start|p1a: Flutter Mane|protosynthesisspa",
+            "|-start|p2a: Flutter Mane|protosynthesisspa"
+          ]
+        },
+        {
+          "file": "game-43000-true-false.json",
+          "sha256": "be699ee91491f5f68996c3ad04e103cebc3403be546294b485b58d953e7e0f8e",
+          "activations": [
+            "|-start|p1a: Flutter Mane|protosynthesisspa",
+            "|-start|p2a: Flutter Mane|protosynthesisspa"
+          ]
+        },
+        {
+          "file": "game-43001-false-false.json",
+          "sha256": "6cc3ff78c00e7ffaca62c52d399fc0cee6002d9c49770fcfdce74e394745eea9",
+          "activations": [
+            "|-start|p1a: Iron Hands|quarkdrivedef",
+            "|-start|p2b: Iron Hands|quarkdrivedef",
+            "|-start|p2b: Iron Hands|quarkdrivedef"
+          ]
+        },
+        {
+          "file": "game-43001-true-false.json",
+          "sha256": "9081fa845ea153ee0efecf7db60ae4da64ba628ad9488ccd1e740bab7978af44",
+          "activations": [
+            "|-start|p1a: Iron Hands|quarkdrivedef",
+            "|-start|p2b: Iron Hands|quarkdrivedef",
+            "|-start|p2b: Iron Hands|quarkdrivedef"
+          ]
+        },
+        {
+          "file": "game-43002-false-false.json",
+          "sha256": "c93677371ea7b0965169d05df646ea300c646385746a813fca0d6d42115d9bcd",
+          "activations": [
+            "|-start|p2a: Flutter Mane|protosynthesisspa",
+            "|-start|p1a: Flutter Mane|protosynthesisspa"
+          ]
+        },
+        {
+          "file": "game-43002-true-false.json",
+          "sha256": "d5f3b9744744927eb904ad4d1eaa84c9c8ce637ebb01f8995c8af924c8f8aaa6",
+          "activations": [
+            "|-start|p2a: Flutter Mane|protosynthesisspa",
+            "|-start|p1a: Flutter Mane|protosynthesisspa"
+          ]
+        },
+        {
+          "file": "game-43003-false-false.json",
+          "sha256": "7feeb951f1f7ef091792367c86b3368cfd9d032be18f24d81ed68450159ab25f",
+          "activations": [
+            "|-start|p2a: Iron Hands|quarkdrivedef",
+            "|-start|p1b: Iron Hands|quarkdrivedef"
+          ]
+        },
+        {
+          "file": "game-43003-true-false.json",
+          "sha256": "766d627d2771586df4ca2259740ba53d9e79766258d0b698251736d357798ecf",
+          "activations": [
+            "|-start|p2a: Iron Hands|quarkdrivedef",
+            "|-start|p1b: Iron Hands|quarkdrivedef",
+            "|-start|p1b: Iron Hands|quarkdrivedef"
+          ]
+        }
+      ],
+      "reproduction": "PYTHON=python NODE_PATH=<pinned-modules> A_DIR=<v10> B_DIR=<v9> RESULT_DIR=<new-directory> COMPARE_SUITE=paradox_mirror node tests/showdown_compare.js 8 43000",
+      "notes": [
+        "Added after first experiment omitted all non-Speed Paradox users. Not independently pre-registered.",
+        "Full test suite and self-test overlapped early games; latency is not an uncontended benchmark."
+      ]
+    }
+  ],
+  "overall": {
+    "candidate_wins": 12,
+    "baseline_wins": 12,
+    "games": 24,
+    "conclusion": "No demonstrated winning advantage.",
+    "candidate_decisions": 250,
+    "baseline_decisions": 251
+  },
+  "limitations": [
+    "Identical rosters use paired seeds and swapped seats only; no duplicate team reversal.",
+    "Four-member expansion is diagnostic coverage, not platform draft or held-out tournament evidence.",
+    "No policy changes or seed replacement between the two runs.",
+    "Natural-versus-Booster expiry source is not fully represented; damage remains approximate.",
+    "No new public replay was reviewed in v10; this builds on the v9 replay notes and checks independent engine behavior.",
+    "No opponent code executed; no live platform match or formal version promoted."
+  ]
+}

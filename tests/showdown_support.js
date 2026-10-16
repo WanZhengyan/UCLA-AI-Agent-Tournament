@@ -58,6 +58,18 @@ teams.speed_unburden = [
  {...mk('Indeedee-F',['Follow Me','Psychic','Helping Hand','Protect'],'Psychic Surge','Safety Goggles','Relaxed',{hp:252,def:252,spd:4}),ivs:{spe:0}},
  teams.balanced[3], teams.balanced[2], teams.balanced[5], teams.trickroom[4]
 ];
+// Authored public-set fixtures for non-Speed Paradox activation. These are
+// diagnostic teams, not reconstructed tournament teams or an optimized meta.
+teams.power_booster = teams.balanced.map(p=>p.species==='Flutter Mane'
+ ? {...p,nature:'Modest',evs:{hp:252,spa:252,spe:4}} : p);
+teams.power_quark = [
+ mk('Iron Hands',['Drain Punch','Wild Charge','Body Press','Protect'],'Quark Drive','Booster Energy','Bold',{hp:252,def:252,spd:4}),
+ teams.regi_shadow[0], teams.regi_rain[1], teams.balanced[0], teams.balanced[1], teams.regi_shadow[4]
+];
+// Coverage extension: four-member rosters prevent preview from omitting the
+// non-Speed activation under test. Not an independent tournament sample.
+teams.power_booster4 = [0,1,2,3].map(i=>teams.power_booster[i]);
+teams.power_quark4 = [0,1,2,5].map(i=>teams.power_quark[i]);
 function publicCard(set){const sp=Dex.species.get(set.species);return {...set,card_id:toID(set.species),name:set.species,species:sp.id,types:sp.types.map(x=>x.toUpperCase()),base_stats:sp.baseStats};}
 function publicSpeedEffects(p){
  // Only public activation facts: Unburden follows visible item loss on the

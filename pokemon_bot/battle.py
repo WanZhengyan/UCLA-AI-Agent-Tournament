@@ -78,6 +78,26 @@ def terrain(f):
     return idnorm(f.get("terrain", ""))
 
 
+def _paradox_stat(p, field):
+    """Use the publicly announced activation before inferring a fresh one.
+
+    A consumed Booster Energy does not end its activation, and later stage
+    changes do not select a new stat. Source/expiry attribution remains an
+    approximation when observations omit natural-versus-item activation.
+    """
+    ab = ability(p)
+    if ab not in {"protosynthesis", "quarkdrive"}: return None
+    order = ("atk", "def", "spa", "spd", "spe")
+    effects = p.get("effects", {})
+    known = next((k for k in order if ab+k in effects), None)
+    if known is not None: return known
+    active = item(p)=="boosterenergy" or (
+        ab=="protosynthesis" and weather(field) in {"sun","sunnyday","desolateland"}) or (
+        ab=="quarkdrive" and terrain(field)=="electricterrain")
+    if active: return max(order, key=lambda k:math.floor(getstat(p,k)))
+    return None
+
+
 def speed(p, side, field):
     # Gen 9 floors the stat after stages, then rounds the combined modifier
     # to the nearest integer (half down). Paralysis halves that result last.
@@ -96,13 +116,8 @@ def speed(p, side, field):
     if ab=="unburden" and not it and (p.get("_unburden") or "unburden" in effects): modifier *= 2
     # The activation fixes the selected stat. Later boosts do not change it.
     # Public non-Speed activations must therefore override stat-based guesses.
-    known_paradox=next((k for k in ("atk","def","spa","spd","spe")
-                        if "protosynthesis"+k in effects or "quarkdrive"+k in effects),None)
-    if p.get("_quark_speed") or known_paradox=="spe":
+    if p.get("_quark_speed") or _paradox_stat(p,field)=="spe":
         modifier *= 1.5
-    elif known_paradox is None and ((ab=="protosynthesis" and (weather(field) in {"sun","sunnyday","desolateland"} or it=="boosterenergy")) or (ab=="quarkdrive" and (terrain(field)=="electricterrain" or it=="boosterenergy"))):
-        best=max(("atk","def","spa","spd","spe"),key=lambda k:math.floor(getstat(p,k)))
-        if best=="spe": modifier *= 1.5
     v=(v*round(modifier*4096)+2047)//4096
     if p.get("status") in {"par", "paralysis"} and ab != "quickfeet": v //= 2
     return max(1,min(10000,int(v)))
@@ -261,9 +276,14 @@ def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None
     if ab == "solarpower" and w in {"sun","sunnyday","desolateland"} and not physical: atkval *= 1.5
     if ab == "orichalcumpulse" and physical and it != "utilityumbrella" and w in {"sun","sunnyday","desolateland"}: atkval *= 5461/4096
     if ab == "hadronengine" and not physical and tr == "electricterrain": atkval *= 5461/4096
-    if (ab == "protosynthesis" and (w in {"sun","sunnyday","desolateland"} or it=="boosterenergy")) or (ab=="quarkdrive" and (tr=="electricterrain" or it=="boosterenergy")):
-        best = max(("atk","def","spa","spd","spe"),key=lambda k:getstat(att,k))
-        if best == atkkey: atkval *= 1.3
+    # Offensive modifier events follow the move category even when Body Press
+    # borrows Defense; defensive events follow Psyshock's targeted Defense.
+    # These abilities are not breakable
+    # by Mold Breaker. Public activations remain after Booster consumption.
+    if _paradox_stat(att,field)==("atk" if physical else "spa"):
+        atkval *= 5325/4096
+    if _paradox_stat(defender,field)==defkey:
+        defval *= 5325/4096
     level = float(att.get("level", 50) or 50)
     dmg = ((2*level/5+2)*power*atkval/defval/50+2)*.925
     mult = eff
