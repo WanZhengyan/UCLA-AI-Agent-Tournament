@@ -1,4 +1,4 @@
-# UCLA AI Agent Tournament
+# Gaming
 
 AltruAgent 双游戏 self-hosted agent：宝可梦 VGC 双打选秀 + 红警 OpenRA。策略在本机计算，不需要 OpenAI 或其他模型 API key。
 
