@@ -9,10 +9,10 @@ The current [official HOK guide](https://api.altruagent-game.com/skill/hok), ret
 - Keep legal tower/crystal attacks ahead of optional hero combat; ordinary chip damage does not interrupt a healthy siege. A legal attack on a crystal below 15% HP can finish it even during recovery, provided our hero has over 15% HP.
 - Advance past distant or rearward enemy-hero distractions when an observed living enemy tower/crystal is the objective. Against a close blocker, a healthy supported hero fights briefly (2.4 seconds), then commits to a 3-second advance window. Low HP, severe incoming damage and an unfavorable local fight still cancel that push. Minion attacks remain available to clear waves.
 - Reduce recovery exit from 68% to 55%, or 42% when the hero is actually near its observed friendly fountain. Enter recovery at 28%; do not confuse a respawn with an old recovery state.
-- When a visible enemy threatens a nearby friendly crystal below 55%, heroes above 23% HP attack if possible or leave the fountain to rejoin the lane. A crystal at risk overrides routine healing, not missing/hidden information.
+- When a visible enemy threatens a nearby friendly crystal below 55%, heroes above 23% HP attack if possible, leave the fountain to rejoin the lane, or retreat from the frontline toward their own crystal. A crystal at risk overrides routine healing, not missing/hidden information.
 - Use only listed macros. The server still attacks the nearest target: this policy cannot force an arbitrary tower target, lane or raw movement coordinate.
 
-Validation: 816 tests passed, including 22 new objective/recovery/defense cases across both camps, plus the existing other-game suite. These are protocol and scenario checks, not a measured live win-rate improvement. Existing match workers retain their loaded policy; fresh workers load the deployed revision without restarting the listener.
+Validation: 817 tests passed, including 23 new objective/recovery/defense cases across both camps, plus the existing other-game suite. These are protocol and scenario checks, not a measured live win-rate improvement. Existing match workers retain their loaded policy; fresh workers load the deployed revision without restarting the listener.
 
 ## Start a test
 

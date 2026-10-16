@@ -222,13 +222,21 @@ class HokPlatformAgent:
                   and (hp_fraction(objective) or 1) <= .15)
         if finish:
             return 'macro_attack', 'structure_pressure', True
-        critical_home = any(s.get('camp') == camp and 'CRYSTAL' in str(s.get('type', '')).upper()
-                            and (hp_fraction(s) or 1) < .55 and distance(me, s) < 24000
-                            and any(distance(e, s) < 10000 for e in visible) for s in structures)
+        threatened = [s for s in structures if s.get('camp') == camp
+                      and 'CRYSTAL' in str(s.get('type', '')).upper()
+                      and (hp_fraction(s) or 1) < .55 and distance(me, s) < 24000
+                      and any(distance(e, s) < 10000 for e in visible)]
+        critical_home = bool(threatened)
         emergency_defense = critical_home and hp >= .23
         if emergency_defense:
             if 'macro_attack' in macros:
                 return 'macro_attack', 'home_defense', True
+            home = min(threatened, key=lambda s: distance(me, s))
+            springs = [s for s in structures if s.get('camp') == camp
+                       and 'SPRING' in str(s.get('type', '')).upper()]
+            if (springs and distance(me, springs[0]) > distance(home, springs[0]) + 1000
+                    and 'macro_retreat' in macros):
+                return 'macro_retreat', 'home_defense', True
             if 'macro_advance' in macros:
                 # From the fountain, rejoin the lane through our crystal.
                 # No invented target IDs or raw movement fields.

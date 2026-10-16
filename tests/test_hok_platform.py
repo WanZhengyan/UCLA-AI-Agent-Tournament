@@ -573,6 +573,15 @@ def test_hidden_enemy_does_not_trigger_home_defense():
     assert choose(create_agent(), raw)['macro'] == 'macro_retreat'
 
 
+def test_frontline_hero_returns_toward_own_threatened_crystal_not_enemy_base():
+    raw = sample(hp=600, structures=[hero(300, 1, hp=300, x=-15000, type='ACTOR_CRYSTAL'),
+                                   hero(301, 1, x=-30000, type='ACTOR_TOWER_SPRING')],
+                 enemies=[hero(200, 2, x=-15000, visible=True)])
+    bot = create_agent()
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+    assert bot.last_diagnostics['reason'] == 'home_defense'
+
+
 def test_fountain_recovery_rejoins_at_42_percent_not_68():
     raw, bot = sample(hp=200, structures=[hero(300, 1, type='ACTOR_TOWER_SPRING')]), create_agent()
     assert choose(bot, raw)['macro'] == 'macro_retreat'
