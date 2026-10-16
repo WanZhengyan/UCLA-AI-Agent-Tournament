@@ -4,7 +4,20 @@ The platform now documents `honor_of_kings_5v5`: **one agent controls five heroe
 
 The current [official HOK guide](https://api.altruagent-game.com/skill/hok), retrieved October 16, 2026, supersedes older availability banners. The initial `hok_team_v1` release had offline validation only. Subsequent live records exposed excessive fighting and long recovery: one losing team had 27 kills but only about 2,375 observed damage to enemy structures. These observations motivated `hok_objectives_v2`; they do not establish its win rate.
 
-## Current balanced revision (`hok_balanced_v3`)
+## Current tower-defense revision (`hok_guard_v4`)
+
+The goal remains destroying the enemy crystal and gaining structure damage, while preventing avoidable losses of our own towers. This adds ordinary-tower defense to v3's combat safety instead of reverting to constant retreat or sending all five heroes home.
+
+- Track friendly tower/crystal HP across owned team observations. A decrease between observations no more than five game seconds apart triggers a four-second recent-hit alarm, even without a visible enemy hero (for example, a minion wave). A visible enemy within 9,000 units is a separate proximity warning, not proof of an attack. Old missing HP alone does not trigger defense.
+- Deduplicate structures and visible attackers across the five owned views. Prefer nearby living heroes above 45% HP; do not call a distant hero from the other end of the map. Ordinary tower threats share a maximum of three defenders: one for damage without a visible hero, normally two for one visible attacker. Other heroes keep their offensive policy and receive fair command scheduling.
+- Prioritize the crystal. At or below 35% HP under an active warning, up to five available heroes may reinforce; low-health and severe-damage safeguards still apply, with bounded last-stand behavior. A safe immediate enemy-crystal finish retains priority over ordinary rotations.
+- Choose only offered advance/retreat macros whose direction toward an observed enemy structure/home fountain also points toward the threatened building. No lane IDs, raw movement coordinates, hidden positions or exact aggro are guessed. Once nearby, clear a legal nearest enemy/minion target or use a listed skill.
+- If no attack is available at the guard point, an explicitly listed neutral button can cancel a stale advance standing order. Without that offered button, no neutral action is invented. When the enemy leaves and recent damage expires, ordinary objective pressure resumes; a destroyed tower is not defended.
+- Reset building/assignment memory on a new game, account, camp or timeline rewind. A handful of old damaged towers cannot trap the whole team at home forever.
+
+Validation: 882 tests passed, including 37 new tower-defense, damage-history, mirrored-camp, neutral-action and team-allocation regressions, plus existing safety/other-game tests. This is scenario/protocol validation, not a demonstrated win-rate increase. Exact pathing and target selection remain constrained by server macros. Updates load in new workers without interrupting current official games.
+
+## Previous balanced revision (`hok_balanced_v3`)
 
 This combines v1's combat/retreat safeguards with v2's structure objective. Live v2 observations showed isolated, freshly respawned heroes advancing into multiple defenders. The old disadvantage test only retreated below 70% HP; full health incorrectly bypassed it. The time-based advance window and 4,500-unit blocker cutoff also allowed walking past ranged threats. A seat-visible scenario from step 979 is now a regression test, not a simulated win-rate experiment.
 
@@ -55,7 +68,7 @@ For official games, register in the applicable HOK tournament and run `exe_entry
 - Replace unavailable skills with available attacks/advance; prioritize urgent retreats and otherwise rotate fairly across heroes. Do not overwrite unchanged standing orders.
 - Ignore hidden enemies even if stale coordinates remain. No spectator data, messages or external network calls enter the policy.
 
-Macros choose the **nearest target**. This version cannot select arbitrary targets, lanes, jungle routes, heroes, equipment or builds through undocumented raw fields. It does not claim precise focus fire or a complete mobile-game strategy. Raw listed actions are only a protocol fallback; no button is guessed to be heal or recall. Thresholds are development heuristics requiring live calibration.
+Macros choose the **nearest target**. This version cannot select arbitrary targets, lanes, jungle routes, heroes, equipment or builds through undocumented raw fields. It does not claim precise focus fire or a complete mobile-game strategy. Raw listed actions are used only for an explicitly offered neutral guard hold or a protocol fallback; no button is guessed to be heal or recall. Thresholds are development heuristics requiring live calibration.
 
 ## Runtime and records
 

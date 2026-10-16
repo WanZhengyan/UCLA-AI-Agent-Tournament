@@ -78,8 +78,8 @@ class HeroMemory:
 
 
 class HokPlatformAgent:
-    strategy_version = 'hok_balanced_v3'
-    profile = 'safe_objectives'
+    strategy_version = 'hok_guard_v4'
+    profile = 'defend_and_push'
     realtime_wait_seconds = .6
 
     def __init__(self):
@@ -91,6 +91,137 @@ class HokPlatformAgent:
         self._rejected = set()
         self.last_diagnostics = {}
         self.counts = Counter()
+        self._buildings = {}
+        self._defense = {}
+
+    def _assign_defense(self, raw, own, now):
+        """Use only owned team views; never infer a hidden attacker or aggro."""
+        buildings, contacts = {}, {}
+        camp = raw['camp']
+        for seat in own:
+            view = summary(raw, seat)
+            for s in records(view.get('structures')):
+                kind = str(s.get('type', '')).upper()
+                x, z = number(s.get('x')), number(s.get('z'))
+                if (s.get('camp') != camp or s.get('visible') is False
+                        or kind not in {'ACTOR_TOWER', 'ACTOR_CRYSTAL', 'TOWER', 'CRYSTAL', 'TURRET'}
+                        or x is None or z is None or hp_fraction(s) is None):
+                    continue
+                key = (camp, kind, x, z)
+                # Multiple owned views of one building are one observation.
+                if key not in buildings or s['hp'] < buildings[key]['hp']:
+                    buildings[key] = s
+            for e in records(view.get('other_heroes'), 10):
+                if (e.get('visible') is not True or e.get('camp') != 3 - camp or not alive(e)
+                        or number(e.get('x')) is None or number(e.get('z')) is None):
+                    continue
+                rid = number(e.get('runtime_id'))
+                key = ('id', rid) if rid is not None else ('position', number(e.get('hero_id')), e['x'], e['z'])
+                contacts.setdefault(key, e)
+        threats = []
+        for key, building in buildings.items():
+            previous = self._buildings.get(key)
+            hit = previous['hit'] if previous else -math.inf
+            if previous and previous['maximum'] == building['max_hp']:
+                if 0 < now - previous['seen'] <= 5 and building['hp'] < previous['hp']:
+                    hit = now
+            else:
+                hit = -math.inf
+            if not previous or now > previous['seen']:
+                self._buildings[key] = dict(hp=building['hp'], maximum=building['max_hp'], seen=now, hit=hit)
+            if not alive(building):
+                continue
+            recent = 0 <= now - hit <= 4
+            attackers = [e for e in contacts.values() if distance(e, building) <= 9000]
+            if not recent and not attackers:
+                continue  # Old low HP by itself does not call everybody home.
+            crystal = 'CRYSTAL' in key[1]
+            urgent = crystal and hp_fraction(building) <= .35
+            priority = (100 if crystal else 0) + 30 * (1 - hp_fraction(building)) + 10 * recent
+            threats.append((priority, key, building, attackers, recent, urgent))
+        self._buildings = {k: v for k, v in self._buildings.items() if now - v['seen'] <= 10}
+        previous_assignments, assigned = self._defense, {}
+        for _, key, building, attackers, recent, urgent in sorted(threats, key=lambda t: (-t[0], t[1])):
+            crystal = 'CRYSTAL' in key[1]
+            limit = 5 if urgent else 3  # Ordinary defense leaves a pushing group.
+            slots = min(limit - len(assigned), 5 if urgent else max(1, min(3, len(attackers) + 1)))
+            if slots <= 0:
+                continue
+            candidates = []
+            for seat, hero in own.items():
+                if seat in assigned or not alive(hero) or (hp_fraction(hero) or 0) < (.30 if urgent else .45):
+                    continue
+                travel = distance(hero, building)
+                if travel > (50000 if crystal else 40000):
+                    continue
+                memory = self._memory.get(seat)
+                if memory and memory.danger_until > now and not urgent:
+                    continue
+                old = previous_assignments.get(seat, {})
+                # Small tie preference prevents swapping defenders every tick.
+                cost = travel - (1500 if old.get('key') == key else 0)
+                candidates.append((cost, seat))
+            for _, seat in sorted(candidates)[:slots]:
+                assigned[seat] = dict(key=key, building=building, attackers=attackers,
+                                      recent=recent, urgent=urgent)
+        self._defense = assigned
+
+    def _defend_building(self, seat, raw, offers, me, hp, loss, memory, disadvantaged, now):
+        task = self._defense.get(seat)
+        if not task:
+            return None
+        last_stand = task['urgent'] and hp >= .30 and loss < .25
+        if not last_stand and (hp < .45 or loss >= .14 or now < memory.danger_until or disadvantaged):
+            return None  # Preserve retreat/recovery rather than feed under our tower.
+        building, macros = task['building'], offers['macros']
+        attack_label = macros.get('macro_attack', '').lower()
+        building_target = any(w in attack_label for w in ('tower', 'crystal', 'turret', 'spring'))
+        near = distance(me, building) <= 18000
+        if near and 'macro_attack' in macros and not building_target:
+            return 'macro_attack', 'tower_defense', task['urgent']
+        if near and task['attackers']:
+            for macro in ('macro_skill3', 'macro_skill1', 'macro_skill2'):
+                label = macros.get(macro, '')
+                if (macro in macros and re.search(r'enemy\s+hero', label, re.I)
+                        and label_distance(label) <= 9000
+                        and (macro != 'macro_skill3' or len(task['attackers']) >= 2 or hp < .60)):
+                    return macro, 'tower_defense', task['urgent']
+        if distance(me, building) <= 4500:
+            neutral = self._raw_fallback({'raw': [p for p in offers['raw'] if p.get('which_button') == 0]}, seat)
+            if neutral:
+                # An explicitly offered neutral button cancels a stale advance
+                # standing order; WAIT alone would keep walking away.
+                return neutral, 'tower_hold', False
+        structures = [s for s in records(summary(raw, seat).get('structures'))
+                      if alive(s) and s.get('visible') is not False]
+        homes = [s for s in structures if s.get('camp') == raw['camp']
+                 and 'SPRING' in str(s.get('type', '')).upper()]
+        enemies = [s for s in structures if s.get('camp') == 3 - raw['camp']
+                   and str(s.get('type', '')).upper() in
+                   {'ACTOR_TOWER', 'ACTOR_CRYSTAL', 'TOWER', 'CRYSTAL', 'TURRET'}]
+        directions = []
+        tx, tz = number(building.get('x')), number(building.get('z'))
+        mx, mz = number(me.get('x')), number(me.get('z'))
+        if None in (tx, tz, mx, mz):
+            return None
+        target_length = math.hypot(tx - mx, tz - mz)
+        for macro, endpoints in (('macro_retreat', homes), ('macro_advance', enemies)):
+            endpoint = min(endpoints, key=lambda s: distance(me, s), default=None)
+            if macro not in macros or endpoint is None or target_length < 1:
+                continue
+            ex, ez = number(endpoint.get('x')), number(endpoint.get('z'))
+            if ex is None or ez is None:
+                continue
+            length = math.hypot(ex - mx, ez - mz)
+            if length > 0:
+                alignment = ((ex - mx) * (tx - mx) + (ez - mz) * (tz - mz)) / (length * target_length)
+                if alignment >= .5:
+                    directions.append((alignment, macro))
+        if directions:
+            # Routine defenders share the fair scheduler with pushers. Only
+            # a critical crystal can preempt all other ordinary team orders.
+            return max(directions)[1], 'tower_reinforce', task['urgent']
+        return None  # No guessed target ID, raw movement direction or global map.
 
     def _owned(self, raw):
         camp = raw.get('camp')
@@ -228,6 +359,9 @@ class HokPlatformAgent:
                   and not disadvantaged and loss < .14 and now >= memory.danger_until)
         if finish:
             return 'macro_attack', 'structure_pressure', True
+        defense = self._defend_building(seat, raw, offers, me, hp, loss, memory, disadvantaged, now)
+        if defense is not None:
+            return defense
         threatened = [s for s in structures if s.get('camp') == camp
                       and 'CRYSTAL' in str(s.get('type', '')).upper()
                       and (hp_fraction(s) or 1) < .55 and distance(me, s) < 24000
@@ -320,6 +454,8 @@ class HokPlatformAgent:
                     getattr(context, 'agent_id', None), raw.get('camp'), tuple(owned))
         if identity != self._identity or version < self._last_version:
             self._memory.clear()
+            self._buildings.clear()
+            self._defense.clear()
             self._rejected.clear()
             self._last_order = None
             self._sequence = 0
@@ -338,6 +474,7 @@ class HokPlatformAgent:
         standing = simultaneous.get('standing_orders') or {}
         own = {s: summary(raw, s).get('my_hero', {}) for s in owned}
         own = {s: h for s, h in own.items() if isinstance(h, dict)}
+        self._assign_defense(raw, own, now)
         self._rejected = {r for r in self._rejected if r[0] == version}
         for seat in owned:
             offers[seat]['macros'] = {m: label for m, label in offers[seat]['macros'].items()
@@ -348,7 +485,11 @@ class HokPlatformAgent:
             if seat not in pending:
                 continue
             memory = self._memory.setdefault(seat, HeroMemory())
-            if want and not (realtime and standing.get(str(seat)) == want):
+            if isinstance(want, dict):
+                if ((version, seat, None) not in self._rejected
+                        and (not realtime or standing.get(str(seat)))):
+                    choices.append((not urgent, memory.last_served, seat, want, reason))
+            elif want and not (realtime and standing.get(str(seat)) == want):
                 choices.append((not urgent, memory.last_served, seat,
                                 {'seat': seat, 'macro': want}, reason))
             elif want is None:

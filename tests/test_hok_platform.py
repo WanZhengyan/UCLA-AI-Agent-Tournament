@@ -582,7 +582,7 @@ def test_frontline_hero_returns_toward_own_threatened_crystal_not_enemy_base():
                  enemies=[hero(200, 2, x=-15000, visible=True)])
     bot = create_agent()
     assert choose(bot, raw)['macro'] == 'macro_retreat'
-    assert bot.last_diagnostics['reason'] == 'home_defense'
+    assert bot.last_diagnostics['reason'] == 'tower_reinforce'
 
 
 def test_fountain_recovery_rejoins_at_55_percent_not_42_or_68():
