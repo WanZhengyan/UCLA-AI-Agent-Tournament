@@ -1,4 +1,4 @@
-"""Short-queue OpenRA economy: two refineries, infantry and screened armor.
+"""Short-queue OpenRA economy: protected mining, tanks and rear artillery.
 
 Policy inspiration: OpenRA's official multiplayer fundamentals. Runtime
 availability and prices always take precedence over the upstream build order.
@@ -275,6 +275,13 @@ def plan(v, memory: dict, emit) -> None:
     tank_types = ('3tnk', '2tnk', '1tnk', '4tnk', 'ttnk') if armor_focus else ('3tnk', '2tnk', '1tnk')
     tank_item = next((t for t in tank_types if t in available), None)
     enemy_tanks = sum(v.cost(_type(e)) for e in _enemies(v) if _type(e) in TANKS)
+    mining_memory = memory.setdefault('mining', {})
+    growth_site = None
+    if armor_focus:
+        from . import mining
+        mining.observe(v, mining_memory)
+        if buildings['proc'] >= 2:
+            growth_site = mining.refinery_site(v, mining_memory, memory.setdefault('harvesters', {}))
 
     # Placement always outranks more production. Leaving a finished structure
     # in its queue blocks the entire category.
@@ -289,10 +296,19 @@ def plan(v, memory: dict, emit) -> None:
         if not item or v.queue(item) not in {'Building', 'Defense'}:
             continue
         order = {"cmd": "place", "item": item}
-        at = _place_at(v, item)
+        at = growth_site['at'] if item == 'proc' and growth_site else _place_at(v, item)
+        if armor_focus and item == 'proc' and buildings['proc'] >= 2 and map_plan.get('active') and not growth_site:
+            # A completed refinery still needs placing if its proposed patch
+            # became unsafe. Let the engine find a home cell, not stale ore.
+            at = None
+        if armor_focus and item in DEFENSE:
+            anchor = mining.defense_anchor(v)
+            if anchor:
+                at = mining.defense_hint(v, anchor)
         if at is not None:
             order["at"] = at
-        emit(order, key=f"place-{item}", cooldown=2)
+        if emit(order, key=f"place-{item}", cooldown=2) and item == 'proc' and growth_site:
+            mining.record_placement(v, mining_memory, growth_site)
 
     if armor_focus:
         from .harvesters import plan as recover_harvesters
@@ -343,9 +359,16 @@ def plan(v, memory: dict, emit) -> None:
         construction = "dome"
     elif not buildings["fix"] and refs >= 2 and (cash >= 850 or harvesters >= 4):
         construction = "fix"
-    elif refs < 3 and (cash >= 800 or harvesters >= 4) and not urgent and (not armor_focus or tanks >= 3):
+    elif (armor_focus and growth_site and refs < 6 and tanks >= 3
+          and harvesters >= 4 and not urgent
+          and v.remaining > float(v.item_rule('proc').get('build_time_s', 33.6)) + map_plan.get('productive_window', 180)
+          and cash >= (v.cost('proc') + tank_budget if tanks < 6 else tank_budget + 200)):
+        # A useful near-mine drop-off precedes optional tech/factories and
+        # costs less than a new MCV. Never count a placement hint as success.
+        construction = 'proc'
+    elif refs < 3 and (cash >= 800 or harvesters >= 4) and not urgent and (not armor_focus or tanks >= 3) and (not armor_focus or not map_plan.get('active')):
         construction = "proc"
-    elif buildings["fact"] >= 2 and refs < 4 and cash >= 600:
+    elif buildings["fact"] >= 2 and refs < 4 and cash >= 600 and (not armor_focus or not map_plan.get('active')):
         construction = "proc"
     elif armor_focus and buildings['weap'] < 2 and harvesters >= 5 and tanks >= 4 and cash > 1600 and not urgent:
         construction = 'weap'
@@ -408,12 +431,14 @@ def plan(v, memory: dict, emit) -> None:
                 build_budget = min(price, max(0, cash-300))
                 building_reserve = 0
 
-    # One affordable home defense can cover the economy while the army
-    # contains a fortified opponent. Do not turn this into tower spam.
+    # Cover distinct mining areas, not just the construction yard. Keep a
+    # small global cap and tank/power reserves instead of spamming towers.
     defenses = sum(buildings[t] for t in DEFENSE)
+    defense_gap = mining.defense_anchor(v) if armor_focus else None
     cover_economy = (fortified or getattr(v, 'profile', 'balanced') == 'eco_guard') and refs >= map_plan.get('defense_refs', 2) and harvesters >= map_plan.get('defense_miners', 3) and cash-build_budget >= map_plan.get('defense_cash', 900) and power_margin >= 30
-    if (urgent or cover_economy) and defenses < (2 if threat_value > 2000 else 1) and not v.queue_count("Defense"):
-        defense_types = ('gun', 'tsla') if armor_focus and enemy_tanks else ('pbox', 'ftur', 'hbox', 'gun', 'tsla')
+    defense_cap = max(2 if threat_value > 2000 else 1, min(3, refs) if defense_gap else 0)
+    if (urgent or cover_economy) and defenses < defense_cap and not v.queue_count("Defense"):
+        defense_types = ('gun', 'tsla') if armor_focus and (enemy_tanks or tanks >= 3) else ('pbox', 'ftur', 'hbox', 'gun', 'tsla')
         candidate = next((t for t in defense_types if t in available), None)
         if armor_focus and candidate:
             live_power = v.item_rule(candidate).get('power')
@@ -429,7 +454,7 @@ def plan(v, memory: dict, emit) -> None:
     # Queue a few units at a time, preserving the ability to respond to armor
     # or aircraft. The default 2:1 infantry mix follows the official guide.
     infantry_queued = v.queue_count("Infantry")
-    target_harvesters = min(8, max(4, refs * 2))
+    target_harvesters = mining.miner_target(v, refs, mining_memory, memory['harvesters']) if armor_focus else min(8, max(4, refs * 2))
     future_harvesters = harvesters + _queued(v, "harv") + _queued(v, "proc")
     miner_reserve = (300 if buildings["weap"] and "harv" in available
                      and future_harvesters < target_harvesters
@@ -497,7 +522,7 @@ def plan(v, memory: dict, emit) -> None:
         # permanent military spam. A refinery under construction brings one.
         if "harv" in available and future_harvesters < target_harvesters and (not urgent or harvesters < 2):
             vehicle = "harv"
-        elif (buildings["fact"] < 2 and not units["mcv"] and "mcv" in available
+        elif (not growth_site and buildings["fact"] < 2 and not units["mcv"] and "mcv" in available
               and harvesters >= 4 and cash >= 2000 and _expansion_window(v, memory)
               and (not armor_focus or (tanks >= 6 and cash >= v.cost('mcv') + tank_budget))
               and not urgent and _expansion_site(v, memory)):
@@ -506,7 +531,9 @@ def plan(v, memory: dict, emit) -> None:
             artillery = units["arty"] + units["v2rl"]
             screen = sum(units[t] for t in ("e1","e3","e2","e4","shok"))
             want_siege = fortified and (tanks >= 3 if armor_focus else screen >= 8 or tanks >= 2) and artillery < 2
-            if want_siege or (not armor_focus and tanks >= 2 and artillery < min(4, 1 + tanks // 3)):
+            defensive_artillery = (armor_focus and tanks >= 5 and not urgent
+                                  and artillery < min(3, tanks // 5))
+            if want_siege or defensive_artillery or (not armor_focus and tanks >= 2 and artillery < min(4, 1 + tanks // 3)):
                 vehicle = next((t for t in ("arty", "v2rl") if t in available), None)
             if vehicle is None:
                 vehicle = tank_item
@@ -524,8 +551,18 @@ def plan(v, memory: dict, emit) -> None:
                 # or every rocket purchase. Reserve the pending building and
                 # infantry buffer; spend a full vehicle budget in peacetime.
                 required = v.cost(vehicle) + max(building_reserve, infantry_reserved, operating_reserve, 150)
+                if armor_focus and vehicle in {'arty', 'v2rl'} and not urgent:
+                    required = max(required, v.cost(vehicle) + tank_budget + build_budget)
                 if urgent:
                     required = max(200, v.cost(vehicle) * 0.45)
+            if (armor_focus and vehicle in {'arty', 'v2rl'} and cash < required
+                    and tank_item):
+                # Discretionary support must not leave the factory idle while
+                # an affordable tank could protect the same mining economy.
+                vehicle = tank_item
+                required = tank_start + max(building_reserve, operating_reserve, infantry_spent, 100)
+                if urgent and harvesters >= 2:
+                    required = tank_start
             if cash >= required:
                 emit({"cmd": "train", "item": vehicle, "count": 1}, key="train-Vehicle", cooldown=4)
 

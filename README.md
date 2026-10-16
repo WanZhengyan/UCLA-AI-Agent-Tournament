@@ -8,7 +8,7 @@ The newly available platform HOK mode uses **one agent per five-hero team**. See
 
 ## What it does
 
-- **Red Alert:** `eco_guard` / `defense_v8` keeps tank-led production and harvesting, limits the force diverted by small raids, and checks known towers before defensive pursuit. `balanced` remains an optional experimental baseline.
+- **Red Alert:** `eco_guard` / `mining_guard_v9` adds screened near-mine refineries, bounded mining-area defenses, tank escorts and rear artillery while retaining efficient-trade and anti-bait safeguards. See [Red Alert strategy](docs/REDALERT.md). `balanced` remains an optional experimental baseline.
 - **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `paradox_damage_v10` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. It also retains publicly announced offensive and defensive Paradox modifiers after item consumption. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md) and [v10 mechanism checks](docs/POKEMON_PARADOX_V10.md).
 - **Werewolf:** `evidence_v1` uses private checks, official reveals, bounded claim evidence, vote history, role-specific night choices, and limited public/private discussion. See [docs/WEREWOLF.md](docs/WEREWOLF.md).
 - **Honor of Kings:** `hok_team_v1` controls five heroes with listed standing orders, objective pressure, health-aware retreat/recovery, local team strength, skill availability checks and fair order scheduling. See [research and limitations](docs/HOK_PLATFORM_RESEARCH.md).

@@ -359,6 +359,88 @@ def _defensive_stance(v, emit, actors):
                  key='raid-cover-stance:' + ','.join(map(str, ids)), cooldown=15)
 
 
+def _garrison_move(v, state, emit, actors, destination):
+    """Do not cross a known tower line on the way to an economic guard post."""
+    goal = _walkable(v, destination)
+    clear = []
+    for actor in actors:
+        blocked = blockers(v, cell(actor), goal)
+        if blocked:
+            _hold_outside_towers(v, state, emit, [actor], blocked)
+            continue
+        if getattr(v, 'map_plan', {}).get('active'):
+            from .maps import route_safe
+            if not route_safe(v, goal, start=cell(actor)):
+                # Static connectivity is unknown from this actor's cell.
+                # Cancel an obsolete movement without inventing a route.
+                _issue(v, state, emit, [actor], cell(actor), 'hold', command='move')
+                continue
+        clear.append(actor)
+    _issue(v, state, emit, clear, goal, 'hold', command='move')
+
+
+def _rear_artillery(v, state, emit, guns, screen, anchor, enemies=()):
+    """Fire only from current range behind tanks; never chase a defense target."""
+    healthy = [a for a in screen if a.get('type') in TANKS and a.get('hp', 100) >= 50]
+    for gun in guns:
+        reach = weapon_range(v, gun.get('type'), 12. if gun.get('type') == 'arty' else 10.)
+        guards = [a for a in healthy if distance(cell(a), cell(gun)) <= 12]
+        targets = [e for e in enemies if 5 <= distance(cell(gun), cell(e)) <= reach - .5
+                   and sum(distance(cell(a), cell(e)) < distance(cell(gun), cell(e))
+                           for a in guards) >= 2]
+        danger = any(distance(cell(gun), cell(e)) < 5 for e in enemies)
+        if targets and not danger and safe_cell(v, cell(gun)):
+            target = min(targets, key=lambda e: (e.get('hp', 100), distance(cell(e), cell(gun))))
+            _issue(v, state, emit, [gun], cell(target), 'defend', urgent=True,
+                   command='attack', target=target['id'])
+        else:
+            direction = cell(min(enemies, key=lambda e: distance(cell(e), anchor))) if enemies else v.enemy_base
+            length = max(1, distance(anchor, direction))
+            goal = (anchor[0] - 4*(direction[0]-anchor[0])/length,
+                    anchor[1] - 4*(direction[1]-anchor[1])/length)
+            if enemies and any(distance(goal, cell(e)) < 7 for e in enemies):
+                current = cell(gun)
+                nearest = cell(min(enemies, key=lambda e: distance(cell(e), current)))
+                length = max(1, distance(current, nearest))
+                goal = (current[0] + 6*(current[0]-nearest[0])/length,
+                        current[1] + 6*(current[1]-nearest[1])/length)
+            _garrison_move(v, state, emit, [gun], goal)
+    if enemies:
+        _defensive_stance(v, emit, guns)
+
+
+def _guard_economy(v, state, emit, army):
+    """Two tanks per separated mine/MCV, keeping at least three at home."""
+    remaining = list(army)
+    posts = [u for u in v.units if u.get('type') == 'mcv' and distance(cell(u), v.base) > 10]
+    for b in sorted(v.buildings, key=lambda a: a['id']):
+        if (b.get('type') == 'proc' and 15 < distance(cell(b), v.base) < 50
+                and all(distance(cell(b), cell(p)) > 12 for p in posts)):
+            posts.append(b)
+    for post in posts[:2]:
+        tanks = [a for a in remaining if a.get('type') in TANKS and a.get('hp', 100) >= 50]
+        if len(tanks) < 5:
+            break
+        guards = sorted(tanks, key=lambda a: (distance(cell(a), cell(post)), a['id']))[:2]
+        anchor = cell(post)
+        length = max(1, distance(anchor, v.enemy_base))
+        front = (anchor[0] + 4*(v.enemy_base[0]-anchor[0])/length,
+                 anchor[1] + 4*(v.enemy_base[1]-anchor[1])/length)
+        _garrison_move(v, state, emit, guards, front)
+        guns = sorted((a for a in remaining if a.get('type') in SIEGE),
+                      key=lambda a: (distance(cell(a), anchor), a['id']))[:1]
+        _rear_artillery(v, state, emit, guns, guards, anchor)
+        used = {a['id'] for a in guards + guns}
+        remaining = [a for a in remaining if a['id'] not in used]
+    guns = [a for a in remaining if a.get('type') in SIEGE]
+    screen = [a for a in remaining if a.get('type') not in SIEGE]
+    goal = _stage(v)
+    if not safe_cell(v, goal):
+        goal = _safe_hold(v, v.base, min(fortifications(v), key=lambda b: distance(cell(b), v.base)))
+    _garrison_move(v, state, emit, screen, goal)
+    _rear_artillery(v, state, emit, guns, screen, goal)
+
+
 def plan(v, memory: dict, emit) -> None:
     state = memory.setdefault('combat', {})
     if not getattr(v,'strategy',None):
@@ -438,7 +520,17 @@ def plan(v, memory: dict, emit) -> None:
                 state['wave_ids'] = list(wave_ids)
                 _keep_home_cover(v, state, emit, army, used, wave_ids)
                 return
-        _issue(v, state, emit, local, goal, 'defend', urgent=True, command=command)
+        if armor_focus:
+            guns = [a for a in army if a.get('type') in SIEGE
+                    and (a in local or distance(cell(a), cell(target)) < 22)]
+            screen = [a for a in local if a.get('type') not in SIEGE]
+            _issue(v, state, emit, screen, goal, 'defend', urgent=True, command=command)
+            anchor = min(important_assets, key=lambda a: distance(cell(a), cell(target))) if important_assets else None
+            _rear_artillery(v, state, emit, guns, screen if can_engage else [],
+                            cell(anchor) if anchor else v.base, nearby_enemies)
+            local = screen + guns
+        else:
+            _issue(v, state, emit, local, goal, 'defend', urgent=True, command=command)
         used = {a['id'] for a in local}
         wave_ids -= used
         state['wave_ids'] = list(wave_ids)
@@ -470,25 +562,15 @@ def plan(v, memory: dict, emit) -> None:
                             and not blockers(v, _centre(army), cell(a))]
         nearby_hostiles = [a for a in threats if distance(cell(a), _centre(army)) < 18]
         opportunity = bool(economic_targets) and armor_ready and _matchup_value(v, army, nearby_hostiles) > max(1800, _matchup_value(v, nearby_hostiles, army) * 1.8)
+        if balance > 0 and v.remaining <= 90:
+            opportunity = False  # Preserve efficient trades near the cutoff.
         if not (desperate and armor_ready) and not opportunity:
             # Cover separate refineries with nearby defenders; keep the bulk
             # behind a single front instead of scattering across every miner.
             state.update(mode='guard economy', wave_ids=[], last_mode='hold')
             scouting = _warning_scout(v, state, emit, army, threats)
             remaining_army = [a for a in army if a['id'] not in scouting]
-            outposts = [b for b in v.buildings if b.get('type') == 'proc'
-                        and 15 < distance(cell(b), v.base) < 50]
-            for outpost in outposts[:2]:
-                guards = sorted(remaining_army, key=lambda a: distance(cell(a), cell(outpost)))[:max(0, min(4, len(remaining_army)//4))]
-                goal = _walkable(v, cell(outpost))
-                if guards and safe_cell(v, goal):
-                    _issue(v, state, emit, guards, goal, 'hold', command='move')
-                    used = {a['id'] for a in guards}
-                    remaining_army = [a for a in remaining_army if a['id'] not in used]
-            goal = _stage(v)
-            if not safe_cell(v, goal):
-                goal = _safe_hold(v, v.base, min(fortifications(v), key=lambda b: distance(cell(b), v.base)))
-            _issue(v, state, emit, remaining_army, goal, 'hold', command='move')
+            _guard_economy(v, state, emit, remaining_army)
             group_size = min(40, max(1, int((v.raw.get('limits') or {}).get('max_units_per_order', 50))))
             for offset in range(0, len(army), group_size):
                 ids = [a['id'] for a in army[offset:offset+group_size] if a.get('stance') != 'defend']
