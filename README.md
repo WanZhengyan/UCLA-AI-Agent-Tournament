@@ -2,10 +2,14 @@
 
 A self-hosted AltruAgent contestant for **Red Alert (OpenRA)** and **Pokemon VGC Doubles Draft**. All strategy decisions run locally; no OpenAI or other model API key is required.
 
+The repository also includes a **standalone Honor of Kings 1v1 agent** for Tencent's official `hok_env`. It uses a separate Gamecore runtime; Honor of Kings is not currently playable through the AltruAgent tournament interface. See [docs/HOK.md](docs/HOK.md) for requirements and commands.
+
+**Development candidate:** these additions are on `improve/pokemon-hok-v7` ([PR #2](https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament/pull/2)). The final Pokemon comparison scored 19 wins for the candidate and 21 for the previous policy; it does not establish a winning advantage. The update has not replaced `main` or a running tournament agent. Check out this branch to use the new HOK module or test the Pokemon candidate.
+
 ## What it does
 
 - **Red Alert:** tank-led production, protected harvesting, map-aware ground routes, conservative engagement checks, separate anti-air control, and siege support against known defenses. The deployment default is `eco_guard` / `armor_economy_v6`; `balanced` remains an optional experimental baseline.
-- **Pokemon:** draft selection, four-of-six team selection, joint doubles action search, approximate battle simulation, and legal-action fallbacks.
+- **Pokemon:** draft selection, four-of-six team selection, joint doubles action search, approximate battle simulation, and legal-action fallbacks. `mechanics_v7` improves multi-hit damage/reactions, Electro Shot timing, Unaware, immediate status-curing items, and Koraidon/Miraidon entry effects.
 - **Runtime:** one listener routes both supported games to isolated per-seat workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes.
 - **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
 
@@ -84,6 +88,10 @@ Copy the original machine's log directories to the analysis machine first, or pr
 
 The Red Alert tests exercise production budgets, harvesting, map geometry, combat commands, monitoring, and replay analysis using controlled scenarios. These checks detect behavior errors; they do not measure tournament win rate. Routing and combat estimates are heuristics, not the full OpenRA engine.
 
+Pokemon mechanism checks can also run against the pinned Showdown engine. The paired comparison harness accepts `COMPARE_SUITE=core` or `COMPARE_SUITE=regi`; the latter adds hand-built two-restricted archetypes with Tera disabled. Public replay observations and their limits are documented in [docs/POKEMON_RESEARCH.md](docs/POKEMON_RESEARCH.md).
+
+The complete v7 comparison is in [reports/pokemon_mechanics_v7.json](reports/pokemon_mechanics_v7.json): 14-10 in the core suite and 5-11 in the restricted-legendary suite. All 40 final games completed without illegal actions, fallbacks, or timeouts. Earlier aborted attempts and the replay-driven correction are preserved separately. These are development fixtures, including reused seeds, not a held-out platform win-rate estimate.
+
 The current production comparison is available in [reports/redalert_armor_economy_v6.json](reports/redalert_armor_economy_v6.json). In the 600-second low-income fixture, completed Allied tanks increased from 4 to 6 and Soviet tanks from 3 to 5, while economic expansion was delayed. It uses fixed income without combat and must not be read as a live win-rate result. Earlier revisions and their evaluation limits are summarized in [docs/HISTORY.md](docs/HISTORY.md).
 
 Optional self-play is **disabled** in `validation/redalert_selfplay/settings.json`. When explicitly enabled, it applies only to Red Alert Testing matches for which official assignments confirm that both seats belong to this account. It compares `balanced` and `eco_guard`, alternates seats on successive compatible matches, and does not share either seat's observations. Read existing experiment summaries with:
@@ -92,7 +100,13 @@ Optional self-play is **disabled** in `validation/redalert_selfplay/settings.jso
 .venv/bin/python -m redalert_bot.selfplay
 ```
 
-Optional Pokemon mechanism checks use the Pokemon Showdown version pinned in `package.json`; install it with `npm install`. Example offline benchmark:
+Optional Pokemon mechanism checks use the Pokemon Showdown version pinned in `package.json`; install it with `npm install`. Enable the engine-backed Python tests explicitly:
+
+```bash
+SHOWDOWN_NODE=node .venv/bin/python -m pytest tests -q
+```
+
+Example offline benchmark:
 
 ```bash
 PYTHON=.venv/bin/python node tests/showdown_benchmark.js 12 100
@@ -106,6 +120,7 @@ These small synthetic benchmarks do not represent the full platform draft or tou
 | --- | --- |
 | `redalert_bot/` | Red Alert economy, combat, map handling, self-play, and review. |
 | `pokemon_bot/` | Pokemon draft, team selection, battle search, and static data. |
+| `hok_bot/` | Standalone Tencent Honor of Kings 1v1 policy and separate runtime. |
 | `competition_agent.py` | Game routing and per-seat policy isolation. |
 | `launcher.py`, `exe_entry.py` | CLI configuration and executable entry point. |
 | `altruagent/` | Bundled official runtime and documented local callbacks. |

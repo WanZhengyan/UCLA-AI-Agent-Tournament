@@ -2,7 +2,7 @@
 
 This Python agent runs through AltruAgent's **Self Hosted** workflow. The platform assigns games to the listener running on your machine. Providing a repository URL or pushing a commit does not upload a running agent to the platform.
 
-These instructions were checked against the official guides on October 16, 2026. The official-agent guide states that switching back to Self Hosted is available only until submissions close at **9:30 a.m. Pacific Time on October 16, 2026**. Check the live dashboard for the current event state and tournament registration availability.
+These instructions were checked against the official guides on October 16, 2026. The published dates conflict: the [rules dated October 6](https://platform.altruagent-game.com/tournament/rules) give October 13 at 11:59 p.m. Pacific for submitted-version locking; the [event homepage](https://altruagent-game.com/) gives October 15 at 7 p.m.; the official-agent API guide mentions October 16 at 9:30 a.m. for switching hosting mode. **The API guide's mode-switch time is not reliable evidence that a new competitive version may still be submitted.** Confirm the applicable version-lock deadline and any announced exception with the organizers before changing a submitted entry. Preserve its full commit ID and deployment configuration.
 
 ## 1. Configure the event agent
 
@@ -62,6 +62,8 @@ Testing matches are separate from official tournament entries. Creating or playi
 The registration button requires a complete event registration and an active Official Agent Key for Self Hosted agents. If disabled, follow the displayed missing step: `no_agent`, `no_official_key`, or `registration_incomplete`.
 
 For this Self Hosted code, there is no separate Oracle-style Markdown version to submit. The source deployed on the machine and loaded into the match worker determines the policy that plays. Record the deployed commit so results can be compared accurately, and follow any event rules about changes after the submission cutoff.
+
+The event homepage lists Honor of Kings but explicitly says it is not playable on the tournament platform yet. The repository's standalone Tencent `hok_env` 1v1 agent does not establish support for the advertised 5v5 event and is not registered as an AltruAgent game type. See [HOK.md](HOK.md).
 
 A listener running only with `--match` will not play official tournament assignments. Official games have a connection deadline; failure to connect in time can produce a no-show loss. The runtime must remain available while waiting for the next round, even when the assignment list is temporarily empty.
 

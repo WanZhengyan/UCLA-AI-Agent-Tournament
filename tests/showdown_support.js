@@ -31,8 +31,28 @@ const teams={
  mk('Tornadus',['Bleakwind Storm','Tailwind','Taunt','Protect'],'Prankster','Covert Cloak','Timid',{hp:4,spa:252,spe:252}),
  mk('Ogerpon-Wellspring',['Ivy Cudgel','Horn Leech','Follow Me','Spiky Shield'],'Water Absorb','Wellspring Mask','Jolly')]
 };
+// Hand-built Regulation I archetypes, not sampled platform draft pools or
+// reconstructed private replay sets. Each has two restricted Pokemon and
+// distinct items. Battles still disable Tera to match the platform.
+teams.regi_rain = [
+ mk('Kyogre',['Water Spout','Origin Pulse','Ice Beam','Protect'],'Drizzle','Mystic Water','Modest',{hp:100,spa:252,spe:156}),
+ mk('Zamazenta-Crowned',['Body Press','Heavy Slam','Wide Guard','Protect'],'Dauntless Shield','Rusted Shield','Impish',{hp:252,def:156,spe:100}),
+ teams.rain[1], teams.balanced[5], teams.balanced[4], teams.balanced[0]
+];
+teams.regi_shadow = [
+ mk('Miraidon',['Electro Drift','Draco Meteor','Volt Switch','Dazzling Gleam'],'Hadron Engine','Choice Specs','Timid',{hp:4,spa:252,spe:252}),
+ mk('Calyrex-Shadow',['Astral Barrage','Psychic','Nasty Plot','Protect'],'As One (Spectrier)','Life Orb','Timid',{hp:4,spa:252,spe:252}),
+ teams.balanced[0], teams.balanced[1],
+ mk('Whimsicott',['Moonblast','Tailwind','Encore','Protect'],'Prankster','Covert Cloak','Timid',{hp:4,spa:252,spe:252}),
+ mk('Clefairy',['Follow Me','Helping Hand','Moonblast','Protect'],'Friend Guard','Eviolite','Bold',{hp:252,def:156,spd:100})
+];
+teams.regi_room = [
+ {...mk('Calyrex-Ice',['Glacial Lance','High Horsepower','Trick Room','Protect'],'As One (Glastrier)','Clear Amulet','Brave',{hp:252,atk:252,spd:4}),ivs:{spe:0}},
+ mk('Koraidon',['Collision Course','Flare Blitz','Dragon Claw','Protect'],'Orichalcum Pulse','Life Orb','Jolly'),
+ teams.trickroom[4], teams.balanced[4], teams.balanced[0], teams.trickroom[3]
+];
 function publicCard(set){const sp=Dex.species.get(set.species);return {...set,card_id:toID(set.species),name:set.species,species:sp.id,types:sp.types.map(x=>x.toUpperCase()),base_stats:sp.baseStats};}
-function mon(p, own=false){if(!p)return null; const set=p.set;return {...publicCard(set),name:p.name,species:p.baseSpecies.id,current_hp:own?p.hp:Math.ceil(100*p.hp/p.maxhp),max_hp:own?p.maxhp:100,current_hp_fraction:p.hp/p.maxhp,status:p.status,ability:p.ability,item:p.item,types:p.getTypes().map(t=>t.toUpperCase()),boosts:{...p.boosts},moves:set.moves,stats:own?{...p.storedStats,hp:p.maxhp}:undefined,fainted:p.fainted,active:p.isActive,revealed:true};}
+function mon(p, own=false){if(!p)return null; const set=p.set;return {...publicCard(set),name:p.name,species:p.baseSpecies.id,current_hp:own?p.hp:Math.ceil(100*p.hp/p.maxhp),max_hp:own?p.maxhp:100,current_hp_fraction:own?p.hp/p.maxhp:Math.ceil(100*p.hp/p.maxhp)/100,status:p.status,ability:p.ability,item:p.item,types:p.getTypes().map(t=>t.toUpperCase()),boosts:{...p.boosts},moves:set.moves,stats:own?{...p.storedStats,hp:p.maxhp}:undefined,fainted:p.fainted,active:p.isActive,revealed:true};}
 function targetChoices(b,p,m){
  if(!['normal','any','adjacentAlly','adjacentAllyOrSelf','adjacentFoe'].includes(m.target))return [0];
  const a=[];for(const loc of [1,2,-1,-2])if(b.validTargetLoc(loc,p,m.target)){const t=p.getAtLoc(loc);if(t&&!t.fainted)a.push(loc);}return a.length?a:[1];
