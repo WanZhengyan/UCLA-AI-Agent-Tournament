@@ -38,9 +38,12 @@ const suite=process.env.COMPARE_SUITE||'core';
 const suites={
  core:[['balanced','rain'],['rain','balanced'],['trickroom','balanced'],['balanced','offense'],['offense','rain'],['trickroom','offense']],
  regi:[['regi_rain','regi_shadow'],['regi_shadow','regi_room'],['regi_room','regi_rain'],['regi_rain','rain']],
- speed:[['speed_unburden','balanced'],['speed_unburden','offense'],['rain','offense'],['trickroom','speed_unburden']]
+ speed:[['speed_unburden','balanced'],['speed_unburden','offense'],['rain','offense'],['trickroom','speed_unburden']],
+ mirror:['power_booster','power_quark','offense','rain'].map(name=>[name,name]),
+ paradox_mirror:['power_booster4','power_quark4'].map(name=>[name,name]),
+ paradox:[['power_booster','offense'],['power_quark','regi_rain']]
 };
-if(!suites[suite])throw new Error('Unknown COMPARE_SUITE; use core, regi, or speed');
+if(!suites[suite])throw new Error('Unknown COMPARE_SUITE; use core, regi, speed, mirror, or paradox');
 const pairs=suites[suite];
 async function game(pair,swap,n,reverseTeams=false){
   if(reverseTeams)pair=[...pair].reverse();
@@ -80,8 +83,12 @@ async function game(pair,swap,n,reverseTeams=false){
 }
 (async()=>{
   const count=Number(process.argv[2]||24),offset=Number(process.argv[3]||1000),results=[];
-  if(count%4)throw new Error('Use a multiple of four to swap both teams and seats');
-  for(let i=0;i<count/4;i++)for(const reverseTeams of [false,true])for(const swap of [false,true]){
+  // Identical rosters need seat swaps only: reversing the teams would replay
+  // the very same game/seed, not provide another independent observation.
+  const mirrorSuite=['mirror','paradox_mirror'].includes(suite);
+  const blockSize=mirrorSuite?2:4;
+  if(count%blockSize)throw new Error('Use complete team/seat swap blocks');
+  for(let i=0;i<count/blockSize;i++)for(const reverseTeams of mirrorSuite?[false]:[false,true])for(const swap of [false,true]){
     const r=await game(pairs[i%pairs.length],swap,offset+i,reverseTeams);results.push(r);console.log(JSON.stringify(r));
   }
   const after=dirs.map(hashes);

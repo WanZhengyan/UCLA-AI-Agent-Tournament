@@ -4,12 +4,12 @@ A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Do
 
 The repository also includes a **standalone Honor of Kings 1v1 agent** for Tencent's official `hok_env`. It uses a separate Gamecore runtime; Honor of Kings is not currently playable through the AltruAgent tournament interface. See [docs/HOK.md](docs/HOK.md) for requirements and commands.
 
-**Development candidate:** the latest additions are on `improve/pokemon-speed-v9`, based on the v8 Werewolf/defenses branch. They improve Pokemon type-aware speed decisions, informed by three public replay timelines and independent engine checks. They have not replaced `main` or a running tournament agent. The earlier v7 Pokemon comparison scored 19-21; that historical result does not measure v9.
+**Development candidate:** the latest additions are on `improve/pokemon-paradox-v10`, based on the v9 type/speed branch. They correct non-Speed Protosynthesis/Quark Drive damage modifiers, including consumed Booster Energy. They have not replaced `main` or a running tournament agent. Mechanics correctness is not proof of a tournament win-rate improvement.
 
 ## What it does
 
 - **Red Alert:** `eco_guard` / `defense_v8` keeps tank-led production and harvesting, limits the force diverted by small raids, and checks known towers before defensive pursuit. `balanced` remains an optional experimental baseline.
-- **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `type_speed_v9` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. Preview scoring now compares both sides under the same weather. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md).
+- **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `paradox_damage_v10` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. It also retains publicly announced offensive and defensive Paradox modifiers after item consumption. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md) and [v10 mechanism checks](docs/POKEMON_PARADOX_V10.md).
 - **Werewolf:** `evidence_v1` uses private checks, official reveals, bounded claim evidence, vote history, role-specific night choices, and limited public/private discussion. See [docs/WEREWOLF.md](docs/WEREWOLF.md).
 - **Runtime:** one listener routes all three supported platform games to isolated per-seat workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes. Honor of Kings uses its separate Tencent runtime.
 - **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
@@ -21,7 +21,7 @@ Only information available to the assigned seat is used. Strategy state and obse
 Use Python 3.11 or later and keep the machine connected to the internet.
 
 ```bash
-git clone --branch improve/pokemon-speed-v9 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
+git clone --branch improve/pokemon-paradox-v10 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
 cd UCLA-AI-Agent-Tournament
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
@@ -91,7 +91,9 @@ The Red Alert tests exercise production budgets, harvesting, map geometry, comba
 
 [Public opponent research](docs/OPPONENT_RESEARCH.md) records seven event/platform-related repositories with custom code and one empty Honor of Kings repository. Registration and deployed versions are unverified. The defensive scenarios cover raid/ambush bait, conditional priority moves, untrusted Werewolf claims and message instructions, and unsafe HOK farming. No opponent code was executed, and no head-to-head winning advantage is claimed.
 
-The v9 validation passed 642 tests with the optional Showdown checks enabled, all three platform policy self-tests, and spawned runtime imports. [pokemon_type_speed_v9.json](reports/pokemon_type_speed_v9.json) records the source hashes and comparison results. The earlier four-game defense validation is preserved in [defense_v8.json](reports/defense_v8.json).
+The v10 validation passed **663 tests**, including 21 focused regressions and 19 independent engine checks within one of those tests, plus the shared runtime self-test. Its frozen comparison against v9 finished **12-12**: 8-8 in six-member mirror fixtures and 4-4 in a coverage-driven four-member extension. The first suite had no non-Speed Paradox activations; all eight extension games exercised them. No overall winning advantage was demonstrated. [pokemon_paradox_v10.json](reports/pokemon_paradox_v10.json) records source hashes, outcomes, activation coverage, latency, and limitations.
+
+The historical v9 validation passed 642 tests with the optional Showdown checks enabled, all three platform policy self-tests, and spawned runtime imports. [pokemon_type_speed_v9.json](reports/pokemon_type_speed_v9.json) records those source hashes and comparison results. The earlier four-game defense validation is preserved in [defense_v8.json](reports/defense_v8.json).
 
 The frozen v9-versus-v8 comparison finished **14-14** across 28 paired games: 8-8 in speed-control fixtures and 6-6 in two-restricted fixtures. There were no illegal choices, fallbacks, timeouts, or incomplete games. This small handcrafted evaluation shows no overall winning advantage; the v9 candidate is a mechanics correction, not a proven tournament-strength upgrade.
 

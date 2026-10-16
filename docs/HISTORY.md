@@ -2,6 +2,12 @@
 
 This document preserves the relevant history of the original local builds. It is not a current deployment record. Some referenced experiment outputs were retained only on the original machine and are intentionally absent from GitHub. Use the main [README](../README.md) for current setup commands.
 
+## Pokemon public Paradox damage modifiers (v10, 2026-10-16)
+
+`paradox_damage_v10` shares the publicly announced Protosynthesis/Quark Drive stat between Speed and damage estimates. It retains consumed-Booster activations, adds defensive modifiers, and checks Body Press and Psyshock modifier-event semantics against the pinned Showdown engine. No search or draft coefficients were tuned. A focused Gholdengo scenario now selects Protect instead of assuming survival against boosted Moonblast; that scenario is not proof of a full-game win.
+
+Validation: **663 tests passed**, including 21 focused cases and 19 independent engine checks within one case, plus the shared runtime self-test. Frozen v9 fails 16 focused policy cases. The frozen A/B comparison finished **12-12** across 24 games: 8-8 in identical six-member rosters and 4-4 in four-member diagnostic rosters added after observing missing activation coverage. All eight extension games exercised non-Speed activations. There were no illegal actions, fallbacks, timeouts, or incomplete games. Neither run demonstrates a winning advantage. See [the mechanism review](POKEMON_PARADOX_V10.md) and [source-hashed results](../reports/pokemon_paradox_v10.json). This remains a development branch; no running agent or formal tournament submission changed.
+
 ## Pokemon type matchups and speed control (v9, 2026-10-16)
 
 `type_speed_v9` corrects effective Speed and type-defense mechanics while retaining the existing joint-action search and draft scoring coefficients. Three additional public replay timelines show Tailwind followed by partner attacks in the same turn, priority attacks, Tailwind expiry, protected Trick Room, disruption, and a non-Speed Protosynthesis activation. The [replay review](POKEMON_SPEED_RESEARCH.md) separates those observations from Tera-dependent damage and from independent engine scenarios. These are public players' games, not our agent's platform matches.
