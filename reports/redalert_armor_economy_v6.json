@@ -1,0 +1,207 @@
+{
+  "date": "2026-10-16",
+  "profile": "eco_guard",
+  "revision": "armor_economy_v6",
+  "baseline_commit": "f966f9adeef16338f341546e4155188de6d37c50",
+  "baseline_economy_sha256": "96e427c87d45369e024474f2e897abb23e94f28cdc4f07bbdb4eb89c8cc14c80",
+  "candidate_economy_sha256": "05ad197411428fbe8d25d868bfb7c67829312fb911bc458264d70d1076a33c96",
+  "comparison_method": {
+    "function": "tests/test_redalert_policy.py:mock_production_progression",
+    "seconds": 600,
+    "starting_cash": 5000,
+    "income_per_harvester_per_second": [
+      8,
+      16
+    ],
+    "baseline": "Only economy.plan replaced with source at baseline_commit; all other code and the simulation harness held fixed.",
+    "payment": "Progressive payment, independent short category queues",
+    "real_engine": false,
+    "battles": false,
+    "map": "Fallback map without a supplied terrain layout",
+    "scope": "Isolates production behavior; does not estimate miner-routing gains, real map income, combat performance, or win rate"
+  },
+  "changes": [
+    "Preserve the next tank operating budget before optional support infantry, defenses, and infrastructure",
+    "Reduce peacetime fallback/long-route opening rifles; preserve the map-selected guarded opening screen and live-attack response",
+    "Keep complete support purchase costs out of the next tank budget",
+    "Resume progressively financed refinery growth after a six-tank core to avoid blocking low-income expansion indefinitely",
+    "Require a six-tank core and full MCV cost plus tank operating cash before buying an expansion MCV",
+    "Keep power, harvester recovery, tank tech, second-factory priority, emergency ground defense and emergency AA support"
+  ],
+  "results": [
+    {
+      "faction": "allies",
+      "income_per_harvester_per_second": 8,
+      "before": {
+        "tanks": 4,
+        "rifles": 10,
+        "rockets": 5,
+        "trained": {
+          "1tnk": 1,
+          "2tnk": 3,
+          "e1": 10,
+          "e3": 5,
+          "harv": 3
+        },
+        "harvesters": 6,
+        "refineries": 3,
+        "factories": 1,
+        "cash": 732.33,
+        "pending": [
+          "2tnk"
+        ]
+      },
+      "after": {
+        "tanks": 6,
+        "rifles": 6,
+        "rockets": 3,
+        "trained": {
+          "2tnk": 6,
+          "e1": 6,
+          "e3": 3,
+          "harv": 2
+        },
+        "harvesters": 5,
+        "refineries": 3,
+        "factories": 1,
+        "cash": 0.0,
+        "pending": [
+          "2tnk"
+        ]
+      }
+    },
+    {
+      "faction": "allies",
+      "income_per_harvester_per_second": 16,
+      "before": {
+        "tanks": 14,
+        "rifles": 10,
+        "rockets": 5,
+        "trained": {
+          "1tnk": 1,
+          "2tnk": 13,
+          "e1": 10,
+          "e3": 5,
+          "harv": 3
+        },
+        "harvesters": 6,
+        "refineries": 3,
+        "factories": 2,
+        "cash": 11312.67,
+        "pending": [
+          "2tnk"
+        ]
+      },
+      "after": {
+        "tanks": 16,
+        "rifles": 6,
+        "rockets": 3,
+        "trained": {
+          "2tnk": 16,
+          "e1": 6,
+          "e3": 3,
+          "harv": 3
+        },
+        "harvesters": 6,
+        "refineries": 3,
+        "factories": 2,
+        "cash": 9680.0,
+        "pending": [
+          "2tnk"
+        ]
+      }
+    },
+    {
+      "faction": "soviets",
+      "income_per_harvester_per_second": 8,
+      "before": {
+        "tanks": 3,
+        "rifles": 10,
+        "rockets": 5,
+        "trained": {
+          "3tnk": 3,
+          "e1": 10,
+          "e3": 5,
+          "harv": 3
+        },
+        "harvesters": 6,
+        "refineries": 3,
+        "factories": 1,
+        "cash": 546.0,
+        "pending": []
+      },
+      "after": {
+        "tanks": 5,
+        "rifles": 6,
+        "rockets": 3,
+        "trained": {
+          "3tnk": 5,
+          "e1": 6,
+          "e3": 3,
+          "harv": 2
+        },
+        "harvesters": 4,
+        "refineries": 2,
+        "factories": 1,
+        "cash": 386.0,
+        "pending": [
+          "3tnk"
+        ]
+      }
+    },
+    {
+      "faction": "soviets",
+      "income_per_harvester_per_second": 16,
+      "before": {
+        "tanks": 11,
+        "rifles": 10,
+        "rockets": 5,
+        "trained": {
+          "3tnk": 11,
+          "e1": 10,
+          "e3": 5,
+          "harv": 3
+        },
+        "harvesters": 6,
+        "refineries": 3,
+        "factories": 2,
+        "cash": 10010.0,
+        "pending": [
+          "3tnk"
+        ]
+      },
+      "after": {
+        "tanks": 11,
+        "rifles": 6,
+        "rockets": 3,
+        "trained": {
+          "3tnk": 11,
+          "e1": 6,
+          "e3": 3,
+          "harv": 3
+        },
+        "harvesters": 6,
+        "refineries": 3,
+        "factories": 2,
+        "cash": 9450.67,
+        "pending": [
+          "3tnk"
+        ]
+      }
+    }
+  ],
+  "verification": {
+    "focused_tests": 147,
+    "command": "python -m pytest -q tests/test_redalert_tank_priority.py tests/test_redalert_armor.py tests/test_redalert_economy.py tests/test_redalert_balance.py tests/test_redalert_policy.py tests/test_redalert_maps.py"
+  },
+  "reproduction": {
+    "environment": "PYTHONPATH=.:tests",
+    "baseline_loading": "Load git show BASELINE_COMMIT:redalert_bot/economy.py in a types.ModuleType with __package__='redalert_bot'; patch redalert_bot.economy.plan with the loaded plan function.",
+    "scenarios": "For faction in ('allies','soviets') and income in (8,16), run mock_production_progression(faction,600,income) once with the baseline patch and once without it."
+  },
+  "limitations": [
+    "Synthetic production counts, not measured match win rates",
+    "Assumes fixed income per miner; no harvesting routes, combat losses, ore depletion, or real factory acceleration",
+    "The medium-income Soviet scenario has no increase in completed tanks within the 600-second window"
+  ]
+}

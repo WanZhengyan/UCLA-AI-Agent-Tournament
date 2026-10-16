@@ -294,10 +294,14 @@ def plan(v, memory: dict, emit) -> None:
             order["at"] = at
         emit(order, key=f"place-{item}", cooldown=2)
 
-    # Only idle miners are nudged; harvesting/unloading cycles stay untouched.
-    idle_harv = [u["id"] for u in v.units if _type(u) == "harv" and u.get("idle")]
-    if idle_harv and buildings["proc"]:
-        emit({"cmd": "harvest", "units": idle_harv[:50]}, key="idle-miners", cooldown=8)
+    if armor_focus:
+        from .harvesters import plan as recover_harvesters
+        recover_harvesters(v, memory.setdefault('harvesters', {}), emit)
+    else:
+        # Preserve the experimental baseline's original native resume policy.
+        idle_harv = [u["id"] for u in v.units if _type(u) == "harv" and u.get("idle")]
+        if idle_harv and buildings["proc"]:
+            emit({"cmd": "harvest", "units": idle_harv[:50]}, key="idle-miners", cooldown=8)
     for b in sorted(v.buildings, key=lambda x: x.get("hp", 100))[:3]:
         hp = b.get("hp", 100)
         if hp < 80 and not b.get("repairing") and (cash > 250 or _type(b) in {"fact", "proc"}):
@@ -314,6 +318,8 @@ def plan(v, memory: dict, emit) -> None:
     power_provided = float(v.econ.get("power_provided", 0) or 0)
     power_drained = float(v.econ.get("power_drained", 0) or 0)
     power_margin = power_provided - power_drained
+    tank_start = (max(250, min(500, v.cost(tank_item) * .45)) if harvesters >= 2 else v.cost(tank_item)) if tank_item else 0
+    tank_budget = tank_start + 100 if armor_focus and tank_item else 0
     construction = None
 
     # Stable two-refinery opening. Avoid researching everything before making
@@ -363,6 +369,21 @@ def plan(v, memory: dict, emit) -> None:
         construction = None
     if construction not in available:
         construction = None
+    optional_construction = ((construction == 'proc' and refs >= 2)
+                             or (construction == 'dome' and not fortified)
+                             or (construction in {'tent', 'barr'} and rax_count > 0))
+    optional_budget = v.cost(construction) + tank_budget
+    if construction == 'proc' and tanks >= 6:
+        # After establishing the tank core, let a refinery use progressive
+        # payment again. Otherwise a low-income base could postpone growth
+        # forever while every deposit funds its next tank.
+        optional_budget = tank_budget
+    if (armor_focus and tank_item and optional_construction
+            and cash < optional_budget):
+        # Do not let another expansion/tech/support queue consume the next
+        # tank's operating cash. Power, the first factory, tank tech and a
+        # second factory retain their infrastructure priority.
+        construction = None
     if construction and construction not in {"powr","apwr"} and "powr" in available:
         raw_power = v.item_rule(construction).get("power")
         next_drain = max(0,-float(raw_power)) if isinstance(raw_power,(int,float)) else (
@@ -399,7 +420,10 @@ def plan(v, memory: dict, emit) -> None:
             drain = max(0, -live_power) if isinstance(live_power, (int, float)) else {'tsla': 150, 'gun': 40, 'ftur': 40}.get(candidate, 0)
             if power_margin < drain + 10:
                 candidate = None
-        if candidate and cash >= min(350, v.cost(candidate)):
+        defense_budget = min(350, v.cost(candidate)) if candidate else 0
+        if armor_focus and tank_item and not urgent and candidate:
+            defense_budget = v.cost(candidate) + tank_budget + build_budget
+        if candidate and cash >= defense_budget:
             emit({"cmd": "build", "item": candidate}, key=f"build-{candidate}", cooldown=5)
 
     # Queue a few units at a time, preserving the ability to respond to armor
@@ -412,19 +436,26 @@ def plan(v, memory: dict, emit) -> None:
                      and not v.queue_count("Vehicle") and not urgent else 0)
     infantry_reserved = 0
     infantry_spent = 0
-    tank_start = (max(250, min(500, v.cost(tank_item) * .45)) if harvesters >= 2 else v.cost(tank_item)) if tank_item else 0
     # Production is paid progressively: protect the start/operating budget of
     # a tank instead of letting another cheap rifle consume every small deposit.
-    armor_reserve = tank_start if armor_focus and tank_item and not v.queue_count('Vehicle') else 0
+    armor_reserve = tank_budget if armor_focus and tank_item and not v.queue_count('Vehicle') else 0
     if armor_focus and any(p.get('item') in TANKS for p in v.production):
-        armor_reserve = 200
+        armor_reserve = max(200, tank_start)
     # Leave an operating buffer during containment. This is not a spending
     # ceiling: surplus income still funds infantry, vehicles and expansion.
     operating_reserve = 350 if fortified and not urgent and harvesters >= 2 else 0
     if rax_count and infantry_queued < 2 and "e1" in available and not recovering:
         early_cap = map_plan.get('early_infantry_cap', 6) if refs == 0 else map_plan.get('second_ref_infantry_cap', 10) if refs < 2 else min(24, 10 + 2*tanks) if armor_focus else 10000
+        economical_opening = (not map_plan.get('active')
+                              or map_plan.get('style') == 'long-route-economy')
+        if armor_focus and refs == 1 and not urgent and economical_opening:
+            # Preserve an initial screen while financing the second refinery
+            # and factory before adding another group of rifles. Keep the
+            # larger screen explicitly selected for a guarded/close map.
+            early_cap = min(early_cap, 6)
         current_inf = sum(units[t] for t in ("e1", "e3", "e2", "e4", "shok"))
-        emergency_rockets = armor_focus and urgent and enemy_tanks and units['e3'] + _queued(v, 'e3') < 4
+        air_threat = any(_type(e) in {'heli', 'hind', 'mig', 'yak'} for e in threats)
+        emergency_rockets = armor_focus and urgent and (enemy_tanks or air_threat) and units['e3'] + _queued(v, 'e3') < 4
         opening_emergency = armor_focus and urgent and not buildings['weap'] and current_inf + infantry_queued < 12
         support_shortage = armor_focus and refs >= 2 and units['e3'] + _queued(v, 'e3') < 2
         if current_inf + infantry_queued < early_cap or (urgent and not armor_focus) or emergency_rockets or opening_emergency or support_shortage:
@@ -435,7 +466,7 @@ def plan(v, memory: dict, emit) -> None:
             item = "e3" if want_rocket and "e3" in available else "e1"
             if (support_shortage or (armor_focus and enemy_armor and units['e3'] + _queued(v, 'e3') < 4)) and 'e3' in available:
                 item = 'e3'
-            rifle_cap = min(10, 4 + tanks//2) if armor_focus and refs >= 2 else early_cap
+            rifle_cap = min(6, 4 + tanks//4) if armor_focus and refs >= 2 else early_cap
             if opening_emergency:
                 rifle_cap = max(rifle_cap, 12)
             if armor_focus and item == 'e1' and units['e1'] + _queued(v, 'e1') >= rifle_cap:
@@ -447,6 +478,11 @@ def plan(v, memory: dict, emit) -> None:
             # incoming $300. With two working miners, a small initial buffer
             # is enough to finance a single rocket over the following seconds.
             required = min(v.cost(item), 100) if harvesters >= 2 else v.cost(item)
+            if armor_focus and tank_item:
+                # Support is discretionary once tanks are available. Reserve
+                # its full cost, not merely its first production installment,
+                # so a rocket order cannot preempt the next tank's start.
+                required = v.cost(item)
             infantry_reserved = reserve + required
             if item and (spendable >= required or (urgent and cash >= 100 and (not armor_focus or emergency_rockets or opening_emergency))):
                 batch = 1 if armor_focus or item == "e3" or cash < 1000 else min(3, max(1, int(spendable // max(1, v.cost(item)))))
@@ -463,7 +499,8 @@ def plan(v, memory: dict, emit) -> None:
             vehicle = "harv"
         elif (buildings["fact"] < 2 and not units["mcv"] and "mcv" in available
               and harvesters >= 4 and cash >= 2000 and _expansion_window(v, memory)
-              and (not armor_focus or tanks >= 3) and not urgent and _expansion_site(v, memory)):
+              and (not armor_focus or (tanks >= 6 and cash >= v.cost('mcv') + tank_budget))
+              and not urgent and _expansion_site(v, memory)):
             vehicle = "mcv"
         else:
             artillery = units["arty"] + units["v2rl"]

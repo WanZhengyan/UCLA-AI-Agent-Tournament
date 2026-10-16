@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 from competition_agent import SUPPORTED_GAME_TYPES
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 GAME_TYPE = "pokemon_vgc_doubles_draft"
 AGENT_SPEC = "competition_agent:create_agent"
 CONTROL_URL = "https://api.altruagent-game.com"
@@ -41,7 +41,7 @@ def load_configuration(key_file: str | None = None, *, prompt: bool = True) -> N
     if key_file:
         os.environ[KEY_ENV] = Path(key_file).expanduser().read_text(encoding="utf-8").strip()
     if not os.environ.get(KEY_ENV) and prompt and sys.stdin.isatty():
-        print("请输入平台 Official Agent Key（eak_live_ 开头，输入时不显示）。")
+        print("Enter your platform Official Agent Key (starts with eak_live_; input is hidden).")
         os.environ[KEY_ENV] = getpass.getpass("Official Agent Key: ").strip()
     load_official_agent_key()  # Validates locally without printing the value.
 
@@ -66,8 +66,8 @@ def check_connection() -> int:
         official.authenticate()
         assignments = official.assignments()
         _resolve_decision_fn(load_agent_factory(AGENT_SPEC)())
-        print(f"连接成功，密钥有效，双游戏策略已加载；当前有 {len(assignments)} 个宝可梦/红警对局。")
-        print("连接检查完成。使用不带 --check 的命令开始接赛。")
+        print(f"Connected: key verified and both game policies loaded; {len(assignments)} Pokemon/Red Alert assignments available.")
+        print("Connection check complete. Run without --check to accept matches.")
         return 0
     finally:
         official.close()
@@ -83,13 +83,13 @@ def run_online(kinds: frozenset[str]) -> int:
     try:
         try:
             official.authenticate()
-            print("已连接 AltruAgent。", flush=True)
+            print("Connected to AltruAgent.", flush=True)
         except AltruAgentError as exc:
             if not is_registration_incomplete(exc):
                 raise
             print(str(exc), flush=True)
-        names = "+".join("正式比赛" if kind == "tournament" else "测试赛" for kind in sorted(kinds))
-        print(f"等待宝可梦 VGC 双打选秀 / 红警 Red Alert 对局（{names}）。保持程序运行；Ctrl+C 停止。", flush=True)
+        names = "+".join("tournament" if kind == "tournament" else "testing" for kind in sorted(kinds))
+        print(f"Waiting for Pokemon VGC Doubles Draft / Red Alert assignments ({names}). Keep this process running; press Ctrl+C to stop.", flush=True)
         run_tournament_forever(official, agent_spec=AGENT_SPEC, kinds=kinds)
         return 0
     finally:
@@ -192,17 +192,17 @@ def runtime_self_test() -> dict:
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="AltruAgent 宝可梦 + 红警双游戏 Agent。默认同时接正式比赛和测试赛。")
+    result = argparse.ArgumentParser(description="AltruAgent Pokemon + Red Alert agent. Accepts tournament and testing matches by default.")
     result.add_argument("--version", action="version", version=f"PokemonChampion + RedAlertChampion {VERSION}")
-    result.add_argument("--check", "--check-tournament", action="store_true", help="仅检查密钥、连接及策略，不接赛")
-    result.add_argument("--self-test", action="store_true", help="离线自检，不需要密钥")
+    result.add_argument("--check", "--check-tournament", action="store_true", help="check the key, connection and policy without accepting matches")
+    result.add_argument("--self-test", action="store_true", help="run offline self-tests; no key required")
     result.add_argument("--runtime-test", action="store_true", help=argparse.SUPPRESS)
-    result.add_argument("--decide", metavar="JSON_FILE", help="离线对 MCP 状态 JSON 决策，- 表示标准输入")
-    result.add_argument("--jsonl", action="store_true", help="离线持久化进程：逐行读取 MCP 状态 JSON 并输出动作")
-    result.add_argument("--tournament", action="store_true", help="接正式比赛；可与 --match 合用")
-    result.add_argument("--match", action="store_true", help="接测试赛；可与 --tournament 合用")
-    result.add_argument("--key-file", metavar="PATH", help="从纯文本文件读取 Official Agent Key")
-    result.add_argument("--no-prompt", action="store_true", help="不交互询问密钥（服务器后台运行）")
+    result.add_argument("--decide", metavar="JSON_FILE", help="choose an action from offline MCP state JSON; use - for stdin")
+    result.add_argument("--jsonl", action="store_true", help="keep an offline process alive, reading state JSON and writing one action per line")
+    result.add_argument("--tournament", action="store_true", help="accept tournament matches; may be combined with --match")
+    result.add_argument("--match", action="store_true", help="accept testing matches; may be combined with --tournament")
+    result.add_argument("--key-file", metavar="PATH", help="read the Official Agent Key from a plain-text file")
+    result.add_argument("--no-prompt", action="store_true", help="disable the interactive key prompt for unattended operation")
     return result
 
 
@@ -230,7 +230,7 @@ def main(argv: list[str] | None = None) -> int:
         kinds = frozenset(kind for kind, enabled in (("tournament", args.tournament), ("testing", args.match)) if enabled)
         return run_online(kinds or frozenset({"tournament", "testing"}))
     except KeyboardInterrupt:
-        print("\n已停止。")
+        print("\nStopped.")
         return 0
     except Exception as exc:
         # SDK errors are redacted. Do not log credential-bearing objects or traceback locals.
@@ -238,6 +238,6 @@ def main(argv: list[str] | None = None) -> int:
         secret = os.environ.get(KEY_ENV)
         if secret:
             message = message.replace(secret, "<redacted>")
-        print(f"启动或运行失败：{message}", file=sys.stderr)
+        print(f"Startup or runtime failed: {message}", file=sys.stderr)
         return 1
 

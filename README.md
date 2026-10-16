@@ -1,51 +1,121 @@
 # Gaming
 
-AltruAgent 双游戏 self-hosted agent：宝可梦 VGC 双打选秀 + 红警 OpenRA。策略在本机计算，不需要 OpenAI 或其他模型 API key。
+A self-hosted AltruAgent contestant for **Red Alert (OpenRA)** and **Pokemon VGC Doubles Draft**. All strategy decisions run locally; no OpenAI or other model API key is required.
 
-## 当前策略
+## What it does
 
-- 红警：默认 `eco_guard` / `replay_map_guard_v5`。继承坦克预算与地图适配，修复撤退重新接战、防空阻塞地面部队指令、集结点落水，以及扩矿车沿旧路线驶向新发现威胁的问题。保留 `balanced` 作为可选实验基线。
-- 宝可梦：选秀、六选四、双打联合动作搜索、状态/伤害近似模拟与合法动作回退。
-- 统一 agent：自动分流两种游戏，使用每席位独立策略状态，运行组件负责认证、MCP、租约、重连与工作进程。
-- 监控：己方可见状态、拟提交动作、执行回执和正式赛果写入本地；确认失败的局进入复盘清单。不使用隐藏信息或另一席位的观测。
+- **Red Alert:** tank-led production, protected harvesting, map-aware ground routes, conservative engagement checks, separate anti-air control, and siege support against known defenses. The deployment default is `eco_guard` / `armor_economy_v6`; `balanced` remains an optional experimental baseline.
+- **Pokemon:** draft selection, four-of-six team selection, joint doubles action search, approximate battle simulation, and legal-action fallbacks.
+- **Runtime:** one listener routes both supported games to isolated per-seat workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes.
+- **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
 
-## 运行
+Only information available to the assigned seat is used. Strategy state and observations are not shared between opposing seats.
 
-Python 3.11+；保持网络连接。同一 Official Agent Key 只运行一个监听器。
+## Run from source
+
+Use Python 3.11 or later and keep the machine connected to the internet.
 
 ```bash
+git clone https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
+cd UCLA-AI-Agent-Tournament
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python exe_entry.py --self-test
+.venv/bin/python exe_entry.py --check
 .venv/bin/python exe_entry.py
 ```
 
-按隐藏输入提示粘贴比赛平台的 Official Agent Key，不是 GitHub token。密钥不作为命令行参数，也不写入仓库。默认同时接测试赛和正式赛；使用 `--match` 或 `--tournament` 可限定范围。参赛报名和 Testing 房间创建仍需在平台完成。
+Paste the platform's **Official Agent Key** when prompted. Input is hidden. This is a platform credential, not a GitHub token or model API key. Interactive entry is not saved to disk.
 
-可复制 `.env.example` 为未跟踪的 `.env` 使用自己的配置。不要提交 `.env`、密钥、对局日志或包含私人数据的回放。
+Run only **one listener per Official Agent Key**. The default accepts both testing and tournament assignments for both supported games.
 
-## 检查与实验
+| Command option | Behavior |
+| --- | --- |
+| `--self-test` | Check both game policies and spawned worker imports offline; no key required. |
+| `--check` | Check authentication and policy loading without accepting matches. |
+| `--match` | Accept testing assignments only. |
+| `--tournament` | Accept tournament assignments only. |
+| `--key-file /path/to/key.txt` | Read the key from a plain-text file. |
+| `--no-prompt` | Disable interactive key entry for unattended operation. |
+| `--decide state.json` | Produce an action from an offline MCP state snapshot. |
+| `--jsonl` | Read offline state snapshots and return one action per line. |
+
+For unattended use, set `ALTRUAGENT_OFFICIAL_AGENT_KEY` in the environment, or copy `.env.example` to an untracked `.env` and replace the example value. Restrict credential-file permissions, for example with `chmod 600 .env`. Do not put keys in command-line arguments, commits, screenshots, or match logs.
+
+## Platform setup and tournament entry
+
+Follow [docs/PLATFORM.md](docs/PLATFORM.md) for the full setup and official-tournament workflow. On the [AltruAgent dashboard](https://platform.altruagent-game.com/tournament/dashboard), complete event registration, select **Self Hosted** under **Agent Configuration**, record this public repository URL, and obtain the Official Agent Key. Start the listener using the command above.
+
+For a practice match, use the platform's **Testing** page, choose Red Alert or Pokemon VGC Doubles Draft, and select **Mine (self-hosted)** for your seat. Create the match and leave the listener running while the platform assigns the seat.
+
+For an official event, open **Dashboard → Tournaments**, choose a supported game, and click **Register my agent**. Keep Self Hosted selected and run the listener with either its default options or `--tournament`. Starting the program does not register an entry or create a match. This repository does not support Werewolf.
+
+This repository uses the self-hosted workflow: the platform dispatches assignments to the running process. The repository URL records the source; it does not upload or execute Python on the platform. Oracle Hosted accepts a separate Markdown agent and is not the deployment path for this code. A GitHub push alone does not update the machine running the agent. Update that checkout before starting new workers; a worker already playing a match keeps its loaded policy. Avoid stopping a live match to deploy an update.
+
+See the [official platform guide](https://api.altruagent-game.com/skill.md) for current registration and agent-configuration requirements.
+
+## Analyze recorded matches
+
+Recording is enabled for new online workers by default. Red Alert samples are recorded approximately every five game seconds; Pokemon records decision observations. Logs contain selected seat-visible fields, proposed actions, execution verdicts, and independent terminal results.
+
+```bash
+.venv/bin/python -m match_monitor
+.venv/bin/python -m redalert_bot.review \
+  --root validation/match_monitor \
+  --root validation/redalert_selfplay \
+  --output validation/review/redalert.json
+```
+
+Copy the original machine's log directories to the analysis machine first, or provide other directories with repeated `--root` options. The review groups outcomes by map, policy source version, faction, seat, and duration, and reports observed low power, missing harvesters, idle production, and sampling gaps.
+
+- Private logs live under `validation/match_monitor/`; each seat has a timeline, latest snapshot, and separate final-result file. Timelines are capped at 8 MiB per seat; old match files are not automatically deleted.
+- Missing results, contradictory terminal results, and server failures do not count as wins or losses. An unaccepted or `pending` order is not proof of execution.
+- The review reads recorded JSON/JSONL, not MP4 files or OpenRA binary replays. Empty input produces no invented match results.
+- Diagnostics identify events to investigate; they do not establish why a match was lost. The review does not change policy parameters or provide background analysis after the listener stops.
+- Set `COMPETITION_MONITOR_DISABLED=1` or `POKEMON_BOT_NO_CACHE=1` to disable new recordings. Keep private logs and replay exports out of GitHub.
+
+## Validation and experiments
 
 ```bash
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m pytest tests -q
-.venv/bin/python -m match_monitor
-.venv/bin/python -m redalert_bot.selfplay
-.venv/bin/python -m redalert_bot.review --root validation/match_monitor --root validation/redalert_selfplay --output validation/review/redalert.json
+.venv/bin/python exe_entry.py --self-test
 ```
 
-独立 Showdown 机制检查需要 Node.js，以及 `npm install` 安装锁定在 `package.json` 的测试引擎。自我对战默认关闭；其配置是 `validation/redalert_selfplay/settings.json`，仅对服务器确认两个席位均归本账号的 Testing 红警局启用。
+The Red Alert tests exercise production budgets, harvesting, map geometry, combat commands, monitoring, and replay analysis using controlled scenarios. These checks detect behavior errors; they do not measure tournament win rate. Routing and combat estimates are heuristics, not the full OpenRA engine.
 
-`redalert_bot.review` 离线读取现有两种日志，按地图、源码版本、阵营、席位、时长分组统计，并给出低电力、无矿车、生产空闲等时间线线索。缺失结果、服务器失败与互相矛盾的终局不计胜负；采样缺口单独报告。它不读取视频格式，也不会自动修改比赛策略。请将原机器的 `validation/match_monitor/` 或 `validation/redalert_selfplay/` 复制到本机后分析；这些私有记录不提交到 GitHub。
+The current production comparison is available in [reports/redalert_armor_economy_v6.json](reports/redalert_armor_economy_v6.json). In the 600-second low-income fixture, completed Allied tanks increased from 4 to 6 and Soviet tanks from 3 to 5, while economic expansion was delayed. It uses fixed income without combat and must not be read as a live win-rate result. Earlier revisions and their evaluation limits are summarized in [docs/HISTORY.md](docs/HISTORY.md).
 
-v5 的修复由离线回归场景验证，尚未做真实对局胜率评估。历史 v4 固定收入生产模拟仅验证坦克预算方向。地图路径、对阵权重和扩矿回本窗口都是近似规则；监控是本地记录，不等于后台持续复盘或消息推送。
+Optional self-play is **disabled** in `validation/redalert_selfplay/settings.json`. When explicitly enabled, it applies only to Red Alert Testing matches for which official assignments confirm that both seats belong to this account. It compares `balanced` and `eco_guard`, alternates seats on successive compatible matches, and does not share either seat's observations. Read existing experiment summaries with:
 
-本次验证：363 项 Python 测试通过，1 项需额外启用 Showdown 的可选测试跳过；双游戏及运行器自检通过。7 个针对缺陷的相同回归场景在原 v4 失败、在 v5 通过；这是行为正确性对照，不是胜率对照。
+```bash
+.venv/bin/python -m redalert_bot.selfplay
+```
 
-目录：`pokemon_bot/`、`redalert_bot/` 为策略，`competition_agent.py` 为路由，`altruagent/` 为运行组件，`match_monitor.py` 为监控，`tests/` 为回归与离线实验。更详细的运行说明和历史边界见 [README_CN.md](README_CN.md)。最新生产对照见 [坦克预算报告](reports/redalert_armor_guard_v4.json)。
+Optional Pokemon mechanism checks use the Pokemon Showdown version pinned in `package.json`; install it with `npm install`. Example offline benchmark:
 
-## 来源与分发边界
+```bash
+PYTHON=.venv/bin/python node tests/showdown_benchmark.js 12 100
+```
 
-官方运行组件来源及本地扩展见 [SDK_PROVENANCE.txt](SDK_PROVENANCE.txt)。宝可梦静态数据来自 Pokémon Showdown；来源和已附第三方许可见 `licenses/`。官方比赛协议：[AltruAgent](https://api.altruagent-game.com/skill.md)。
+These small synthetic benchmarks do not represent the full platform draft or tournament field.
 
-此仓库不包含真实密钥、历史比赛私有日志、原机器缓存、虚拟环境或预编译可执行文件。`build.sh` 是可选打包脚本；本次源码修订未重新验证或发布 Linux 二进制。
+## Project layout
+
+| Path | Purpose |
+| --- | --- |
+| `redalert_bot/` | Red Alert economy, combat, map handling, self-play, and review. |
+| `pokemon_bot/` | Pokemon draft, team selection, battle search, and static data. |
+| `competition_agent.py` | Game routing and per-seat policy isolation. |
+| `launcher.py`, `exe_entry.py` | CLI configuration and executable entry point. |
+| `altruagent/` | Bundled official runtime and documented local callbacks. |
+| `match_monitor.py` | Passive local recording and read-only summaries. |
+| `tests/` | Regression scenarios and offline benchmarks. |
+
+## Packaging and provenance
+
+`bash build.sh` builds and self-tests a single executable in `dist/PokemonChampion`. Despite the historical filename, the current build includes both game policies. The target architecture and system-library requirements depend on the build machine. The repository contains no prebuilt binary; previously downloaded binaries do not receive source updates automatically.
+
+The official runtime source and local extensions are documented in [SDK_PROVENANCE.txt](SDK_PROVENANCE.txt). Pokemon static data comes from Pokemon Showdown; provenance and included third-party licenses are under [licenses/](licenses/).
+
+Credentials, private match histories, original-machine caches, virtual environments, and unverified legacy binaries are excluded from this repository.
