@@ -477,3 +477,126 @@ def test_contradictory_raw_domains_are_rejected_instead_of_guessed():
     }]
     with pytest.raises(ValueError, match="no complete listed action"):
         choose(create_agent(), raw)
+
+
+def objective_state(*, camp=1, enemy_x=6500, hp=1000, target='hero'):
+    sign = 1 if camp == 1 else -1
+    seat = 0 if camp == 1 else 5
+    tower = hero(300, 3-camp, x=20000*sign, type='ACTOR_TOWER')
+    raw = sample(camp=camp, hp=hp, structures=[tower],
+                 enemies=[hero(200, 3-camp, x=enemy_x*sign, visible=True)],
+                 macros=['macro_attack', 'macro_skill1', 'macro_advance', 'macro_retreat'])
+    raw['legal_actions']['actions'][0]['label'] = f'Attack nearest target (nearest: enemy {target}, 4000 away)'
+    raw['legal_actions']['actions'][1]['label'] = 'Cast skill 1 toward enemy hero (nearest: enemy hero, 6500 away)'
+    return raw
+
+
+@pytest.mark.parametrize('camp', [1, 2])
+@pytest.mark.parametrize('enemy_x', [6500, -4000])
+def test_distant_or_rear_hero_does_not_distract_from_building(camp, enemy_x):
+    raw = objective_state(camp=camp, enemy_x=enemy_x)
+    assert choose(create_agent(), raw)['macro'] == 'macro_advance'
+
+
+@pytest.mark.parametrize('camp', [1, 2])
+def test_short_skirmish_then_committed_push_for_healthy_team(camp):
+    raw, bot = objective_state(camp=camp, enemy_x=3000), create_agent()
+    assert choose(bot, raw)['macro'] == 'macro_skill1'
+    tick(raw, steps=13)
+    assert choose(bot, raw)['macro'] == 'macro_advance'
+    tick(raw, steps=5)
+    assert choose(bot, raw)['macro'] == 'macro_advance'
+
+
+def test_push_commit_never_overrides_low_health_escape():
+    raw, bot = objective_state(enemy_x=3000), create_agent()
+    choose(bot, raw)
+    tick(raw, steps=13)
+    assert choose(bot, raw)['macro'] == 'macro_advance'
+    tick(raw, hp=180)
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+
+
+def test_new_legal_tower_attack_interrupts_advance_commit():
+    raw, bot = objective_state(enemy_x=3000), create_agent()
+    choose(bot, raw)
+    tick(raw, steps=13)
+    assert choose(bot, raw)['macro'] == 'macro_advance'
+    raw['legal_actions']['actions'][0]['label'] = 'Attack enemy tower (3000 away)'
+    tick(raw)
+    assert choose(bot, raw)['macro'] == 'macro_attack'
+
+
+def test_structure_attack_survives_minor_damage_without_panic_retreat():
+    raw, bot = objective_state(hp=700, target='tower'), create_agent()
+    assert choose(bot, raw)['macro'] == 'macro_attack'
+    tick(raw, steps=5, hp=540)
+    assert choose(bot, raw)['macro'] == 'macro_attack'
+
+
+def test_major_burst_still_interrupts_siege():
+    raw, bot = objective_state(target='tower'), create_agent()
+    choose(bot, raw)
+    tick(raw, steps=5, hp=500)
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+
+
+@pytest.mark.parametrize('camp', [1, 2])
+def test_finishing_crystal_overrides_low_health_recovery(camp):
+    raw = objective_state(camp=camp, hp=200, target='crystal')
+    structure = raw['observation']['seats'][str(raw['seats'][0])]['summary']['structures'][0]
+    structure.update(type='ACTOR_CRYSTAL', hp=100)
+    assert choose(create_agent(), raw)['macro'] == 'macro_attack'
+
+
+def test_healthy_crystal_is_not_a_suicide_finish():
+    raw = objective_state(hp=200, target='crystal')
+    raw['observation']['seats']['0']['summary']['structures'][0]['type'] = 'ACTOR_CRYSTAL'
+    assert choose(create_agent(), raw)['macro'] == 'macro_retreat'
+
+
+@pytest.mark.parametrize('camp', [1, 2])
+@pytest.mark.parametrize('can_attack', [False, True])
+def test_threatened_home_crystal_interrupts_fountain_recovery(camp, can_attack):
+    seat = 0 if camp == 1 else 5
+    home = hero(300, camp, hp=300, x=15000, type='ACTOR_CRYSTAL')
+    enemy = hero(200, 3-camp, x=15000, visible=True)
+    macros = ['macro_advance', 'macro_retreat'] + (['macro_attack'] if can_attack else [])
+    raw = sample(camp=camp, hp=250, structures=[home], enemies=[enemy], macros=macros)
+    assert choose(create_agent(), raw) == {'seat': seat, 'macro': 'macro_attack' if can_attack else 'macro_advance'}
+
+
+def test_hidden_enemy_does_not_trigger_home_defense():
+    raw = sample(hp=250, structures=[hero(300, 1, hp=300, type='ACTOR_CRYSTAL')],
+                 enemies=[hero(200, 2, visible=False)],
+                 macros=['macro_attack', 'macro_retreat', 'macro_advance'])
+    assert choose(create_agent(), raw)['macro'] == 'macro_retreat'
+
+
+def test_fountain_recovery_rejoins_at_42_percent_not_68():
+    raw, bot = sample(hp=200, structures=[hero(300, 1, type='ACTOR_TOWER_SPRING')]), create_agent()
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+    tick(raw, steps=30, hp=430)
+    assert choose(bot, raw)['macro'] == 'macro_advance'
+
+
+def test_outside_fountain_recovery_does_not_end_at_42_percent():
+    raw, bot = sample(hp=200, structures=[hero(300, 1, x=20000, type='ACTOR_TOWER_SPRING')]), create_agent()
+    choose(bot, raw)
+    tick(raw, steps=30, hp=430)
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+    tick(raw, steps=30, hp=560)
+    assert choose(bot, raw)['macro'] == 'macro_advance'
+
+
+def test_destroyed_building_does_not_invent_a_push_objective():
+    raw = objective_state()
+    raw['observation']['seats']['0']['summary']['structures'][0]['hp'] = 0
+    assert choose(create_agent(), raw)['macro'] == 'macro_skill1'
+
+
+def test_minion_wave_is_cleared_when_it_is_the_legal_attack_target():
+    raw = objective_state(target='minion')
+    raw['legal_actions']['actions'] = [a for a in raw['legal_actions']['actions']
+                                     if a['input']['action']['macro'] != 'macro_skill1']
+    assert choose(create_agent(), raw)['macro'] == 'macro_attack'
