@@ -1,68 +1,44 @@
-# Honor of Kings 1v1 agent
+# Honor of Kings 5v5 on AltruAgent
 
-`hok_bot` is a standalone, objective-focused rule agent for Tencent's official **HoK1v1 research environment**. It is separate from this repository's AltruAgent listener. As checked on October 16, 2026, the [AltruAgent event page](https://altruagent-game.com/) marks Honor of Kings as **not playable on the tournament platform yet**. Its announced 5v5 mode is not the protocol implemented here.
+The platform now documents `honor_of_kings_5v5`: **one agent controls five heroes**, with one opponent controlling the other five. This repository's `hok_platform` policy implements that interface without an LLM or model API key. The separate Tencent 1v1 runner remains in `hok_bot`; its setup is archived in [HOK_TENCENT_1V1.md](HOK_TENCENT_1V1.md).
 
-The latest `hok_objective_v2` module is on the development branch `improve/werewolf-defenses-v8`, based on the original v7 integration. Check out that branch before following the commands below; a clone of the unchanged `main` branch does not contain it. The v2 policy prioritizes retreat from an unfavorable nearby enemy before farming and only counts healthy local allied minions as support. These corrections passed adversarial fixtures, not a live Gamecore tournament.
+The current [official HOK guide](https://api.altruagent-game.com/skill/hok), retrieved October 16, 2026, supersedes older availability banners. No live match was run for this release: the available browser session had expired and this workspace had no Official Agent Key. Local checks establish protocol and scenario behavior, not tournament win rate.
 
-The policy targets last hits, safe wave clearing, protected tower/crystal pressure, favorable ranged trades, and low-health recovery. It checks the official legal masks before emitting an action and preserves recall channels until completion or interruption. Current hero profiles are **112 (Lu Ban No.7)** and **133 (Di Renjie)**; the runner restricts the controlled hero to those profiles.
+## Start a test
 
-## Offline check
-
-From the repository root, using the normal project Python:
+Use `improve/hok-team-v11`. In an existing checkout:
 
 ```bash
-python -m hok_bot --smoke
-python -m pytest tests/test_hok_agent.py -q
+git fetch origin
+git switch improve/hok-team-v11
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python exe_entry.py --self-test
+.venv/bin/python exe_entry.py --check
+.venv/bin/python exe_entry.py --match
 ```
 
-The smoke input is synthetic. Passing it proves neither engine connectivity nor competitive strength. The rule module has no Tencent SDK dependency; SDK imports occur only when starting a real engine session.
+If needed, create the environment with `python3 -m venv .venv` first. Enter the platform's Official Agent Key at the hidden prompt. No OpenAI key, local game installation or Tencent gamecore license is needed for this platform integration.
 
-## Real engine prerequisites
+On **Dashboard → Testing**, select **Honor of Kings**, use **Mine (self-hosted)** for your team and create/join a test. Keep one listener per key. This branch changes the assignment filter and runtime: an older listener must be restarted after its active matches finish. Updating files alone does not refresh that listener's loaded filter. Rebuild an old executable before use.
 
-1. Obtain the gamecore and its license through Tencent's [official application page](https://aiarena.tencent.com/aiarena/en/open-gamecore), following the [pinned SDK instructions](https://github.com/tencent-ailab/hok_env/tree/c6e0029a5e4b6e037a049804fdbe23ac74484311). The license and proprietary engine are not included here.
-2. Run the gamecore on Windows 10/11, or use the upstream Linux/Wine instructions. The pinned Python SDK bundles **x86_64 Linux** native extensions; use that architecture, including x86_64 WSL2.
-3. Create a **separate CPython 3.8 environment**, the verified installation path for this runner. Do not install the SDK into the AltruAgent Python 3.11+ environment. The native extension has an older Python ABI. Although the runner also accepts Python 3.9 and upstream bundles that ABI, the pinned SDK's `requires-python <=3.9` metadata rejects ordinary 3.9.x patch releases greater than 3.9.0. Use Python 3.8 for the commands below.
-4. Ensure the gamecore can reach the AI server's two consecutive TCP ports (default 35150 and 35151), and that the AI server can reach gamecore port 23432. Loopback addresses below apply only when both processes can actually reach one another through loopback. WSL, containers, and separate hosts usually require explicit reachable addresses.
+For official games, register in the applicable HOK tournament and run `exe_entry.py --tournament`, or run without flags to accept both testing and official assignments. A push, connection check or test match does not register a tournament entry. Follow the event's current version-lock instructions.
 
-For example, install the pinned SDK outside this repository:
+## Decisions
 
-```bash
-python3.8 -m venv /path/to/hok-venv
-git clone https://github.com/tencent-ailab/hok_env.git /path/to/hok-sdk
-git -C /path/to/hok-sdk checkout c6e0029a5e4b6e037a049804fdbe23ac74484311
-/path/to/hok-venv/bin/python -m pip install -e /path/to/hok-sdk/hok_env
-```
+- Prioritize a listed tower/crystal basic attack. Offered attacks are already range-checked by the platform; a guessed skill range must not discard them.
+- Advance toward objectives when no useful attack exists. Do not retreat solely because a tower is nearby or the summary omits minions.
+- Retreat on low health, fresh substantial damage, or a wounded local disadvantage. A health/level proxy considers nearby healthy teammates rather than counting every hero equally.
+- Keep recovery/damage history per hero and reset it on death, respawn, changed team/session, or timeline rewind. Separate recovery thresholds reduce oscillation. Critical own-crystal defense can interrupt ordinary recovery when an attack is legal and the local estimate permits it.
+- Cast currently listed skills only with a parsed nearby enemy-hero target. Reserve the third skill for multiple nearby visible enemies, a weakened enemy, or immediate combat pressure. Unknown hero-specific effects remain a limitation.
+- Replace unavailable skills with available attacks/advance; prioritize urgent retreats and otherwise rotate fairly across heroes. Do not overwrite unchanged standing orders.
+- Ignore hidden enemies even if stale coordinates remain. No spectator data, messages or external network calls enter the policy.
 
-Start the official gamecore server from its installed `gamecore` directory on Windows:
+Macros choose the **nearest target**. This version cannot select arbitrary targets, lanes, jungle routes, heroes, equipment or builds through undocumented raw fields. It does not claim precise focus fire or a complete mobile-game strategy. Raw listed actions are only a protocol fallback; no button is guessed to be heal or recall. Thresholds are development heuristics requiring live calibration.
 
-```powershell
-.\gamecore-server.exe server --server-address :23432
-```
+## Runtime and records
 
-Then, from this repository's root on the AI host:
+Macros remain standing orders and are re-evaluated by the server every 0.2-second game step. Real-time mode sends changed orders consecutively, pausing 0.6 seconds before re-reading only when no updates are needed. Lockstep sends an action for every pending hero even if its standing macro is unchanged. A rejection is not treated as confirmation; repeated invalid actions at one version are suppressed.
 
-```bash
-/path/to/hok-venv/bin/python -m hok_bot \
-  --gamecore 127.0.0.1:23432 \
-  --ai-server 127.0.0.1 \
-  --port 35150 \
-  --hero 133 --enemy-hero 133 --seat 0
-```
+Bounded, sparse records under `validation/match_monitor/` contain team-visible health, deaths, positions, visible enemies, structures, orders, verdicts and independent final results. Credentials and hidden coordinates are excluded. HOK MCP returns `+1`, `-1`, `0` mean win, loss, draw; server failures are not losses. Keep local records outside GitHub.
 
-`--seat 0` controls the first camp; `--seat 1` controls the second. The other seat uses Tencent's built-in common AI. `GAMECORE_SERVER_ADDR` and `AI_SERVER_ADDR` provide the corresponding defaults. `--max-steps` defaults to 12000 decision steps.
-
-The final JSON distinguishes `engine_terminated` from `step_limit_truncated`. Reaching the step limit exits with status 2. Engine termination is **not a win declaration**: the runner does not yet parse authoritative winners. Retain the engine's terminal result and statistics before computing any win rate.
-
-## Contract and evidence
-
-The pinned SDK supplies `player_id`, `req_pb`, and a 172-entry legal-action vector. Actions have six dimensions with sizes `(12, 16, 16, 16, 16, 8)`. Target legality depends on the selected button. Actor target slots, camp-relative movement, and visibility indexing follow the pinned official implementation. Invalid or incompatible inputs raise an explicit protocol error instead of guessing another game interface.
-
-The implementation was reviewed against upstream source and the Python 3.8 native interface. Its action adapter was checked against **136,535 recorded actions** from **200 official HoKOff turret-destruction trajectories**, plus constructed actions across their legal masks. These tests validate encoding; the recordings' 725-feature observations are incompatible with the current SDK's 453-feature encoder and were not fed into this policy.
-
-See [HOK_RESEARCH.md](HOK_RESEARCH.md) and [hok_dataset_review.json](../reports/hok_dataset_review.json) for source links, hashes, statistics, and pretrained-model compatibility findings. No gamecore match was run for this release, and no competitive win rate is claimed. Live engine validation across both camps and multiple opponents is required before treating it as a competitive agent.
-
-## Replay-driven iteration
-
-The licensed gamecore writes `.abs` replays and result/statistic files. Use Tencent's [ABS replay viewer](https://aiarena.tencent.com/hok/doc/quickstart/evaluation.html) to inspect them. Retain the engine version, hero/summoner configuration, camp, opponent, authoritative result, and source version together. Inspect tower deaths, missed last hits, abandoned objective windows, and time spent away from lane before changing priorities.
-
-Keep gamecore licenses, private replay files, and downloaded models outside the public repository. The current runner does not upload agents to AltruAgent, register a tournament entry, or train a neural policy.
+Review actual tower/crystal HP changes, recovery time, stale skill orders and whether every hero receives updates. Compare both camps and multiple real opponents before claiming strength. [HOK_PLATFORM_RESEARCH.md](HOK_PLATFORM_RESEARCH.md) records sources and limits; [hok_platform_v11.json](../reports/hok_platform_v11.json) records validation and source hashes. Earlier [Tencent 1v1 research](HOK_RESEARCH.md) does not measure this policy's 5v5 performance.

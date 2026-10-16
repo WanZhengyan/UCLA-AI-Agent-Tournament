@@ -14,6 +14,48 @@ import time
 
 ROOT = Path(__file__).resolve().parent / 'validation' / 'match_monitor'
 LIMIT = 8 * 1024 * 1024
+HOK = 'honor_of_kings_5v5'
+HOK_MACROS = frozenset({'macro_advance', 'macro_retreat', 'macro_attack',
+                       'macro_skill1', 'macro_skill2', 'macro_skill3'})
+HOK_PHASES = frozenset({'waiting_for_players', 'queued', 'starting', 'moving', 'finished', 'failed'})
+HOK_ENDS = frozenset({'crystal_destroyed', 'step_limit', 'time_limit', 'resignation',
+                     'start_failed', 'engine_failed', 'match_stalled', 'cancelled'})
+HOK_NO_RESULT = frozenset({'start_failed', 'engine_failed', 'match_stalled', 'cancelled'})
+HOK_REASONS = frozenset({'missing_observation', 'dead', 'recover', 'damage_spike', 'local_disadvantage',
+                         'structure_pressure', 'combat_skill', 'attack_available', 'objective_advance',
+                         'no_useful_macro', 'standing_orders_current'})
+
+
+def numeric_fields(value, names):
+    """HoK telemetry never needs arbitrary strings, including in numeric fields."""
+    if not isinstance(value, dict):
+        return {}
+    return {key: value[key] for key in names if type(value.get(key)) in (int, float)
+            and abs(value[key]) <= 10 ** 15 and math.isfinite(value[key])}
+
+
+def hok_seat(value):
+    if type(value) is int and 0 <= value < 10:
+        return value
+    if isinstance(value, str) and len(value) == 1 and value in '0123456789':
+        return int(value)
+    return None
+
+
+def hok_order(action):
+    """Keep only a known macro and its seat; never persist raw action templates."""
+    if isinstance(action, str):
+        seat, separator, macro = action.partition(':')
+        payload = {'seat': hok_seat(seat[1:]) if seat.startswith('s') else None, 'macro': macro}
+        if not separator:
+            return {}
+    elif isinstance(action, dict):
+        payload = action
+    else:
+        action_id = getattr(action, 'action_id', None)
+        return hok_order(action_id) if isinstance(action_id, str) else {}
+    seat, macro = hok_seat(payload.get('seat')), payload.get('macro')
+    return {'seat': seat, 'macro': macro} if seat is not None and isinstance(macro, str) and macro in HOK_MACROS else {}
 
 
 def fields(value, names):
@@ -40,7 +82,7 @@ def atomic_json(path, payload):
 
 
 def strategy_hash(game):
-    folder = 'redalert_bot' if game == 'red_alert' else 'pokemon_bot'
+    folder = 'hok_platform' if game == HOK else 'redalert_bot' if game == 'red_alert' else 'pokemon_bot'
     digest = hashlib.sha256()
     for path in sorted((Path(__file__).resolve().parent / folder).glob('*.py')):
         digest.update(path.name.encode())
@@ -52,7 +94,7 @@ def make_monitor(context, policy=None):
     sid = getattr(context, 'session_id', '')
     # Werewolf observations carry private roles and investigations. Until a
     # dedicated redacted schema exists, never send them to Pokemon telemetry.
-    if (getattr(context, 'game_type', None) not in {'red_alert', 'pokemon_vgc_doubles_draft'}
+    if (getattr(context, 'game_type', None) not in {'red_alert', 'pokemon_vgc_doubles_draft', HOK}
             or not sid or sid.startswith(('offline', 'test', 'selftest'))
             or os.environ.get('COMPETITION_MONITOR_DISABLED') == '1'
             or os.environ.get('POKEMON_BOT_NO_CACHE') == '1'):
@@ -73,8 +115,9 @@ class MatchMonitor:
         self.meta = dict(schema=1, game=self.game, session_id=self.sid,
                          seat=getattr(context, 'seat_position', None),
                          competition='tournament' if getattr(context, 'tournament_id', None) else 'testing',
-                         profile=getattr(policy, 'profile', 'unknown' if self.game == 'red_alert' else 'pokemon_current'),
-                         strategy_version=getattr(policy, 'strategy_version', 'unknown' if self.game == 'red_alert' else 'pokemon_current'),
+                         profile=getattr(policy, 'profile', 'unknown' if self.game in {'red_alert', HOK} else 'pokemon_current'),
+                         strategy_version=getattr(policy, 'strategy_version', 'hok_team_v1' if self.game == HOK else
+                                                  'unknown' if self.game == 'red_alert' else 'pokemon_current'),
                          strategy_hash=strategy_hash(self.game), worker_pid=os.getpid(),
                          started_at=time.time())
         self.commands, self.immediate, self.engine = Counter(), Counter(), Counter()
@@ -82,6 +125,7 @@ class MatchMonitor:
         self.dropped_order_batches = 0
         self.seen, self.window = set(), deque()
         self.last_sample = None
+        self.last_hok_wall = None
         self.last_signature = None
         self.snapshot = None
         self.decision_count = 0
@@ -188,6 +232,73 @@ class MatchMonitor:
                     own=board('active_pokemon'), opponent=board('opponent_active_pokemon'),
                     proposed_action=clean, diagnostics=diagnostics)
 
+    def hok_snapshot(self, raw, state, action, policy):
+        """Bounded team view from this agent's five grants, never spectator state."""
+        camp = raw.get('camp')
+        camp = camp if type(camp) is int and camp in (1, 2) else None
+        owned = raw.get('seats')
+        owned = sorted({hok_seat(s) for s in owned[:10]} - {None}) if isinstance(owned, list) else []
+        if camp is not None:
+            owned = [s for s in owned if (s < 5) == (camp == 1)]
+        else:
+            owned = []  # Without a declared camp, do not guess which views are ours.
+        owned = owned[:5]
+        observation = raw.get('observation')
+        seat_views = observation.get('seats') if isinstance(observation, dict) else None
+        seat_views = seat_views if isinstance(seat_views, dict) else {}
+        own, enemies, structures = [], {}, {}
+        hero_fields = ('hero_id', 'runtime_id', 'camp', 'hp', 'max_hp', 'level', 'deaths',
+                       'kills', 'x', 'z', 'revive_time')
+        for seat in owned:
+            entry = seat_views.get(str(seat), seat_views.get(seat))
+            summary = entry.get('summary') if isinstance(entry, dict) else None
+            if not isinstance(summary, dict):
+                continue
+            own.append(dict(seat=seat, **numeric_fields(summary.get('my_hero'), hero_fields)))
+            contacts = summary.get('other_heroes')
+            for enemy in contacts[:32] if isinstance(contacts, list) else []:
+                if not isinstance(enemy, dict) or enemy.get('visible') is not True or camp is None \
+                        or type(enemy.get('camp')) is not int or enemy['camp'] != 3 - camp:
+                    continue
+                clean = numeric_fields(enemy, hero_fields)
+                key = ('id', clean['runtime_id']) if 'runtime_id' in clean else (
+                    'position', clean.get('hero_id'), clean.get('x'), clean.get('z'))
+                if key in enemies or len(enemies) < 5:
+                    enemies.setdefault(key, clean)
+            buildings = summary.get('structures')
+            for building in buildings[:64] if isinstance(buildings, list) else []:
+                if not isinstance(building, dict) or building.get('visible') is False:
+                    continue
+                kind = building.get('type')
+                if not isinstance(kind, str) or kind not in {'ACTOR_TOWER', 'ACTOR_CRYSTAL', 'ACTOR_TOWER_SPRING'}:
+                    continue
+                clean = dict(type=kind, **numeric_fields(building, ('runtime_id', 'camp', 'hp', 'max_hp', 'x', 'z')))
+                key = (clean.get('camp'), kind, clean.get('runtime_id'), clean.get('x'), clean.get('z'))
+                if key in structures or len(structures) < 32:
+                    structures.setdefault(key, clean)
+        diagnostics = getattr(policy, 'last_diagnostics', {})
+        cleaned = numeric_fields(diagnostics, ('seconds', 'seat', 'pending', 'selected_seat', 'alive_heroes',
+                                              'retreating_heroes', 'visible_enemies', 'orders', 'refused'))
+        if isinstance(diagnostics, dict):
+            if type(diagnostics.get('fallback')) is bool:
+                cleaned['fallback'] = diagnostics['fallback']
+            if isinstance(diagnostics.get('phase'), str) and diagnostics['phase'] in HOK_PHASES:
+                cleaned['phase'] = diagnostics['phase']
+            if isinstance(diagnostics.get('macro'), str) and diagnostics['macro'] in HOK_MACROS:
+                cleaned['macro'] = diagnostics['macro']
+            if isinstance(diagnostics.get('reason'), str) and diagnostics['reason'] in HOK_REASONS:
+                cleaned['reason'] = diagnostics['reason']
+        phase = raw.get('phase')
+        simultaneous = raw.get('simultaneous')
+        standing = simultaneous.get('standing_orders') if isinstance(simultaneous, dict) else None
+        standing = standing if isinstance(standing, dict) else {}
+        orders = {str(seat): standing[str(seat)] for seat in owned
+                  if isinstance(standing.get(str(seat)), str) and standing[str(seat)] in HOK_MACROS}
+        return dict(phase=phase if isinstance(phase, str) and phase in HOK_PHASES else None,
+                    **numeric_fields(raw, ('state_version', 'seconds_left', 'max_steps')),
+                    camp=camp, own=own, visible_enemies=list(enemies.values()), structures=list(structures.values()),
+                    standing_orders=orders, proposed_action=hok_order(action), diagnostics=cleaned)
+
     def flags(self, snapshot):
         flags = []
         if self.game == 'red_alert':
@@ -227,6 +338,26 @@ class MatchMonitor:
                 return
             snapshot = self.red_snapshot(raw, context, policy)
             self.last_sample = now
+        elif self.game == HOK:
+            order = hok_order(action)
+            if order:
+                self.commands[order['macro']] += 1
+                self.dropped_order_batches += len(self.pending_orders) == self.pending_orders.maxlen
+                self.pending_orders.append(dict(**numeric_fields(raw, ('state_version',)), orders=[order]))
+            diagnostics = getattr(policy, 'last_diagnostics', {})
+            self.fallbacks += isinstance(diagnostics, dict) and diagnostics.get('fallback') is True
+            version = numeric_fields(raw, ('state_version',)).get('state_version')
+            # Ten nominal 0.2-second steps; repeated per-hero calls do not grow the log.
+            # Missing versions use elapsed wall time, never one row per decision.
+            wall = time.monotonic()
+            if version is not None and self.last_sample is not None and 0 <= version - self.last_sample < 10:
+                return
+            if version is None and self.last_hok_wall is not None and wall - self.last_hok_wall < 2:
+                return
+            snapshot = self.hok_snapshot(raw, state, action, policy)
+            if version is not None:
+                self.last_sample = version
+            self.last_hok_wall = wall
         else:
             snapshot = self.pokemon_snapshot(raw, state, action, policy)
             signature = json.dumps(snapshot, sort_keys=True)
@@ -241,7 +372,7 @@ class MatchMonitor:
         flags = self.flags(snapshot)
         row = dict(kind='sample', **self.meta, updated_at=time.time(),
                    snapshot=snapshot, flags=flags, counters=self.counters())
-        if self.game == 'red_alert':
+        if self.game in {'red_alert', HOK}:
             row['proposed_order_batches'] = list(self.pending_orders)
             self.pending_orders.clear()
         self.save(row)
@@ -270,6 +401,8 @@ class MatchMonitor:
                 if self.game == 'red_alert':
                     self.read_verdicts(raw)
                     snapshot = self.red_snapshot(raw, context, policy)
+                elif self.game == HOK:
+                    snapshot = self.hok_snapshot(raw, state, {}, policy)
                 else:
                     snapshot = self.pokemon_snapshot(raw, state, {}, policy)
                 exact = raw.get('is_terminal') is True
@@ -287,6 +420,40 @@ class MatchMonitor:
                    exact_final_observation=exact, snapshot_parse_error=parse_error,
                    flags=flags, counters=self.counters(), pending_order_batches=list(self.pending_orders),
                    review_needed=outcome in {'lost', 'timed out', 'resigned'})
+        if self.game == HOK:
+            # This game's documented native returns are +1/-1/0, not 1/0/0.5.
+            # Preserve the exact native score, but interpret a native zero as draw.
+            reason = row['termination_reason']
+            row['termination_reason'] = reason if isinstance(reason, str) and reason in HOK_ENDS else None
+            result_outcome = result.get('outcome')
+            result_outcome = result_outcome if isinstance(result_outcome, dict) else {}
+            winner = result_outcome.get('winner_camp')
+            winner = winner if type(winner) is int and winner in (1, 2) else None
+            clean_outcome = {'winner_camp': winner, 'score': {}}
+            scores = result_outcome.get('score')
+            if isinstance(scores, dict):
+                for camp in (1, 2):
+                    clean_outcome['score'][str(camp)] = numeric_fields(
+                        scores.get(str(camp), scores.get(camp)), ('enemy_structure_damage', 'kills'))
+            row['hok_outcome'] = clean_outcome
+            score = row['score']
+            score = score if type(score) in (int, float) and math.isfinite(score) and score in (-1, 0, .5, 1) else None
+            row['score'] = score
+            row['server_failed'] = row['server_failed'] or row['termination_reason'] in HOK_NO_RESULT
+            winners = result.get('winner_agent_ids')
+            own_camp = snapshot.get('camp') if isinstance(snapshot, dict) else None
+            if row['server_failed']:
+                outcome = 'no result'
+            elif isinstance(winners, list) and winners:
+                outcome = 'won' if self.agent_id in winners else 'lost'
+            elif winner is not None and own_camp in (1, 2):
+                outcome = 'won' if winner == own_camp else 'lost'
+            elif score is not None:
+                outcome = 'won' if score > .5 else 'lost' if score < 0 else 'drew'
+            else:
+                outcome = 'unknown'
+            row['outcome'] = outcome
+            row['review_needed'] = outcome == 'lost'
         self.save(row, terminal=True)
 
 

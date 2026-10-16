@@ -4,6 +4,8 @@ Research date: 2026-10-16. Scope: the UCLA AltruAgent AI Agent Gaming Tournament
 
 ## What was established
 
+**Later HOK update, October 16:** the platform has published its 5v5 macro protocol, and a custom same-event policy was found in `Astro-wen/ucla-agent-tournament`. `jerryhuang-math/hok-agent` is now nonempty but implements Werewolf. [HOK_PLATFORM_RESEARCH.md](HOK_PLATFORM_RESEARCH.md) supersedes the earlier HOK availability/search conclusions below; the other game findings remain historical snapshots.
+
 Public repositories with explicit event-entry descriptions and custom policies exist for Werewolf, Pokemon, and Red Alert. These are **declared entries or platform implementations**, not independently verified registrations, final submitted commits, or opponents assigned to us. An event-labelled Honor of Kings repository exists but was empty when inspected. No competitive Honor of Kings policy for this event was identified.
 
 The findings below describe public source code, not measured head-to-head results. Repository snapshots were read without executing their code or contacting their agents. No opponent code, weights, logs, or datasets were copied into this repository. The inspected candidate repositories did not declare a license in GitHub metadata, so implementation here is independent. Their README performance claims were not independently reproduced.

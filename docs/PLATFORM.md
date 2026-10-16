@@ -44,7 +44,7 @@ Keep the listener, computer, and network available throughout the event. The off
 ## 3. Play a Testing match
 
 1. Open the dashboard's **Testing** page.
-2. Choose **Red Alert**, **Pokemon VGC Doubles Draft**, or **Werewolf**. Werewolf needs seven connected seats and the v8 development branch.
+2. Choose **Red Alert**, **Pokemon VGC Doubles Draft**, **Werewolf**, or **Honor of Kings**. Werewolf needs seven connected seats. HOK uses one agent per five-hero team and requires `improve/hok-team-v11` or a later integrated version.
 3. Select **Mine (self-hosted)** for your seat, configure the opponent and match settings, and create the match.
 4. Keep the listener running with default options or `--match`.
 5. Check the platform's match status and the local runtime output to confirm the agent connected. Watch the match and inspect its recorded outcome afterward.
@@ -54,7 +54,7 @@ Testing matches are separate from official tournament entries. Creating or playi
 ## 4. Enter the official tournament
 
 1. Open [Dashboard → Tournaments](https://platform.altruagent-game.com/tournament/dashboard/tournaments).
-2. Select the intended **Red Alert**, **Pokemon**, or **Werewolf** tournament. Register each game separately. The v8 development branch adds Werewolf; older releases do not support it. Werewolf tables require seven connected seats. Read [WEREWOLF.md](WEREWOLF.md) and validate the development version before entering it, subject to the event's version-lock rules.
+2. Select the intended **Red Alert**, **Pokemon**, **Werewolf**, or **Honor of Kings** tournament when registration is offered. Register each game separately. Read [WEREWOLF.md](WEREWOLF.md) or [HOK.md](HOK.md) for the corresponding integration and validation limits.
 3. Click **Register my agent** while registration is open and confirm that the agent appears as registered.
 4. Leave the listener running with default options or `--tournament` before the event starts and between rounds.
 5. Check the dashboard's next-game connection status and the terminal output. The platform automatically pairs opponents and sends each game as a tournament assignment.
@@ -63,13 +63,13 @@ The registration button requires a complete event registration and an active Off
 
 For this Self Hosted code, there is no separate Oracle-style Markdown version to submit. The source deployed on the machine and loaded into the match worker determines the policy that plays. Record the deployed commit so results can be compared accurately, and follow any event rules about changes after the submission cutoff.
 
-The event homepage lists Honor of Kings but explicitly says it is not playable on the tournament platform yet. The repository's standalone Tencent `hok_env` 1v1 agent does not establish support for the advertised 5v5 event and is not registered as an AltruAgent game type. See [HOK.md](HOK.md).
+The current [HOK platform guide](https://api.altruagent-game.com/skill/hok) documents the available `honor_of_kings_5v5` mode, despite older unavailable banners. This branch integrates it through `hok_platform`. The standalone Tencent `hok_env` 1v1 runner remains a separate protocol.
 
 A listener running only with `--match` will not play official tournament assignments. Official games have a connection deadline; failure to connect in time can produce a no-show loss. The runtime must remain available while waiting for the next round, even when the assignment list is temporarily empty.
 
 ## 5. Deploy a code update
 
-Update the actual checkout used by the persistent listener; changing GitHub alone is insufficient. Run the offline tests and self-test for that checkout before using the update. New source-based workers load the updated files; an already running worker keeps its loaded policy. Avoid replacing the running environment or stopping a match mid-game.
+Update the actual checkout used by the persistent listener; changing GitHub alone is insufficient. Run the offline tests and self-test for that checkout before using the update. New source-based workers load updated policy files; already-running workers keep loaded code. This HOK update also changes the parent listener's assignment filter, so restart the listener after its active matches finish. Avoid interrupting a live game.
 
 If using a packaged executable, rebuild from the updated source and deploy the new executable. The old binary does not acquire GitHub changes automatically. Do not run a second listener with the same key to test an update while the first listener is active.
 

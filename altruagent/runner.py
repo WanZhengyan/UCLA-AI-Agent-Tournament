@@ -98,6 +98,12 @@ and the runner recovered. That is how an agent learns that a move it sent
 was refused, for any game. It is optional; a plain function agent never
 needs it.
 
+An agent with standing orders may additionally define
+`realtime_wait_seconds(state, context)` (or a numeric attribute of that name)
+to request 0-5 seconds between a real-time `WAIT` and the next fresh read.
+The default is zero, preserving ordinary long-poll behavior. It never delays
+actual orders, so a team's per-hero updates are submitted back to back.
+
 `state_version` (MCP's optimistic-concurrency counter) is entirely
 runner-owned: taken from the same read that produced `state.legal_actions`
 (the server only embeds legal actions whose `state_version` matches the
@@ -107,6 +113,7 @@ state's), never something `choose_action`/`choose_message` supply or manage.
 from __future__ import annotations
 
 import linecache
+import math
 import os
 import random
 import re
@@ -497,6 +504,19 @@ def _report_result(hook, result: dict, context: DecisionContext) -> None:
         raise DecisionError(
             f"on_action_result raised {exc!r} for session {context.session_id!r}."
         ) from exc
+
+
+def _realtime_wait_seconds(agent: Any, state: GameState, context: DecisionContext) -> float:
+    """Optional standing-order cadence, used only after a real-time WAIT."""
+    hint = getattr(agent, "realtime_wait_seconds", 0.0)
+    try:
+        delay = hint(state, context) if callable(hint) else hint
+    except Exception as exc:
+        raise DecisionError("realtime_wait_seconds raised an exception") from exc
+    if (isinstance(delay, bool) or not isinstance(delay, (int, float))
+            or not math.isfinite(delay) or not 0 <= delay <= 5):
+        raise DecisionError("realtime_wait_seconds must be a finite number between 0 and 5")
+    return float(delay)
 
 
 def _with_game_config(game: Any, context: DecisionContext) -> DecisionContext:
@@ -943,7 +963,12 @@ def run_game(
                         f"(session {context.session_id!r}); WAIT is only for real-time "
                         "games, where nothing needs to be sent right now."
                     )
-                state = wait(state, _last_message_seq(state))
+                delay = _realtime_wait_seconds(choose_action, state, context)
+                if delay:
+                    sleep(delay)
+                    state = read(game.get_state)
+                else:
+                    state = wait(state, _last_message_seq(state))
                 continue
             left_the_game = False
             try:

@@ -6,7 +6,9 @@ This module only forwards decisions and real-time order verdicts.
 from collections import OrderedDict
 from time import perf_counter
 
-SUPPORTED_GAME_TYPES = frozenset({"pokemon_vgc_doubles_draft", "red_alert", "werewolf"})
+SUPPORTED_GAME_TYPES = frozenset({
+    "pokemon_vgc_doubles_draft", "red_alert", "werewolf", "honor_of_kings_5v5",
+})
 
 
 class CompetitionAgent:
@@ -64,6 +66,9 @@ class CompetitionAgent:
             elif game_type == "werewolf":
                 from werewolf_bot.agent import WerewolfAgent
                 policy = WerewolfAgent()
+            elif game_type == "honor_of_kings_5v5":
+                from hok_platform.agent import create_agent as create_hok
+                policy = create_hok()
             else:
                 from pokemon_bot.agent import PokemonAgent
                 policy = PokemonAgent()
@@ -119,6 +124,17 @@ class CompetitionAgent:
             handler(result, context)
         if policy is not None:
             self._record('action_result', context, policy, result)
+
+    def realtime_wait_seconds(self, state, context):
+        """Keep standing orders running between complete team decisions.
+
+        This only delays WAIT: individual hero orders still go out back to
+        back. Other games retain the SDK's existing long-poll behavior.
+        """
+        game_type = self._game_type(state, context)
+        policy = self._policies.get(self._key(game_type, context, state))
+        default = 1.0 if game_type == "honor_of_kings_5v5" else 0.0
+        return getattr(policy, "realtime_wait_seconds", default)
 
     def on_game_end(self, state, context):
         policy = self._policies.get(self._key(getattr(context, 'game_type', None), context))
