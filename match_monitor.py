@@ -23,7 +23,8 @@ HOK_ENDS = frozenset({'crystal_destroyed', 'step_limit', 'time_limit', 'resignat
 HOK_NO_RESULT = frozenset({'start_failed', 'engine_failed', 'match_stalled', 'cancelled'})
 HOK_REASONS = frozenset({'missing_observation', 'dead', 'recover', 'damage_spike', 'local_disadvantage',
                          'structure_pressure', 'combat_skill', 'attack_available', 'objective_advance',
-                         'no_useful_macro', 'standing_orders_current', 'home_defense', 'objective_commit'})
+                         'no_useful_macro', 'standing_orders_current', 'home_defense', 'objective_commit',
+                         'siege_regroup', 'safe_objective_advance'})
 
 
 def numeric_fields(value, names):

@@ -228,7 +228,7 @@ def test_visible_outnumbering_overrides_chasing_low_health_bait():
 def test_healthy_local_group_does_not_retreat_only_because_enemies_exist():
     friends = [hero(110 + i, 1, x=500 * i, visible=True) for i in range(4)]
     enemies = [hero(200 + i, 2, x=1000 + 500 * i, visible=True) for i in range(2)]
-    raw = sample(hp=850, friends=friends, enemies=enemies,
+    raw = sample(seats=[0, 1, 2, 3, 4], hp=850, friends=friends, enemies=enemies,
                  macros=["macro_attack", "macro_retreat", "macro_advance"])
     assert choose(create_agent(), raw)["macro"] == "macro_attack"
 
@@ -260,10 +260,10 @@ def test_skill_is_not_cast_without_visible_hero_even_when_listed():
     assert choose(create_agent(), raw)["macro"] == "macro_advance"
 
 
-def skill_state(*, enemy_hp=1000, own_hp=1000, count=1, skill="macro_skill3", distance=4000):
+def skill_state(*, enemy_hp=1000, own_hp=1000, count=1, skill="macro_skill3", distance=4000, seats=None):
     enemies = [hero(200 + i, 2, hp=enemy_hp, x=distance, z=100 * i, visible=True)
                for i in range(count)]
-    raw = sample(hp=own_hp, enemies=enemies,
+    raw = sample(seats=seats, hp=own_hp, enemies=enemies,
                  macros=[skill, "macro_attack", "macro_advance", "macro_retreat"])
     raw["legal_actions"]["actions"][0]["label"] = (
         f"[seat 0] Cast skill {skill[-1]} toward enemy hero (nearest: enemy hero, {distance} away)"
@@ -280,7 +280,7 @@ def test_ultimate_is_reserved_against_healthy_single_enemy():
     assert choose(create_agent(), skill_state())["macro"] == "macro_attack"
 
 
-@pytest.mark.parametrize("kwargs", [{"enemy_hp": 200}, {"own_hp": 500}, {"count": 2}])
+@pytest.mark.parametrize("kwargs", [{"enemy_hp": 200}, {"own_hp": 500}, {"count": 2, "seats": [0, 1]}])
 def test_ultimate_has_finishing_survival_and_group_opportunities(kwargs):
     assert choose(create_agent(), skill_state(**kwargs))["macro"] == "macro_skill3"
 
@@ -492,36 +492,36 @@ def objective_state(*, camp=1, enemy_x=6500, hp=1000, target='hero'):
 
 
 @pytest.mark.parametrize('camp', [1, 2])
-@pytest.mark.parametrize('enemy_x', [6500, -4000])
+@pytest.mark.parametrize('enemy_x', [12000, -6500])
 def test_distant_or_rear_hero_does_not_distract_from_building(camp, enemy_x):
     raw = objective_state(camp=camp, enemy_x=enemy_x)
     assert choose(create_agent(), raw)['macro'] == 'macro_advance'
 
 
 @pytest.mark.parametrize('camp', [1, 2])
-def test_short_skirmish_then_committed_push_for_healthy_team(camp):
+def test_elapsed_combat_time_never_forces_movement_through_a_blocker(camp):
     raw, bot = objective_state(camp=camp, enemy_x=3000), create_agent()
     assert choose(bot, raw)['macro'] == 'macro_skill1'
     tick(raw, steps=13)
-    assert choose(bot, raw)['macro'] == 'macro_advance'
+    assert choose(bot, raw)['macro'] == 'macro_skill1'
     tick(raw, steps=5)
-    assert choose(bot, raw)['macro'] == 'macro_advance'
+    assert choose(bot, raw)['macro'] == 'macro_skill1'
 
 
-def test_push_commit_never_overrides_low_health_escape():
+def test_fighting_blocker_never_overrides_low_health_escape():
     raw, bot = objective_state(enemy_x=3000), create_agent()
     choose(bot, raw)
     tick(raw, steps=13)
-    assert choose(bot, raw)['macro'] == 'macro_advance'
+    assert choose(bot, raw)['macro'] == 'macro_skill1'
     tick(raw, hp=180)
     assert choose(bot, raw)['macro'] == 'macro_retreat'
 
 
-def test_new_legal_tower_attack_interrupts_advance_commit():
+def test_new_safe_legal_tower_attack_interrupts_optional_hero_combat():
     raw, bot = objective_state(enemy_x=3000), create_agent()
     choose(bot, raw)
     tick(raw, steps=13)
-    assert choose(bot, raw)['macro'] == 'macro_advance'
+    assert choose(bot, raw)['macro'] == 'macro_skill1'
     raw['legal_actions']['actions'][0]['label'] = 'Attack enemy tower (3000 away)'
     tick(raw)
     assert choose(bot, raw)['macro'] == 'macro_attack'
@@ -530,7 +530,7 @@ def test_new_legal_tower_attack_interrupts_advance_commit():
 def test_structure_attack_survives_minor_damage_without_panic_retreat():
     raw, bot = objective_state(hp=700, target='tower'), create_agent()
     assert choose(bot, raw)['macro'] == 'macro_attack'
-    tick(raw, steps=5, hp=540)
+    tick(raw, steps=5, hp=640)
     assert choose(bot, raw)['macro'] == 'macro_attack'
 
 
@@ -542,8 +542,8 @@ def test_major_burst_still_interrupts_siege():
 
 
 @pytest.mark.parametrize('camp', [1, 2])
-def test_finishing_crystal_overrides_low_health_recovery(camp):
-    raw = objective_state(camp=camp, hp=200, target='crystal')
+def test_safe_crystal_finish_still_beats_optional_hero_combat(camp):
+    raw = objective_state(camp=camp, hp=800, target='crystal')
     structure = raw['observation']['seats'][str(raw['seats'][0])]['summary']['structures'][0]
     structure.update(type='ACTOR_CRYSTAL', hp=100)
     assert choose(create_agent(), raw)['macro'] == 'macro_attack'
@@ -563,7 +563,10 @@ def test_threatened_home_crystal_interrupts_fountain_recovery(camp, can_attack):
     enemy = hero(200, 3-camp, x=15000, visible=True)
     macros = ['macro_advance', 'macro_retreat'] + (['macro_attack'] if can_attack else [])
     raw = sample(camp=camp, hp=250, structures=[home], enemies=[enemy], macros=macros)
-    assert choose(create_agent(), raw) == {'seat': seat, 'macro': 'macro_attack' if can_attack else 'macro_advance'}
+    bot = create_agent()
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+    tick(raw, steps=30, hp=500)
+    assert choose(bot, raw) == {'seat': seat, 'macro': 'macro_attack' if can_attack else 'macro_advance'}
 
 
 def test_hidden_enemy_does_not_trigger_home_defense():
@@ -582,10 +585,12 @@ def test_frontline_hero_returns_toward_own_threatened_crystal_not_enemy_base():
     assert bot.last_diagnostics['reason'] == 'home_defense'
 
 
-def test_fountain_recovery_rejoins_at_42_percent_not_68():
+def test_fountain_recovery_rejoins_at_55_percent_not_42_or_68():
     raw, bot = sample(hp=200, structures=[hero(300, 1, type='ACTOR_TOWER_SPRING')]), create_agent()
     assert choose(bot, raw)['macro'] == 'macro_retreat'
     tick(raw, steps=30, hp=430)
+    assert choose(bot, raw)['macro'] == 'macro_retreat'
+    tick(raw, steps=30, hp=560)
     assert choose(bot, raw)['macro'] == 'macro_advance'
 
 
@@ -594,7 +599,7 @@ def test_outside_fountain_recovery_does_not_end_at_42_percent():
     choose(bot, raw)
     tick(raw, steps=30, hp=430)
     assert choose(bot, raw)['macro'] == 'macro_retreat'
-    tick(raw, steps=30, hp=560)
+    tick(raw, steps=30, hp=610)
     assert choose(bot, raw)['macro'] == 'macro_advance'
 
 
@@ -609,3 +614,146 @@ def test_minion_wave_is_cleared_when_it_is_the_legal_attack_target():
     raw['legal_actions']['actions'] = [a for a in raw['legal_actions']['actions']
                                      if a['input']['action']['macro'] != 'macro_skill1']
     assert choose(create_agent(), raw)['macro'] == 'macro_attack'
+
+
+@pytest.mark.parametrize('camp', [1, 2])
+@pytest.mark.parametrize('hp', [850, 1000])
+@pytest.mark.parametrize('enemy_count', [2, 3])
+def test_full_or_near_full_health_does_not_license_outnumbered_fight(camp, hp, enemy_count):
+    raw = sample(camp=camp, hp=hp,
+                 enemies=[hero(200+i, 3-camp, x=1000+i*1000, visible=True) for i in range(enemy_count)],
+                 macros=['macro_attack', 'macro_skill3', 'macro_advance', 'macro_retreat'])
+    assert choose(create_agent(), raw)['macro'] == 'macro_retreat'
+
+
+def test_live_derived_isolated_respawn_does_not_repeat_the_feed():
+    # Derived from our seat-visible v2 observation at step 979. No raw replay
+    # or hidden positions; this tests a decision, not a simulated match result.
+    raw = sample(camp=2, seats=[5, 6, 7, 8, 9], hp=0,
+                 enemies=[hero(200+i, 1, hp=1000, level=5, x=x, z=z, visible=True)
+                          for i,(x,z) in enumerate([(-4470,-8567),(-8088,-12221),
+                                                   (-8668,-13055),(-8915,-8068)])],
+                 structures=[hero(300,1,x=-11524,z=-11526,type='ACTOR_TOWER')],
+                 macros=['macro_attack','macro_skill3','macro_advance','macro_retreat'])
+    mine(raw, 7).update(hp=4593,max_hp=4593,level=4,x=-7987,z=-7080)
+    mine(raw, 5).update(hp=4182,max_hp=4182,level=4,x=13436,z=9905)
+    assert choose(create_agent(), raw) == {'seat':7,'macro':'macro_retreat'}
+
+
+def test_dead_and_distant_allies_are_not_fictitious_local_support():
+    raw = sample(seats=[0,1,2,3,4], enemies=[hero(200,2,x=1000,visible=True),hero(201,2,x=2000,visible=True)])
+    mine(raw,1)['hp']=0
+    mine(raw,2)['hp']=0
+    mine(raw,3)['x']=40000
+    mine(raw,4)['hp']=100
+    raw['simultaneous']['your_pending_seats']=[0]
+    assert choose(create_agent(),raw)['macro']=='macro_retreat'
+
+
+@pytest.mark.parametrize('camp',[1,2])
+@pytest.mark.parametrize('has_attack',[False,True])
+def test_lone_hero_does_not_walk_into_a_defended_tower(camp,has_attack):
+    seat=0 if camp==1 else 5
+    raw=objective_state(camp=camp,enemy_x=9500,target='tower')
+    summary=raw['observation']['seats'][str(seat)]['summary']
+    summary['structures'][0]['x']=9000*(1 if camp==1 else -1)
+    if not has_attack:
+        raw['legal_actions']['actions']=[a for a in raw['legal_actions']['actions']
+                                        if a['input']['action']['macro']!='macro_attack']
+    bot=create_agent()
+    assert choose(bot,raw)['macro']=='macro_retreat'
+    assert bot.last_diagnostics['reason']=='siege_regroup'
+
+
+def test_two_healthy_allies_can_pressure_one_defender_without_passive_retreat():
+    tower=hero(300,2,x=9000,type='ACTOR_TOWER')
+    raw=sample(seats=[0,1],structures=[tower],enemies=[hero(200,2,x=9500,visible=True)],
+               macros=['macro_attack','macro_advance','macro_retreat'])
+    raw['legal_actions']['actions'][0]['label']='Attack enemy tower (4000 away)'
+    assert choose(create_agent(),raw)['macro']=='macro_attack'
+
+
+@pytest.mark.parametrize('visible',[False,True])
+def test_only_living_visible_defenders_can_veto_siege(visible):
+    raw=objective_state(enemy_x=9500,target='tower')
+    view=raw['observation']['seats']['0']['summary']
+    view['structures'][0]['x']=9000
+    view['other_heroes'][0].update(visible=visible,hp=0 if visible else 1000)
+    assert choose(create_agent(),raw)['macro']=='macro_attack'
+
+
+@pytest.mark.parametrize('camp',[1,2])
+def test_ranged_blocker_is_fought_not_walked_through(camp):
+    raw=objective_state(camp=camp,enemy_x=6500)
+    assert choose(create_agent(),raw)['macro']=='macro_skill1'
+
+
+def test_very_close_rear_enemy_is_a_threat_not_a_free_bypass():
+    assert choose(create_agent(),objective_state(enemy_x=-3000))['macro']=='macro_skill1'
+
+
+def test_push_resumes_as_soon_as_blocker_is_gone():
+    raw,bot=objective_state(enemy_x=6500),create_agent()
+    assert choose(bot,raw)['macro']=='macro_skill1'
+    raw['observation']['seats']['0']['summary']['other_heroes']=[]
+    tick(raw)
+    assert choose(bot,raw)['macro']=='macro_advance'
+
+
+def test_moderate_siege_damage_restores_old_escape_safety():
+    raw,bot=objective_state(hp=700,target='tower'),create_agent()
+    assert choose(bot,raw)['macro']=='macro_attack'
+    tick(raw,steps=5,hp=540)
+    assert choose(bot,raw)['macro']=='macro_retreat'
+
+
+def test_near_dead_crystal_is_not_permission_for_a_wounded_solo_suicide():
+    raw=objective_state(hp=200,target='crystal')
+    raw['observation']['seats']['0']['summary']['structures'][0].update(type='ACTOR_CRYSTAL',hp=50)
+    assert choose(create_agent(),raw)['macro']=='macro_retreat'
+
+
+def test_full_health_finish_is_cancelled_when_four_enemies_surround_hero():
+    raw=objective_state(target='crystal')
+    view=raw['observation']['seats']['0']['summary']
+    view['structures'][0].update(type='ACTOR_CRYSTAL',hp=50)
+    view['other_heroes']=[hero(200+i,2,x=1000+i*1000,visible=True) for i in range(4)]
+    assert choose(create_agent(),raw)['macro']=='macro_retreat'
+
+
+def test_retreat_has_short_hysteresis_instead_of_immediate_reentry():
+    raw=sample(enemies=[hero(200,2,x=1000,visible=True),hero(201,2,x=2000,visible=True)])
+    bot=create_agent()
+    assert choose(bot,raw)['macro']=='macro_retreat'
+    raw['observation']['seats']['0']['summary']['other_heroes']=[]
+    tick(raw,steps=2)
+    assert choose(bot,raw)['macro']=='macro_retreat'
+    tick(raw,steps=12)
+    assert choose(bot,raw)['macro']=='macro_advance'
+
+
+def test_safe_reinforcements_release_regroup_without_waiting_for_timer():
+    raw=sample(seats=[0,1,2],enemies=[hero(200,2,x=1000,visible=True),hero(201,2,x=2000,visible=True)])
+    mine(raw,1)['x']=30000
+    mine(raw,2)['x']=30000
+    raw['simultaneous']['your_pending_seats']=[0]
+    bot=create_agent()
+    assert choose(bot,raw)['macro']=='macro_retreat'
+    mine(raw,1)['x']=100
+    mine(raw,2)['x']=200
+    tick(raw)
+    assert choose(bot,raw)['macro']=='macro_advance'
+
+
+def test_half_health_home_crystal_does_not_send_critically_hurt_hero_to_die():
+    raw=sample(hp=250,structures=[hero(300,1,hp=500,x=15000,type='ACTOR_CRYSTAL')],
+               enemies=[hero(200,2,x=15000,visible=True)])
+    assert choose(create_agent(),raw)['macro']=='macro_retreat'
+
+
+def test_genuinely_critical_crystal_can_still_trigger_last_stand():
+    raw=sample(hp=300,structures=[hero(300,1,hp=150,x=15000,type='ACTOR_CRYSTAL')],
+               enemies=[hero(200,2,x=15000,visible=True)])
+    bot=create_agent()
+    assert choose(bot,raw)['macro']=='macro_advance'
+    assert bot.last_diagnostics['reason']=='home_defense'

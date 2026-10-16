@@ -74,13 +74,12 @@ class HeroMemory:
     last_served: int = -1
     deaths: float | None = None
     was_dead: bool = False
-    combat_since: float | None = None
-    push_until: float = -1.
+    regroup_until: float = -1.
 
 
 class HokPlatformAgent:
-    strategy_version = 'hok_objectives_v2'
-    profile = 'structure_first'
+    strategy_version = 'hok_balanced_v3'
+    profile = 'safe_objectives'
     realtime_wait_seconds = .6
 
     def __init__(self):
@@ -168,8 +167,7 @@ class HokPlatformAgent:
             memory.samples.clear()
             memory.recovering = False
             memory.danger_until = -1.
-            memory.combat_since = None
-            memory.push_until = -1.
+            memory.regroup_until = -1.
         memory.was_dead = dead
         memory.deaths = deaths
         hp = hp_fraction(hero)
@@ -180,11 +178,11 @@ class HokPlatformAgent:
         loss = max((h - hp for t, h, m in memory.samples if t < now and m == maximum), default=0.)
         if not memory.samples or memory.samples[-1][0] < now:
             memory.samples.append((now, hp, maximum))
-        if (loss >= .25 and hp < .65) or (loss >= .18 and hp < .48):
+        if (loss >= .14 and hp < .75) or loss >= .30:
             memory.danger_until = now + 1.2
-        if hp <= .28:
+        if hp <= .32:
             memory.recovering = True
-        if hp >= .55:
+        if hp >= .60:
             memory.recovering = False
         return memory, loss
 
@@ -206,7 +204,13 @@ class HokPlatformAgent:
         allies = [a for a in own.values() if alive(a) and distance(me, a) <= 10000]
         friendly = sum(strength(a) for a in allies) or strength(me)
         hostile = sum(strength(e) for e in enemies)
-        disadvantaged = hostile > friendly * 1.55 and len(enemies) >= 2 and hp < .70
+        # Full health is not permission for a respawned hero to fight 1v3.
+        disadvantaged = (hostile > friendly * 1.5
+                         and (len(enemies) >= 2 or hostile > friendly * 2.2))
+        if disadvantaged:
+            memory.regroup_until = now + 2.
+        elif len(allies) >= 2 and friendly >= hostile * 1.2:
+            memory.regroup_until = -1.
         structures = [s for s in records(view.get('structures'))
                       if alive(s) and s.get('visible') is not False]
         objectives = [s for s in structures if s.get('camp') == 3 - camp
@@ -216,10 +220,12 @@ class HokPlatformAgent:
         attack_label = macros.get('macro_attack', '').lower()
         structure_attack = ('macro_attack' in macros and 'spring' not in attack_label
                             and any(w in attack_label for w in ('tower', 'crystal', 'turret')))
-        # Do not abandon a legal crystal finish to chase a hero or heal.
-        finish = (structure_attack and 'crystal' in attack_label and hp > .15
+        # A near-finished crystal remains important, but not a blind suicide
+        # override for recovery, fresh burst damage or an overwhelming enemy.
+        finish = (structure_attack and 'crystal' in attack_label and hp > .32
                   and objective is not None and 'CRYSTAL' in str(objective.get('type', '')).upper()
-                  and (hp_fraction(objective) or 1) <= .15)
+                  and (hp_fraction(objective) or 1) <= .10
+                  and not disadvantaged and loss < .14 and now >= memory.danger_until)
         if finish:
             return 'macro_attack', 'structure_pressure', True
         threatened = [s for s in structures if s.get('camp') == camp
@@ -227,9 +233,11 @@ class HokPlatformAgent:
                       and (hp_fraction(s) or 1) < .55 and distance(me, s) < 24000
                       and any(distance(e, s) < 10000 for e in visible)]
         critical_home = bool(threatened)
-        emergency_defense = critical_home and hp >= .23
+        last_stand = any((hp_fraction(s) or 1) <= .20 for s in threatened) and hp >= .28 and loss < .25
+        emergency_defense = critical_home and (last_stand or (
+            hp >= .45 and not disadvantaged and now >= memory.danger_until))
         if emergency_defense:
-            if 'macro_attack' in macros:
+            if 'macro_attack' in macros and not structure_attack:
                 return 'macro_attack', 'home_defense', True
             home = min(threatened, key=lambda s: distance(me, s))
             springs = [s for s in structures if s.get('camp') == camp
@@ -243,47 +251,40 @@ class HokPlatformAgent:
                 return 'macro_advance', 'home_defense', True
         at_home = any(s.get('camp') == camp and 'SPRING' in str(s.get('type', '')).upper()
                       and distance(me, s) < 5000 for s in structures)
-        if at_home and hp >= .42:
+        if at_home and hp >= .55:
             memory.recovering = False
-        # Listed structure attacks are precious. Ordinary chip damage should
-        # not send a healthy siege group all the way back to the fountain.
-        if structure_attack and hp >= .40 and loss < .25 and not disadvantaged:
-            memory.combat_since = None
-            return 'macro_attack', 'structure_pressure', False
         if 'macro_retreat' in macros:
             if memory.recovering and not emergency_defense:
                 return 'macro_retreat', 'recover', hp <= .28
             if now < memory.danger_until:
                 return 'macro_retreat', 'damage_spike', True
-            if disadvantaged:
+            if disadvantaged or now < memory.regroup_until:
                 return 'macro_retreat', 'local_disadvantage', True
+
+        # Do not infer tower aggro or absent minions. Only a visible defending
+        # hero plus insufficient nearby healthy teammates vetoes a siege.
+        defenders = [e for e in visible if objective is not None and distance(e, objective) <= 10000]
+        healthy_support = sum((hp_fraction(a) or 0) >= .45 for a in allies)
+        defended_siege = (objective is not None and distance(me, objective) <= 12000 and defenders
+                          and (healthy_support < 2 or friendly < sum(strength(e) for e in defenders) * 1.2))
+        if defended_siege and 'macro_retreat' in macros:
+            return 'macro_retreat', 'siege_regroup', True
 
         # A legal attack already has an in-range target. Do not apply the
         # heuristic skill range to it, and do not assume missing minion data
         # means that there is no supporting wave.
         if structure_attack:
             return 'macro_attack', 'structure_pressure', False
-        # Fighting is a way to reach a building, not the objective. A distant
-        # or rearward hero must not lure all five units away from the lane.
+        # Fight a real blocker; never advance through it just because a timer
+        # elapsed. Only a distant, rearward distraction may be bypassed.
         hero_target = 'enemy hero' in attack_label or any(
             re.search(r'enemy\s+hero', macros.get(m, ''), re.I)
             for m in ('macro_skill1', 'macro_skill2', 'macro_skill3'))
         if objective is not None and math.isfinite(distance(me, objective)) and hero_target:
-            blockers = [e for e in enemies if distance(me, e) <= 4500
-                        and distance(e, objective) <= distance(me, objective) + 1000]
-            safe_push = hp >= .60 and not disadvantaged and loss < .12 and friendly >= hostile * .85
-            if not blockers:
-                memory.combat_since = None
-            elif memory.combat_since is None:
-                memory.combat_since = now
-            elif safe_push and now - memory.combat_since >= 2.4 and now >= memory.push_until:
-                memory.push_until = now + 3.
-                memory.combat_since = now
-            if 'macro_advance' in macros and (not blockers or (safe_push and now < memory.push_until)):
-                return 'macro_advance', 'objective_commit', False
-        else:
-            memory.combat_since = None
-            memory.push_until = -1.
+            blockers = [e for e in enemies if distance(me, e) <= 9000 and (
+                distance(me, e) <= 4500 or distance(e, objective) <= distance(me, objective) + 1000)]
+            if 'macro_advance' in macros and not blockers and loss < .08 and not memory.recovering:
+                return 'macro_advance', 'safe_objective_advance', False
         skills = []
         if enemies:
             for name in ('macro_skill1', 'macro_skill2', 'macro_skill3'):
