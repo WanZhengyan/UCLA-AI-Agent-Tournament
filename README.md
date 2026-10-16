@@ -1,17 +1,18 @@
 # Gaming
 
-A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Doubles Draft**, and **Werewolf**. All strategy decisions run locally; no OpenAI or other model API key is required.
+A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Doubles Draft**, **Werewolf**, and **Honor of Kings 5v5**. All strategy decisions run locally; no OpenAI or other model API key is required.
 
-The repository also includes a **standalone Honor of Kings 1v1 agent** for Tencent's official `hok_env`. It uses a separate Gamecore runtime; Honor of Kings is not currently playable through the AltruAgent tournament interface. See [docs/HOK.md](docs/HOK.md) for requirements and commands.
+The platform HoK agent controls five heroes through legal macros and standing orders; see [docs/HOK_PLATFORM.md](docs/HOK_PLATFORM.md). The repository also retains a separate **Tencent Honor of Kings 1v1 experiment**, documented in [docs/HOK.md](docs/HOK.md); it is not used for platform matches.
 
-**Development candidate:** the latest additions are on `improve/pokemon-paradox-v10`, based on the v9 type/speed branch. They correct non-Speed Protosynthesis/Quark Drive damage modifiers, including consumed Booster Energy. They have not replaced `main` or a running tournament agent. Mechanics correctness is not proof of a tournament win-rate improvement.
+**Development candidate:** `improve/hok-platform-v11` adds the newly published HoK 5v5 platform interface to v10. Pokemon, Red Alert, and Werewolf strategy code is unchanged. Deployment and tournament registration are separate from this source change; offline validation is not proof of a winning advantage.
 
 ## What it does
 
 - **Red Alert:** `eco_guard` / `defense_v8` keeps tank-led production and harvesting, limits the force diverted by small raids, and checks known towers before defensive pursuit. `balanced` remains an optional experimental baseline.
 - **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `paradox_damage_v10` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. It also retains publicly announced offensive and defensive Paradox modifiers after item consumption. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md) and [v10 mechanism checks](docs/POKEMON_PARADOX_V10.md).
 - **Werewolf:** `evidence_v1` uses private checks, official reveals, bounded claim evidence, vote history, role-specific night choices, and limited public/private discussion. See [docs/WEREWOLF.md](docs/WEREWOLF.md).
-- **Runtime:** one listener routes all three supported platform games to isolated per-seat workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes. Honor of Kings uses its separate Tencent runtime.
+- **Honor of Kings 5v5:** `hok_team_v11` commands all five heroes, keeps persistent orders, recovers injured heroes, evaluates visible local support, and advances toward objectives. It is a rule baseline, not a trained competitive model.
+- **Runtime:** one listener routes all four supported platform games to isolated workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes. The old Tencent 1v1 experiment still uses its separate runtime.
 - **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
 
 Only information available to the assigned seat is used. Strategy state and observations are not shared between opposing seats.
@@ -21,7 +22,7 @@ Only information available to the assigned seat is used. Strategy state and obse
 Use Python 3.11 or later and keep the machine connected to the internet.
 
 ```bash
-git clone --branch improve/pokemon-paradox-v10 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
+git clone --branch improve/hok-platform-v11 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
 cd UCLA-AI-Agent-Tournament
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
@@ -32,11 +33,11 @@ python3 -m venv .venv
 
 Paste the platform's **Official Agent Key** when prompted. Input is hidden. This is a platform credential, not a GitHub token or model API key. Interactive entry is not saved to disk.
 
-Run only **one listener per Official Agent Key**. The default accepts testing and tournament assignments for all three supported platform games.
+Run only **one listener per Official Agent Key**. The default accepts testing and tournament assignments for all four supported platform games.
 
 | Command option | Behavior |
 | --- | --- |
-| `--self-test` | Check all three platform policies and spawned worker imports offline; no key required. |
+| `--self-test` | Check all four platform policies and spawned worker imports offline; no key required. |
 | `--check` | Check authentication and policy loading without accepting matches. |
 | `--match` | Accept testing assignments only. |
 | `--tournament` | Accept tournament assignments only. |
@@ -51,7 +52,7 @@ For unattended use, set `ALTRUAGENT_OFFICIAL_AGENT_KEY` in the environment, or c
 
 Follow [docs/PLATFORM.md](docs/PLATFORM.md) for the full setup and official-tournament workflow. On the [AltruAgent dashboard](https://platform.altruagent-game.com/tournament/dashboard), complete event registration, select **Self Hosted** under **Agent Configuration**, record this public repository URL, and obtain the Official Agent Key. Start the listener using the command above.
 
-For a practice match, use the platform's **Testing** page, choose Red Alert, Pokemon VGC Doubles Draft, or Werewolf, and select **Mine (self-hosted)** for your seat. Werewolf requires seven connected seats. Create the match and leave the listener running while the platform assigns the seat.
+For a practice match, use the platform's **Testing** page, choose Red Alert, Pokemon VGC Doubles Draft, Werewolf, or Honor of Kings 5v5, and select **Mine (self-hosted)** for your seat. Werewolf requires seven connected seats; HoK uses two agents controlling five heroes each. Create the match and leave the listener running while the platform assigns the seat.
 
 For an official event, open **Dashboard → Tournaments**, choose a supported game, and click **Register my agent**. Each game needs its own entry. Keep Self Hosted selected and run the listener with either its default options or `--tournament`. Starting the program does not register an entry or create a match. Confirm version-lock eligibility before replacing a submitted entry.
 
@@ -131,6 +132,7 @@ These small synthetic benchmarks do not represent the full platform draft or tou
 | `pokemon_bot/` | Pokemon draft, team selection, battle search, and static data. |
 | `werewolf_bot/` | Seven-seat role inference, legal actions, and bounded discussion. |
 | `hok_bot/` | Standalone Tencent Honor of Kings 1v1 policy and separate runtime. |
+| `hok_platform_bot/` | AltruAgent HoK 5v5 five-hero macro policy, using the shared listener. |
 | `competition_agent.py` | Game routing and per-seat policy isolation. |
 | `launcher.py`, `exe_entry.py` | CLI configuration and executable entry point. |
 | `altruagent/` | Bundled official runtime and documented local callbacks. |
@@ -139,7 +141,7 @@ These small synthetic benchmarks do not represent the full platform draft or tou
 
 ## Packaging and provenance
 
-`bash build.sh` builds and self-tests a single executable in `dist/PokemonChampion`. Despite the historical filename, the build includes all three AltruAgent game policies; Tencent HOK remains separate. The target architecture and system-library requirements depend on the build machine. The repository contains no prebuilt binary; previously downloaded binaries do not receive source updates automatically.
+`bash build.sh` builds and self-tests a single executable in `dist/PokemonChampion`. Despite the historical filename, the build includes all four AltruAgent game policies; Tencent HOK 1v1 remains separate. The target architecture and system-library requirements depend on the build machine. The repository contains no prebuilt binary; previously downloaded binaries do not receive source updates automatically.
 
 The official runtime source and local extensions are documented in [SDK_PROVENANCE.txt](SDK_PROVENANCE.txt). Pokemon static data comes from Pokemon Showdown; provenance and included third-party licenses are under [licenses/](licenses/).
 

@@ -1,6 +1,6 @@
 # Honor of Kings 1v1 agent
 
-`hok_bot` is a standalone, objective-focused rule agent for Tencent's official **HoK1v1 research environment**. It is separate from this repository's AltruAgent listener. As checked on October 16, 2026, the [AltruAgent event page](https://altruagent-game.com/) marks Honor of Kings as **not playable on the tournament platform yet**. Its announced 5v5 mode is not the protocol implemented here.
+`hok_bot` is a standalone, objective-focused rule agent for Tencent's official **HoK1v1 research environment**. It is separate from this repository's AltruAgent listener. **For the newly published AltruAgent 5v5 platform interface, use `hok_platform_bot` and [HOK_PLATFORM.md](HOK_PLATFORM.md).** The event homepage's old “not playable yet” notice is superseded by the live HoK API guide and tournament listing. The 1v1 protocol documented below is not the platform protocol.
 
 The latest `hok_objective_v2` module is on the development branch `improve/werewolf-defenses-v8`, based on the original v7 integration. Check out that branch before following the commands below; a clone of the unchanged `main` branch does not contain it. The v2 policy prioritizes retreat from an unfavorable nearby enemy before farming and only counts healthy local allied minions as support. These corrections passed adversarial fixtures, not a live Gamecore tournament.
 

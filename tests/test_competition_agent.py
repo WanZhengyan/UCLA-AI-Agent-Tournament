@@ -116,16 +116,18 @@ def test_offline_unwraps_reasoned_actions():
     assert launcher._offline_action(sample(), lambda *_: WithReasoning(action, "Deploy.")) == action
 
 
-def test_launcher_selftest_checks_three_games_without_authentication():
+def test_launcher_selftest_checks_four_games_without_authentication():
     with patch("pokemon_bot.selftest.run", return_value=0) as pokemon, \
          patch("redalert_bot.selftest.run", return_value=0) as redalert, \
          patch("werewolf_bot.selftest.run", return_value=0) as werewolf, \
+         patch("hok_platform_bot.selftest.run", return_value=0) as hok, \
          patch.object(launcher, "runtime_self_test", return_value={"worker": True}), \
          patch.object(launcher, "load_configuration") as auth:
         assert launcher.main(["--self-test"]) == 0
     pokemon.assert_called_once_with()
     redalert.assert_called_once_with()
     werewolf.assert_called_once_with()
+    hok.assert_called_once_with()
     auth.assert_not_called()
 
 

@@ -204,6 +204,17 @@ def game_outcome(final_state, agent_id: str) -> str | None:
         return _OUTCOME_WORDS[mine["outcome"]]
     if result.get("status") == "failed" or result.get("failure_reason"):
         return "no result"
+    if (getattr(final_state, "raw", {}) or {}).get("game_type") == "honor_of_kings_5v5":
+        if result.get("termination_reason") in {"start_failed", "engine_failed", "match_stalled", "cancelled"}:
+            return "no result"
+        winners = result.get("winner_agent_ids")
+        if isinstance(winners, list) and winners:
+            return "won" if agent_id in winners else "lost"
+        score = _score(final_state, agent_id)
+        if score is not None:
+            # HoK returns are +1 / -1 / 0, not tournament points 1 / 0 / .5.
+            return "won" if score > 0 else "lost" if score < 0 else "drew"
+        return None
     winner = result.get("winner_agent_id")
     if winner:
         return "won" if winner == agent_id else "lost"

@@ -2,7 +2,7 @@
 
 The official SDK owns authentication, seat leases, MCP, retries and workers.
 This module supplies safe configuration and limits assignments to this bot's
-three supported games. Secrets are never put in command-line arguments or logs.
+four supported games. Secrets are never put in command-line arguments or logs.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 from competition_agent import SUPPORTED_GAME_TYPES
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 GAME_TYPE = "pokemon_vgc_doubles_draft"
 AGENT_SPEC = "competition_agent:create_agent"
 CONTROL_URL = "https://api.altruagent-game.com"
@@ -66,7 +66,7 @@ def check_connection() -> int:
         official.authenticate()
         assignments = official.assignments()
         _resolve_decision_fn(load_agent_factory(AGENT_SPEC)())
-        print(f"Connected: key verified and game router loaded; {len(assignments)} Pokemon/Red Alert/Werewolf assignments available.")
+        print(f"Connected: key verified and game router loaded; {len(assignments)} Pokemon/Red Alert/Werewolf/HoK 5v5 assignments available.")
         print("Connection check complete. Run without --check to accept matches.")
         return 0
     finally:
@@ -89,7 +89,7 @@ def run_online(kinds: frozenset[str]) -> int:
                 raise
             print(str(exc), flush=True)
         names = "+".join("tournament" if kind == "tournament" else "testing" for kind in sorted(kinds))
-        print(f"Waiting for Pokemon VGC Doubles Draft / Red Alert / Werewolf assignments ({names}). Keep this process running; press Ctrl+C to stop.", flush=True)
+        print(f"Waiting for Pokemon VGC Doubles Draft / Red Alert / Werewolf / HoK 5v5 assignments ({names}). Keep this process running; press Ctrl+C to stop.", flush=True)
         run_tournament_forever(official, agent_spec=AGENT_SPEC, kinds=kinds)
         return 0
     finally:
@@ -174,7 +174,8 @@ def _probe_worker(queue) -> None:
     from pokemon_bot.agent import create_agent as create_pokemon
     from redalert_bot.agent import create_agent as create_redalert
     from werewolf_bot.agent import create_agent as create_werewolf
-    for factory in (create_pokemon, create_redalert, create_werewolf):
+    from hok_platform_bot.agent import create_agent as create_hok
+    for factory in (create_pokemon, create_redalert, create_werewolf, create_hok):
         _resolve_decision_fn(factory())
     # No request is made: construction catches absent CA bundles and optional
     # proxy dependencies in the packaged artifact before a real match starts.
@@ -203,7 +204,7 @@ def runtime_self_test() -> dict:
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="AltruAgent Pokemon + Red Alert + Werewolf agent. Accepts tournament and testing matches by default.")
+    result = argparse.ArgumentParser(description="AltruAgent Pokemon + Red Alert + Werewolf + HoK 5v5 agent. Accepts tournament and testing matches by default.")
     result.add_argument("--version", action="version", version=f"Gaming Agent {VERSION}")
     result.add_argument("--check", "--check-tournament", action="store_true", help="check the key, connection and policy without accepting matches")
     result.add_argument("--self-test", action="store_true", help="run offline self-tests; no key required")
@@ -228,11 +229,13 @@ def main(argv: list[str] | None = None) -> int:
             from pokemon_bot.selftest import run as pokemon_test
             from redalert_bot.selftest import run as redalert_test
             from werewolf_bot.selftest import run as werewolf_test
+            from hok_platform_bot.selftest import run as hok_test
             result = pokemon_test()
             redalert_result = redalert_test()
             werewolf_result = werewolf_test()
+            hok_result = hok_test()
             print("Runtime:", json.dumps(runtime_self_test()))
-            return int(result or redalert_result or werewolf_result or 0)
+            return int(result or redalert_result or werewolf_result or hok_result or 0)
         if args.decide:
             return decide_offline(args.decide)
         if args.jsonl:

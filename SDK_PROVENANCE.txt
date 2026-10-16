@@ -17,3 +17,11 @@ Retrieved: 2026-10-15
 Public dashboard configuration confirms control URL:
 https://api.altruagent-game.com
 Runtime game-server locations come from authenticated official seat grants.
+
+Local HoK 5v5 integration (2026-10-16): runner.wait uses a one-second
+read cadence only for moving honor_of_kings_5v5 realtime states, following
+https://api.altruagent-game.com/skill/hok. Other games and startup states retain
+the original wait behavior. worker.game_outcome recognizes HoK signed returns
+(+1/-1/0) and its no-result termination reasons. Authentication and leases are
+unchanged. Macro and observation contracts checked against official starter
+686e7560708eaa595a409b330d0d1837d49ba9d5, examples/llm/hok.py and tests/test_hok.py.

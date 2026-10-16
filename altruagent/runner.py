@@ -838,6 +838,13 @@ def run_game(
 
     def wait(current: GameState, message_seq: int | None) -> GameState:
         nonlocal long_poll_supported
+        if (context.game_type == "honor_of_kings_5v5" and current.phase == "moving"
+                and _is_realtime(current)):
+            # HoK's step changes every .2 s even with no order to change.
+            # Official HoK guide: re-read at 1-5 s cadence during play; retain
+            # normal long-poll for queued/starting and all other game types.
+            sleep(1.0)
+            return read(game.get_state)
         if long_poll_supported:
             try:
                 return read(

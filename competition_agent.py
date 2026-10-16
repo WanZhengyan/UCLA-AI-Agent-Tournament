@@ -6,7 +6,7 @@ This module only forwards decisions and real-time order verdicts.
 from collections import OrderedDict
 from time import perf_counter
 
-SUPPORTED_GAME_TYPES = frozenset({"pokemon_vgc_doubles_draft", "red_alert", "werewolf"})
+SUPPORTED_GAME_TYPES = frozenset({"pokemon_vgc_doubles_draft", "red_alert", "werewolf", "honor_of_kings_5v5"})
 
 
 class CompetitionAgent:
@@ -64,6 +64,9 @@ class CompetitionAgent:
             elif game_type == "werewolf":
                 from werewolf_bot.agent import WerewolfAgent
                 policy = WerewolfAgent()
+            elif game_type == "honor_of_kings_5v5":
+                from hok_platform_bot.agent import HokTeamAgent
+                policy = HokTeamAgent()
             else:
                 from pokemon_bot.agent import PokemonAgent
                 policy = PokemonAgent()
