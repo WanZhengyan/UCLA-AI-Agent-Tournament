@@ -704,7 +704,12 @@ def _simulate(base, actions, horizon, tie_order):
             # Priority denial is checked after redirection and against the field.
             pr=priority(p,a,field)
             if ts!=side and pr>0:
-                if (terrain(field)=="psychicterrain" and grounded(q)) or any(alive(x) and ability(x) in {"armortail","queenlymajesty","dazzling"} for x in board[ts]): continue
+                if terrain(field)=="psychicterrain" and grounded(q): continue
+                # Mold Breaker ignores a defending ally's breakable ability,
+                # but not terrain, Quick Guard, or an Ability Shield holder.
+                bypass=ability(p) in {"moldbreaker","teravolt","turboblaze"} or d.get("ignoreAbility",False)
+                if any(alive(x) and ability(x) in {"armortail","queenlymajesty","dazzling"}
+                       and (not bypass or item(x)=="abilityshield") for x in board[ts]): continue
                 if field.get(("own_" if ts==0 else "foe_")+"quickguard"): continue
             native_spread=d.get("target") in SPREAD_TARGETS or (mid=="expandingforce" and terrain(field)=="psychicterrain" and grounded(p))
             if ts!=side and native_spread and field.get(("own_" if ts==0 else "foe_")+"wideguard"): continue
@@ -732,11 +737,14 @@ def _simulate(base, actions, horizon, tie_order):
                 continue
             if mid=="pollenpuff" and ts==side:
                 q["hp"]=min(1,q["hp"]+.5); continue
-            if mid=="suckerpunch":
+            if mid in {"suckerpunch","thunderclap"}:
                 # A target that already moved (e.g. Extreme Speed) cannot be
-                # hit by Sucker Punch, even if it selected a damaging move.
+                # hit by conditional priority, even if it selected an attack.
+                # Status and incoming switches can deliberately bait failure.
                 pending=next((e[4] for e in events if e[2]==ts and e[3]==tj),None)
-                if not pending or pending.get("type")!="move" or md(pending["move_id"])["category"]=="status": continue
+                if not pending or pending.get("type")!="move" or "mustrecharge" in q.get("effects",{}): continue
+                target_move=md(pending["move_id"])
+                if target_move["category"]=="status" and target_move["id"]!="mefirst": continue
             if mid in {"brickbreak","psychicfangs"}:
                 for sc in ("reflect","lightscreen","auroraveil"):
                     field[("own_" if ts==0 else "foe_")+sc]=False

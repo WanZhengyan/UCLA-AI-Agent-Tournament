@@ -114,7 +114,9 @@ def test_router_uses_profile_only_after_attestation(monkeypatch,tmp_path):
     import redalert_bot.selfplay as experiment
     settings(tmp_path)
     monkeypatch.setattr(experiment,'ROOT',tmp_path)
-    bot, state = create_agent(), GameState.from_mcp_state(raw())
+    data = raw()
+    data['session_id'] = ctx(1).session_id
+    bot, state = create_agent(), GameState.from_mcp_state(data)
     bot.on_match_start({'match_id':'match-1','verified_selfplay':True},ctx(1))
     bot.choose_action(state,ctx(1))
     tested = next(iter(bot._policies.values()))

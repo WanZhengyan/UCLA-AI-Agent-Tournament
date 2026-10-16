@@ -21,7 +21,9 @@ def test_standalone_factory_uses_latest_policy():
 @pytest.mark.parametrize('tournament', [None, 'tournament-1'])
 def test_testing_and_tournament_routes_use_latest_policy(tournament):
     bot, ctx = create_competition(), context(tournament)
-    bot.choose_action(GameState.from_mcp_state(sample()), ctx)
+    raw = sample()
+    raw['session_id'] = ctx.session_id
+    bot.choose_action(GameState.from_mcp_state(raw), ctx)
     policy = next(iter(bot._policies.values()))
     assert policy.profile == 'eco_guard'
     assert 'map_adaptation' in policy._memory(ctx)

@@ -1,8 +1,8 @@
-"""Dual-game launcher for the official AltruAgent contestant runtime.
+"""Multi-game launcher for the official AltruAgent contestant runtime.
 
 The official SDK owns authentication, seat leases, MCP, retries and workers.
 This module supplies safe configuration and limits assignments to this bot's
-two supported games. Secrets are never put in command-line arguments or logs.
+three supported games. Secrets are never put in command-line arguments or logs.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 from competition_agent import SUPPORTED_GAME_TYPES
 
-VERSION = "1.3.0"
+VERSION = "1.4.0"
 GAME_TYPE = "pokemon_vgc_doubles_draft"
 AGENT_SPEC = "competition_agent:create_agent"
 CONTROL_URL = "https://api.altruagent-game.com"
@@ -66,7 +66,7 @@ def check_connection() -> int:
         official.authenticate()
         assignments = official.assignments()
         _resolve_decision_fn(load_agent_factory(AGENT_SPEC)())
-        print(f"Connected: key verified and both game policies loaded; {len(assignments)} Pokemon/Red Alert assignments available.")
+        print(f"Connected: key verified and game router loaded; {len(assignments)} Pokemon/Red Alert/Werewolf assignments available.")
         print("Connection check complete. Run without --check to accept matches.")
         return 0
     finally:
@@ -89,7 +89,7 @@ def run_online(kinds: frozenset[str]) -> int:
                 raise
             print(str(exc), flush=True)
         names = "+".join("tournament" if kind == "tournament" else "testing" for kind in sorted(kinds))
-        print(f"Waiting for Pokemon VGC Doubles Draft / Red Alert assignments ({names}). Keep this process running; press Ctrl+C to stop.", flush=True)
+        print(f"Waiting for Pokemon VGC Doubles Draft / Red Alert / Werewolf assignments ({names}). Keep this process running; press Ctrl+C to stop.", flush=True)
         run_tournament_forever(official, agent_spec=AGENT_SPEC, kinds=kinds)
         return 0
     finally:
@@ -98,19 +98,20 @@ def run_online(kinds: frozenset[str]) -> int:
 
 def decide_offline(path: str) -> int:
     from altruagent.agent_loader import load_agent_factory
-    from altruagent.runner import _resolve_decision_fn
+    from altruagent.runner import _resolve_decision_fn, _resolve_message_decision_fn
     stream = sys.stdin if path == "-" else open(path, "r", encoding="utf-8")
     try:
         payload = json.load(stream)
     finally:
         if stream is not sys.stdin:
             stream.close()
-    action = _offline_action(payload, _resolve_decision_fn(load_agent_factory(AGENT_SPEC)()))
+    agent = load_agent_factory(AGENT_SPEC)()
+    action = _offline_action(payload, _resolve_decision_fn(agent), _resolve_message_decision_fn(agent))
     print(json.dumps(action, ensure_ascii=False))
     return 0
 
 
-def _offline_action(payload: dict, choose) -> dict:
+def _offline_action(payload: dict, choose, choose_message=None) -> dict:
     from altruagent.models import DecisionContext, GameState, LegalAction
     raw = payload.get("state", payload)
     state = GameState.from_mcp_state(raw)
@@ -119,17 +120,24 @@ def _offline_action(payload: dict, choose) -> dict:
         tournament_id=None,
         game_type=raw.get("game_type", GAME_TYPE),
         agent_id=payload.get("agent_id", "offline"),
-        seat_position=payload.get("seat_position", 0),
+        seat_position=payload.get("seat_position", raw.get("your_position", 0)),
         game_config=payload.get("game_config"),
     )
-    from altruagent import WAIT, WithReasoning
-    action = choose(state, context)
+    from altruagent import WAIT, WithReasoning, SendMessage, TERMINATE_MESSAGING
+    action = ((choose_message(state, context) if choose_message else TERMINATE_MESSAGING)
+              if state.phase == "messaging" else choose(state, context))
     if isinstance(action, WithReasoning):
         action = action.action
     if action is WAIT:
         return {"type": "wait"}
+    if action is TERMINATE_MESSAGING:
+        return {"type": "terminate"}
+    if isinstance(action, SendMessage):
+        return {"type": "chat", "content": action.content, "recipients": list(action.recipients)}
     if isinstance(action, LegalAction):
         action = action.input.get("action", {"action_id": action.action_id})
+    if isinstance(action, str):
+        return {"action_id": action}
     return action
 
 
@@ -137,15 +145,17 @@ def decide_jsonl() -> int:
     """Keep one agent alive for many local engine decisions; stdout is JSON only."""
     from contextlib import redirect_stdout
     from altruagent.agent_loader import load_agent_factory
-    from altruagent.runner import _resolve_decision_fn
+    from altruagent.runner import _resolve_decision_fn, _resolve_message_decision_fn
     with redirect_stdout(sys.stderr):
-        choose = _resolve_decision_fn(load_agent_factory(AGENT_SPEC)())
+        agent = load_agent_factory(AGENT_SPEC)()
+        choose = _resolve_decision_fn(agent)
+        choose_message = _resolve_message_decision_fn(agent)
     for line in sys.stdin:
         if not line.strip():
             continue
         try:
             with redirect_stdout(sys.stderr):
-                action = _offline_action(json.loads(line), choose)
+                action = _offline_action(json.loads(line), choose, choose_message)
             print(json.dumps(action, ensure_ascii=False), flush=True)
         except Exception as exc:
             print(json.dumps({"error": str(exc)}, ensure_ascii=False), flush=True)
@@ -163,7 +173,8 @@ def _probe_worker(queue) -> None:
     # Lazy routing must not hide a missing game module in a spawned worker.
     from pokemon_bot.agent import create_agent as create_pokemon
     from redalert_bot.agent import create_agent as create_redalert
-    for factory in (create_pokemon, create_redalert):
+    from werewolf_bot.agent import create_agent as create_werewolf
+    for factory in (create_pokemon, create_redalert, create_werewolf):
         _resolve_decision_fn(factory())
     # No request is made: construction catches absent CA bundles and optional
     # proxy dependencies in the packaged artifact before a real match starts.
@@ -192,8 +203,8 @@ def runtime_self_test() -> dict:
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="AltruAgent Pokemon + Red Alert agent. Accepts tournament and testing matches by default.")
-    result.add_argument("--version", action="version", version=f"PokemonChampion + RedAlertChampion {VERSION}")
+    result = argparse.ArgumentParser(description="AltruAgent Pokemon + Red Alert + Werewolf agent. Accepts tournament and testing matches by default.")
+    result.add_argument("--version", action="version", version=f"Gaming Agent {VERSION}")
     result.add_argument("--check", "--check-tournament", action="store_true", help="check the key, connection and policy without accepting matches")
     result.add_argument("--self-test", action="store_true", help="run offline self-tests; no key required")
     result.add_argument("--runtime-test", action="store_true", help=argparse.SUPPRESS)
@@ -216,10 +227,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.self_test:
             from pokemon_bot.selftest import run as pokemon_test
             from redalert_bot.selftest import run as redalert_test
+            from werewolf_bot.selftest import run as werewolf_test
             result = pokemon_test()
             redalert_result = redalert_test()
+            werewolf_result = werewolf_test()
             print("Runtime:", json.dumps(runtime_self_test()))
-            return int(result or redalert_result or 0)
+            return int(result or redalert_result or werewolf_result or 0)
         if args.decide:
             return decide_offline(args.decide)
         if args.jsonl:

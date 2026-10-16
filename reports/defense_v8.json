@@ -1,0 +1,93 @@
+{
+  "revision": "v8",
+  "date": "2026-10-16",
+  "branch": "improve/werewolf-defenses-v8",
+  "base_commit": "129b1da5a246b4ac093db431c59fce7f6284a81c",
+  "status": "development_candidate",
+  "strategy_versions": {
+    "pokemon": "counterplay_v8",
+    "redalert": "defense_v8",
+    "werewolf": "evidence_v1",
+    "honor_of_kings": "hok_objective_v2"
+  },
+  "launcher_version": "1.4.0",
+  "source_sha256": {
+    "competition_agent.py": "37e5135158beffe1711af54693b5ae82a6c792785e58d58de78aa34f7bcf8d83",
+    "launcher.py": "b95db5b9acacd3bf6e884e7ac5bb86964d5790d91c5da07abd878012cd8e5f23",
+    "match_monitor.py": "d76d16b9869740b4888beac89486ddffc62e181b0560a9834b6cbdd269ac68db",
+    "pokemon_bot/agent.py": "72582e4966b35e0713b48d8217ecc30a31bc633e3f512d2087031d17ac4d0fde",
+    "pokemon_bot/battle.py": "9a077197ea0dc2ceb700f34c9cc376dcc323a915c4a69a36d8256edf9bb34d69",
+    "redalert_bot/agent.py": "cc8f9bc6e9a75e86af1d81a70deb0a99615c058840b8004e02f5a9438ce673c9",
+    "redalert_bot/combat.py": "f9093d6a6ea5f306cea1dd099595dbba63fe4584cac35fe64b0750e07f86bc10",
+    "hok_bot/agent.py": "ece2492b9d58da2cd5cb482a8a4142af656fca6e44fd9e4b6f3c7b0c48cece0a",
+    "werewolf_bot/agent.py": "272241e068864483cdc3fe1994d64f950b295d8713d0e7f9edc284a9c7ea153f",
+    "werewolf_bot/selftest.py": "c461695f28b8638b5fce487e089792e90629e6df2a7a23535bceb9740dbce027"
+  },
+  "validation": {
+    "full_suite": {
+      "command": "SHOWDOWN_NODE=node python -m pytest tests -q",
+      "environment_note": "Pokemon Showdown 0.11.11 installed; validation host used NODE_PATH to the external installation. Use npm install for the repository-local dependency.",
+      "passed": 560,
+      "failed": 0,
+      "duration_seconds": 13.62
+    },
+    "runtime_self_test": {
+      "command": "python exe_entry.py --self-test",
+      "passed": true,
+      "checks": [
+        "Pokemon policy",
+        "Red Alert policy",
+        "Werewolf policy",
+        "spawned worker imports",
+        "MCP import",
+        "entry import",
+        "TLS initialization"
+      ]
+    },
+    "hok_smoke": {
+      "command": "python -m hok_bot --smoke",
+      "passed": true,
+      "synthetic": true,
+      "engine_tested": false
+    },
+    "new_scenarios": {
+      "werewolf": {
+        "policy_tests": 38,
+        "integration_tests": 16,
+        "old_source_comparison": "not applicable: new game policy"
+      },
+      "pokemon": {
+        "tests": 21,
+        "old_source_failures": 9,
+        "showdown_independent_checks_within_one_test": 9
+      },
+      "redalert": {
+        "tests": 10,
+        "old_source_failures": 8
+      },
+      "honor_of_kings": {
+        "tests": 7,
+        "old_source_failures": 6
+      }
+    },
+    "diff_check_passed": true
+  },
+  "research": {
+    "document": "docs/OPPONENT_RESEARCH.md",
+    "evidence": "reports/opponent_research.json",
+    "custom_code_repositories": 7,
+    "empty_hok_repositories": 1,
+    "registration_verified": false,
+    "deployed_versions_verified": false,
+    "opponent_code_executed": false,
+    "opponent_code_copied": false
+  },
+  "limitations": [
+    "No live match or opponent head-to-head evaluation was run for v8; software checks do not establish win rate.",
+    "The prior 19-21 Pokemon result evaluates v7 only, not v8.",
+    "Werewolf uses a narrow English claim grammar and heuristic inference; arbitrary natural-language persuasion is not understood.",
+    "Red Alert combat and routing estimates and Pokemon battle simulation remain approximate.",
+    "HOK remains standalone Tencent 1v1, without licensed Gamecore testing or support for the announced AltruAgent 5v5 format.",
+    "This development branch does not replace main or an existing tournament deployment."
+  ]
+}

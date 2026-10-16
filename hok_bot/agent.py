@@ -125,7 +125,7 @@ class HonorOfKingsAgent:
     hero-specific skill combos remain an explicit limitation.
     """
 
-    version = "hok_objective_v1"
+    version = "hok_objective_v2"
 
     def __init__(self):
         self.game_id = None
@@ -267,6 +267,19 @@ class HonorOfKingsAgent:
                     self.last_reason = "finish_objective" if _hp(organ) < .18 else "push_with_wave"
                     return action
 
+        # Resolve enemy pressure before farming: otherwise an opponent can keep
+        # dealing damage while the policy repeatedly selects a nearby minion.
+        # A friendly soldier elsewhere on the map is not local wave support.
+        threat = next((t for t in nearby_foes if _distance(pos, _position(t.actor)) <
+                       max(2500, _number(t.actor, "atk_range", 6000)) + 300), None)
+        if threat and health < _hp(threat.actor) + .08:
+            threat_pos = _position(threat.actor)
+            support_range = max(2500, _number(threat.actor, "atk_range", 6000)) + 1000
+            local_wave = any(_hp(s) > .22 and _distance(pos, _position(s)) < 6500
+                             and _distance(threat_pos, _position(s)) < support_range for s in friendly)
+            if not local_wave:
+                return self._move(legal, pos, home, camp, "kite_unfavorable_trade")
+
         attack = max(60.0, _number(ego, "phy_atk", 150))
         last_hits = [t for t in targets if t.kind == "soldier" and _number(t.actor, "hp") <= attack * .85
                      and _distance(pos, _position(t.actor)) <= attack_range + 500]
@@ -300,12 +313,6 @@ class HonorOfKingsAgent:
             if action is not None:
                 self.last_reason = "push_with_wave"
                 return action
-
-        # Stay outside the opponent's attack range if no favorable trade exists.
-        threat = next((t for t in nearby_foes if _distance(pos, _position(t.actor)) <
-                       max(2500, _number(t.actor, "atk_range", 6000)) + 300), None)
-        if threat and health < _hp(threat.actor) + .08 and not friendly:
-            return self._move(legal, pos, home, camp, "kite_unfavorable_trade")
 
         destination = _position(farm[0].actor) if farm else (_position(organ) if organ else (-home[0], -home[1]))
         # Approach only to attack range, and stop outside unsupported tower fire.

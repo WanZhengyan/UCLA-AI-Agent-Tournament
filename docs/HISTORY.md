@@ -2,6 +2,18 @@
 
 This document preserves the relevant history of the original local builds. It is not a current deployment record. Some referenced experiment outputs were retained only on the original machine and are intentionally absent from GitHub. Use the main [README](../README.md) for current setup commands.
 
+## Werewolf and targeted defenses (v8, 2026-10-16)
+
+This development revision adds `evidence_v1` for the official seven-seat Werewolf format. It uses role-specific night choices, a constrained wolf-pair model, limited discussion, and private per-seat tie randomization. Server role information is kept separate from untrusted claims; announced votes are not resolved votes. The router validates game/session/seat identities, isolates same-account seats, and excludes private Werewolf observations from general telemetry. The launcher is version 1.4.0 and packages three AltruAgent policies. [WEREWOLF.md](WEREWOLF.md) documents the supported protocol and limitations.
+
+[Public repository research](OPPONENT_RESEARCH.md) identified seven event/platform-related projects with custom policies and one empty HOK repository. Registration and deployed commits are unverified. Sources suggested raids, ambushes, predictable voting, and paired-action counterplay as useful defensive scenarios. No opponent code was copied or executed, and no source established prohibited attacks against this agent.
+
+Red Alert `defense_v8` assigns a bounded local response to small economic raids, preserves reserve guards, and holds outside known towers instead of following bait. Ten new scenarios pass; eight fail on the frozen previous source. Pokemon `counterplay_v8` models Thunderclap's pending-attack requirement and ability-bypassing priority denial, while preserving Ability Shield, Psychic Terrain, and Quick Guard protection. Twenty-one new tests pass, including nine independent Showdown mechanism checks within one test; nine Python scenarios fail on the previous source. These are targeted mechanics corrections rather than a new search-weight tuning experiment.
+
+Standalone HOK `hok_objective_v2` retreats from unfavorable trades before choosing to farm, and only counts healthy nearby minions as protective cover. Seven new scenarios pass; six fail on the previous source. This remains Tencent's separate 1v1 integration, with no licensed Gamecore match and no AltruAgent 5v5 support claim.
+
+Validation: **560 tests passed**, including the optional Showdown checks, plus all three platform policy self-tests, spawned runtime imports, and a separate HOK smoke check. Werewolf contributes 38 policy tests and 16 integration tests. [defense_v8.json](../reports/defense_v8.json) records source hashes and reproduction commands. No live match, opponent head-to-head, or v8 win-rate comparison was run. The earlier v7 result of 19-21 is historical evidence about v7 only. This branch has not replaced `main` or a running tournament submission.
+
 ## Pokemon mechanics and standalone Honor of Kings (v7, 2026-10-16)
 
 Pokemon `mechanics_v7` improves the approximate simulator used by joint-action search. Multi-hit attacks apply Stamina, Multiscale, Focus Sash, berries, and contact reactions per hit. Drain healing precedes contact recoil. Electro Shot and Meteor Beam gain their Special Attack boost before damage; rain, Power Herb, and Utility Umbrella affect the charge turn. Unaware, immediate Lum/Chesto/Mental Herb cures, Unnerve's berry suppression, and Punching Glove versus Unseen Fist are modeled more accurately. Koraidon and Miraidon set weather/terrain on entry and receive their conditional offensive-stat boosts. Variable hit counts and other damage details remain approximations.

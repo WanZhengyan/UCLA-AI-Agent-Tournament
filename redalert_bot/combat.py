@@ -7,7 +7,7 @@ idle or a meaningful tactical change occurs.
 from __future__ import annotations
 
 from .common import NONCOMBAT, alive, cell, distance
-from .strategy import STATIC, SIEGE, TANKS, observe, fortifications, blockers, safe_cell, radius, weapon_range
+from .strategy import STATIC, SIEGE, TANKS, observe, fortifications, blockers, safe_cell, radius, weapon_range, segment_distance
 
 AIR = {'mig', 'yak', 'heli', 'hind', 'tran', 'badr', 'u2'}
 PASSIVE = NONCOMBAT | AIR | {'dtruck', 'ant', 'ant1', 'ant2', 'ant3'}
@@ -280,6 +280,85 @@ def _warning_scout(v, state, emit, army, threats):
     return {scout['id']}
 
 
+def _raid_response(v, state, army, enemies, target):
+    """Use a stable, sufficient local screen for a small visible raid.
+
+    This uses the existing conservative matchup estimate, not a predicted
+    combat outcome. If nearby units cannot cover the raid, the caller retains
+    its normal full-incursion response.
+    """
+    old = state.get('raid_response', {})
+    previous = (set(old.get('units', []))
+                if distance(old.get('goal', cell(target)), cell(target)) <= 13 else set())
+    candidates = [a for a in army if a.get('type') not in SIEGE
+                  and distance(cell(a), cell(target)) <= 26]
+    candidates.sort(key=lambda a: (a['id'] not in previous,
+                                   distance(cell(a), cell(target)), a['id']))
+    chosen = []
+    for actor in candidates:
+        chosen.append(actor)
+        required = max(400, _matchup_value(v, enemies, chosen) * 1.25)
+        if _matchup_value(v, chosen, enemies) >= required:
+            state['raid_response'] = {'units': [a['id'] for a in chosen],
+                                      'goal': list(cell(target))}
+            return chosen
+    state.pop('raid_response', None)
+    return None
+
+
+def _hold_outside_towers(v, state, emit, actors, known):
+    """Local cover must never trigger the offensive controller's global retreat.
+
+    Select a goal from each unit's side of the tower line. A safe endpoint is
+    insufficient: the straight approach must stay outside other towers, or
+    monotonically leave a firing zone the actor already occupies.
+    """
+    groups = {}
+    for actor in actors:
+        start = cell(actor)
+        nearest = min(known, key=lambda b: distance(cell(b), start))
+        goal = _safe_hold(v, start, nearest)
+        for tower in fortifications(v):
+            centre, reach = cell(tower), radius(v, tower) + 2
+            if distance(start, centre) > reach:
+                clear = segment_distance(centre, start, goal) > reach
+            else:
+                clear = ((goal[0]-start[0])*(start[0]-centre[0])
+                         + (goal[1]-start[1])*(start[1]-centre[1])) >= 0
+            if not clear:
+                # Stop the chase locally rather than crossing another zone
+                # or moving the whole army because this reserve is weak.
+                goal = start
+                break
+        groups.setdefault(tuple(goal), []).append(actor)
+    for goal, group in groups.items():
+        _issue(v, state, emit, group, goal, 'hold', command='move')
+
+
+def _keep_home_cover(v, state, emit, army, used, wave_ids):
+    """Release obsolete raid assignments without moving the other flank."""
+    idle_cover = [a for a in army if a['id'] not in used | wave_ids]
+    recalled = [a for a in idle_cover
+                if state.get('unit_orders', {}).get(str(a['id']), {}).get('mode')
+                in {None, 'defend'}]
+    goal = _stage(v)
+    blocked = {b['id']: b for a in recalled for b in blockers(v, cell(a), goal)}
+    if blocked:
+        _hold_outside_towers(v, state, emit, recalled, list(blocked.values()))
+    else:
+        _issue(v, state, emit, recalled, goal, 'hold', command='move')
+    _defensive_stance(v, emit, idle_cover)
+
+
+def _defensive_stance(v, emit, actors):
+    cap = min(40, max(1, int((v.raw.get('limits') or {}).get('max_units_per_order', 50))))
+    for offset in range(0, len(actors), cap):
+        ids = [a['id'] for a in actors[offset:offset+cap] if a.get('stance') != 'defend']
+        if ids:
+            emit({'cmd': 'set_stance', 'units': ids, 'stance': 'defend'},
+                 key='raid-cover-stance:' + ','.join(map(str, ids)), cooldown=15)
+
+
 def plan(v, memory: dict, emit) -> None:
     state = memory.setdefault('combat', {})
     if not getattr(v,'strategy',None):
@@ -330,6 +409,13 @@ def plan(v, memory: dict, emit) -> None:
         target = min(home_threats, key=lambda a: distance(cell(a), v.base))
         nearby_enemies = [a for a in home_threats if distance(cell(a), cell(target)) <= 13]
         local = [a for a in army if distance(cell(a), cell(target)) <= 26 or a['id'] not in wave_ids]
+        armor_focus = getattr(v, 'profile', 'balanced') == 'eco_guard'
+        if armor_focus and len(home_threats) <= 4 and len(nearby_enemies) == len(home_threats):
+            response = _raid_response(v, state, army, nearby_enemies, target)
+            if response:
+                local = response
+        else:
+            state.pop('raid_response', None)
         # Commit the distant army only for a substantial incursion, not a scout.
         if _matchup_value(v, local, nearby_enemies) < _matchup_value(v, nearby_enemies, local) * 1.15:
             local = army
@@ -338,14 +424,31 @@ def plan(v, memory: dict, emit) -> None:
         can_engage = friendly >= _matchup_value(v, nearby_enemies, local) * (.95 if getattr(v, 'profile', 'balanced') == 'eco_guard' else .85)
         goal = cell(target) if can_engage else _rear(v)
         command = 'move' if not can_engage and getattr(v, 'profile', 'balanced') == 'eco_guard' else 'attack_move'
+        if armor_focus:
+            # A raider at home is still bait if reaching it crosses a known
+            # tower line. Defensive orders must obey the same risk gate as
+            # an offensive wave; visibility never makes the route safe.
+            blocked = {b['id']: b for a in local for b in blockers(v, cell(a), goal)}
+            if blocked:
+                _hold_outside_towers(v, state, emit, local, list(blocked.values()))
+                _defensive_stance(v, emit, local)
+                state['mode'] = 'defend outside fortifications'
+                used = {a['id'] for a in local}
+                wave_ids -= used
+                state['wave_ids'] = list(wave_ids)
+                _keep_home_cover(v, state, emit, army, used, wave_ids)
+                return
         _issue(v, state, emit, local, goal, 'defend', urgent=True, command=command)
         used = {a['id'] for a in local}
         wave_ids -= used
         state['wave_ids'] = list(wave_ids)
         state['mode'] = 'defend economy'
         state['last_mode'] = 'defend'
+        if armor_focus:
+            _keep_home_cover(v, state, emit, army, used, wave_ids)
         # Preserve the rest of an already advancing army's current orders.
         return
+    state.pop('raid_response', None)
     if (getattr(v,'strategy',{}) or {}).get('recover_until',0) > v.now and v.remaining > 45:
         state.update(mode='recover after bad exchange',wave_ids=[])
         _issue(v,state,emit,army,_stage(v),'regroup',command='move')
