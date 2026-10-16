@@ -17,7 +17,7 @@ from urllib.parse import urlparse
 
 from competition_agent import SUPPORTED_GAME_TYPES
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 GAME_TYPE = "pokemon_vgc_doubles_draft"
 AGENT_SPEC = "competition_agent:create_agent"
 CONTROL_URL = "https://api.altruagent-game.com"

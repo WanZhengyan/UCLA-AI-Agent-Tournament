@@ -16,6 +16,8 @@ LOG=logging.getLogger('pokemon_bot')
 
 
 class PokemonAgent:
+    strategy_version = "mechanics_v7"
+
     def __init__(self):
         self.memories={}
         self.last_diagnostics={}
@@ -76,7 +78,7 @@ class PokemonAgent:
             elif template.get('type') in ('select_lineup','doubles_turn'):answer=fallback(template)
             else:raise
             fallback_used=True
-        self.last_diagnostics={'phase':state.phase,'seconds':round(time.monotonic()-start,4),'fallback':fallback_used}
+        self.last_diagnostics={'phase':state.phase,'seconds':round(time.monotonic()-start,4),'fallback':fallback_used,'strategy_version':self.strategy_version}
         memory['_signature']=signature;memory['_answer']=copy.deepcopy(answer)
         # Store intended actions separately; no claim that a submitted action succeeded.
         memory['_planned_action']=copy.deepcopy(answer if isinstance(answer,dict) else answer.input.get('action',{}))

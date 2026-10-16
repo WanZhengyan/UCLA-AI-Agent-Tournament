@@ -47,8 +47,8 @@ def boost(n):
     return (2+n)/2 if n >= 0 else 2/(2-n)
 
 
-def getstat(p, k, crit=False, defending=False):
-    b = float(p.get("boosts", {}).get(k, 0) or 0)
+def getstat(p, k, crit=False, defending=False, ignore_boosts=False):
+    b = 0. if ignore_boosts else float(p.get("boosts", {}).get(k, 0) or 0)
     if crit and ((defending and b > 0) or (not defending and b < 0)):
         b = 0
     return max(1., float(p.get("stats", {}).get(k, 100)) * boost(b))
@@ -120,17 +120,53 @@ def _needs_charge(p, d, field):
     mid=d["id"]; effects=p.get("effects",{})
     if "twoturnmove" in effects or mid in effects: return False
     if item(p)=="powerherb" and mid!="skydrop": return False
-    if mid=="electroshot" and weather(field) in {"rain","raindance","primordialsea"}: return False
+    if mid=="electroshot" and item(p)!="utilityumbrella" and weather(field) in {"rain","raindance","primordialsea"}: return False
     if mid in {"solarbeam","solarblade"} and weather(field) in {"sun","sunnyday","desolateland"}: return False
     return True
 
 
-def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None, helping=False):
+def _hit_weights(p, d):
+    """Exact fixed hit counts; bounded mean approximations for random multi-hit moves."""
+    hits=d.get("multihit",1)
+    if isinstance(hits,(list,tuple)):
+        hits=hits[-1] if ability(p)=="skilllink" else 4.5 if item(p)=="loadeddice" else 3.
+    if d["id"]=="surgingstrikes": hits=3
+    if d["id"]=="populationbomb": hits=6.5
+    if d["id"] in {"tripleaxel","triplekick"}: return [1.,1.8,2.43]
+    hits=float(hits or 1)
+    return [1.] * int(hits) + ([hits % 1] if hits % 1 else [])
+
+
+def _makes_contact(att, d):
+    return bool(d.get("flags",{}).get("contact")) and ability(att)!="longreach" and not (item(att)=="punchingglove" and d.get("flags",{}).get("punch"))
+
+
+def _contact_cost(att, defender, d):
+    if not _makes_contact(att,d) or ability(att)=="magicguard" or item(att)=="protectivepads": return 0.
+    return (1/6 if item(defender)=="rockyhelmet" else 0.) + (1/8 if ability(defender) in {"roughskin","ironbarbs"} else 0.)
+
+
+def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None, helping=False, _single_hit=False):
     """Expected HP fraction, using known fixed sets and common VGC mechanics."""
     if not alive(att) or not alive(defender): return 0.
     field = field or {}
     d = md(move_id); mid = d["id"]
     if d["category"] == "status": return 0.
+    # Electro Shot/Meteor Beam boost before attacking, even with rain/Power Herb.
+    # The simulator marks its explicit boost to avoid applying it twice here.
+    if mid in {"electroshot","meteorbeam"} and not att.get("_charge_boost_applied") and not (mid in att.get("effects",{}) or "twoturnmove" in att.get("effects",{})):
+        att=_clone_mon(att); _setboost(att,{"spa":1}); att["_charge_boost_applied"]=True
+    hit_weights=_hit_weights(att,d)
+    if not _single_hit and len(hit_weights)>1:
+        q=_clone_mon(defender); total=0.
+        for weight in hit_weights:
+            part=damage(att,q,move_id,field,side,spread,friend,helping,_single_hit=True)*weight
+            total+=part
+            # Retain a positive HP floor so ranking sees damage beyond the KO
+            # threshold, while only the first hit benefits from Multiscale.
+            q["hp"]=max(.00001,q["hp"]-part)
+            if part>0 and ability(q)=="stamina": _setboost(q,{"def":1})
+        return total
     ab, db, it, di = ability(att), ability(defender), item(att), item(defender)
     if ab in {"moldbreaker", "teravolt", "turboblaze"} or d.get("ignoreAbility"): db = ""
     typ = d["type"]
@@ -187,7 +223,8 @@ def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None
     if ab == "technician" and power <= 60: power *= 1.5
     if ab == "strongjaw" and d.get("flags",{}).get("bite"): power *= 1.5
     if ab == "ironfist" and d.get("flags",{}).get("punch"): power *= 1.2
-    if ab == "toughclaws" and d.get("flags",{}).get("contact"): power *= 1.3
+    if ab == "toughclaws" and _makes_contact(att,d): power *= 1.3
+    if it == "punchingglove" and d.get("flags",{}).get("punch"): power *= 1.1
     if ab == "sharpness" and d.get("flags",{}).get("slicing"): power *= 1.5
     if ab == "punkrock" and d.get("flags",{}).get("sound"): power *= 1.3
     if ab == "sheerforce" and (d.get("secondary") or d.get("secondaries")): power *= 1.3
@@ -197,8 +234,8 @@ def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None
     defkey = "def" if physical or mid in {"psyshock", "psystrike", "secretsword"} else "spd"
     atkp = defender if mid == "foulplay" else att
     if mid == "bodypress": atkkey = "def"
-    atkval = getstat(atkp, atkkey, crit)
-    defval = getstat(defender, defkey, crit, True)
+    atkval = getstat(atkp, atkkey, crit, ignore_boosts=db=="unaware" and atkp is att)
+    defval = getstat(defender, defkey, crit, True, ignore_boosts=ab=="unaware")
     if ab in {"hugepower", "purepower"} and physical and mid != "bodypress": atkval *= 2
     if ab == "guts" and physical and att.get("status"): atkval *= 1.5
     if it == "choiceband" and physical: atkval *= 1.5
@@ -213,6 +250,8 @@ def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None
     if w == "sandstorm" and "rock" in types(defender) and defkey == "spd": defval *= 1.5
     if w in {"snow","snowscape"} and "ice" in types(defender) and defkey == "def": defval *= 1.5
     if ab == "solarpower" and w in {"sun","sunnyday","desolateland"} and not physical: atkval *= 1.5
+    if ab == "orichalcumpulse" and physical and it != "utilityumbrella" and w in {"sun","sunnyday","desolateland"}: atkval *= 5461/4096
+    if ab == "hadronengine" and not physical and tr == "electricterrain": atkval *= 5461/4096
     if (ab == "protosynthesis" and (w in {"sun","sunnyday","desolateland"} or it=="boosterenergy")) or (ab=="quarkdrive" and (tr=="electricterrain" or it=="boosterenergy")):
         best = max(("atk","def","spa","spd","spe"),key=lambda k:getstat(att,k))
         if best == atkkey: atkval *= 1.3
@@ -241,7 +280,7 @@ def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None
     if db=="purifyingsalt" and typ=="ghost": mult *= .5
     if db=="heatproof" and typ=="fire": mult *= .5
     if db=="fluffy":
-        if d.get("flags",{}).get("contact"): mult *= .5
+        if _makes_contact(att,d): mult *= .5
         if typ=="fire": mult *= 2
     if friend and alive(friend) and ability(friend)=="friendguard": mult *= .75
     if it=="lifeorb": mult *= 1.3
@@ -250,14 +289,7 @@ def damage(att, defender, move_id, field=None, side=0, spread=False, friend=None
     if boosters.get(it)==typ: mult *= 1.2
     screen = ("foe_" if side==0 else "own_")+("reflect" if physical else "lightscreen")
     if (field.get(screen) or field.get(("foe_" if side==0 else "own_")+"auroraveil")) and not crit and ab!="infiltrator": mult *= 2/3
-    hits=d.get("multihit",1)
-    if isinstance(hits,(list,tuple)):
-        hits=hits[-1] if ab=="skilllink" else 4. if it=="loadeddice" else 3.
-    hits=float(hits or 1)
-    if mid=="surgingstrikes": hits=3
-    if mid=="populationbomb": hits=6.5
-    if mid in {"tripleaxel","triplekick"}: hits=5.23
-    dmg = dmg*mult*hits/max(1,float(defender.get("stats",{}).get("hp",180)))
+    dmg = dmg*mult/max(1,float(defender.get("stats",{}).get("hp",180)))
     acc = d["accuracy"]
     if ab=="noguard" or db=="noguard": acc=1.
     if mid in {"thunder","hurricane"} and w in {"rain","raindance","primordialsea"}: acc=1.
@@ -467,8 +499,27 @@ def _entry(q, side, board, field):
         for foe in board[1-side]:
             if not alive(foe) or ability(foe) in {"clearbody","whitesmoke","fullmetalbody","innerfocus","oblivious","owntempo","scrappy"} or item(foe)=="clearamulet": continue
             _setboost(foe,{"atk":-1},opposing=True)
-    if ab in {"drizzle","drought","sandstream","snowwarning"}: field["weather"]={"drizzle":"raindance","drought":"sunnyday","sandstream":"sandstorm","snowwarning":"snowscape"}[ab]
-    if ab in {"electricsurge","grassysurge","psychicsurge","mistysurge"}: field["terrain"]={"electricsurge":"electricterrain","grassysurge":"grassyterrain","psychicsurge":"psychicterrain","mistysurge":"mistyterrain"}[ab]
+    if ab in {"drizzle","drought","orichalcumpulse","sandstream","snowwarning"}: field["weather"]={"drizzle":"raindance","drought":"sunnyday","orichalcumpulse":"sunnyday","sandstream":"sandstorm","snowwarning":"snowscape"}[ab]
+    if ab in {"electricsurge","hadronengine","grassysurge","psychicsurge","mistysurge"}: field["terrain"]={"electricsurge":"electricterrain","hadronengine":"electricterrain","grassysurge":"grassyterrain","psychicsurge":"psychicterrain","mistysurge":"mistyterrain"}[ab]
+
+
+def _berries_blocked(foes):
+    return any(alive(q) and ability(q) in {"unnerve","asoneglastrier","asonespectrier"} for q in foes)
+
+
+def _activate_cure(p, foes):
+    """Immediate held-item cures happen before a later move in the same turn."""
+    it=item(p)
+    blocked=_berries_blocked(foes)
+    status=p.get("status","")
+    cures_status=(it=="lumberry" and bool(status)) or (it=="chestoberry" and status in {"slp","sleep"})
+    if cures_status and not blocked:
+        p["status"]=""; p["item"]=""
+    elif it=="mentalherb" and p.get("_taunt"):
+        p.pop("_taunt",None); p["item"]=""
+    else:
+        return
+    if ability(p)=="unburden": p["_unburden"]=True
 
 
 def _clone_mon(p):
@@ -614,16 +665,24 @@ def _simulate(base, actions, horizon, tie_order):
         if mid in {"electricterrain","grassyterrain","psychicterrain","mistyterrain"}: field["terrain"]=mid; continue
         if mid in HEAL: p["hp"]=min(1,p["hp"]+.5); continue
         if mid=="rest":
-            if _status_possible(p,p,"spore",field): p["hp"]=1.; p["status"]="slp"
+            if _status_possible(p,p,"spore",field):
+                p["hp"]=1.; p["status"]="slp"; _activate_cure(p,board[1-side])
             continue
         if mid=="haze":
             for line in board:
                 for q in line: q["boosts"]={}
             continue
+        beginning_charge=d.get("flags",{}).get("charge") and not (mid in p.get("effects",{}) or "twoturnmove" in p.get("effects",{}))
+        if beginning_charge and mid in {"electroshot","meteorbeam"}:
+            _setboost(p,{"spa":1}); p["_charge_boost_applied"]=True
         if _needs_charge(p,d,field):
             p["_charging"]=mid
-            if mid in {"electroshot","meteorbeam"}: _setboost(p,{"spa":1})
             continue
+        if beginning_charge and item(p)=="powerherb" and mid!="skydrop":
+            no_herb=dict(p,item="")
+            if _needs_charge(no_herb,d,field):
+                p["item"]=""
+                if ability(p)=="unburden": p["_unburden"]=True
         if d["category"]=="status" and d.get("boosts") and d.get("target") in {"self","allySide"}:
             _setboost(p,d["boosts"]); continue
         targets=_target_pairs(a,side,slot,board,field)
@@ -651,7 +710,7 @@ def _simulate(base, actions, horizon, tie_order):
             if ts!=side and native_spread and field.get(("own_" if ts==0 else "foe_")+"wideguard"): continue
             protect=q.get("_protect",0)
             if mid in {"feint","hyperspacefury","hyperspacehole","phantomforce","shadowforce"}: protect=0
-            if ability(p)=="unseenfist" and d.get("flags",{}).get("contact"): protect=0
+            if ability(p)=="unseenfist" and _makes_contact(p,d): protect=0
             if ts==side and d["category"]=="status": protect=0
             if protect>=1: continue
             if d["category"]=="status":
@@ -669,6 +728,7 @@ def _simulate(base, actions, horizon, tie_order):
                 elif mid in {"healpulse","lifedew","junglehealing"}: q["hp"]=min(1,q["hp"]+.5)
                 elif mid=="partingshot": _setboost(q,{"atk":-1,"spa":-1},opposing=ts!=side)
                 elif d.get("boosts"): _setboost(q,d["boosts"],opposing=ts!=side)
+                _activate_cure(q,board[1-ts])
                 continue
             if mid=="pollenpuff" and ts==side:
                 q["hp"]=min(1,q["hp"]+.5); continue
@@ -680,15 +740,35 @@ def _simulate(base, actions, horizon, tie_order):
             if mid in {"brickbreak","psychicfangs"}:
                 for sc in ("reflect","lightscreen","auroraveil"):
                     field[("own_" if ts==0 else "foe_")+sc]=False
-            amount=damage(p,q,mid,field,side,spread,board[ts][1-tj],p.get("_helping",False))*(1-protect)
-            if amount<=0: continue
-            # Focus Sash/Sturdy do not protect against multi-hit attacks.
-            if q["hp"]>=.999 and (item(q)=="focussash" or ability(q)=="sturdy") and not d.get("multihit") and mid!="surgingstrikes":
-                amount=min(amount,q["hp"]-.006)
-                if amount>=q["hp"]-.007 and item(q)=="focussash": q["item"]=""
-            before=q["hp"]; q["hp"]=max(0,q["hp"]-amount); total_dealt+=min(before,amount)*q.get("stats",{}).get("hp",180)
-            if alive(q) and item(q)=="sitrusberry" and q["hp"]<=.5:
-                q["hp"]=min(1.,q["hp"]+.25); q["item"]=""
+            dealt_this_target=0.
+            bypass=ability(p) in {"moldbreaker","teravolt","turboblaze"} or d.get("ignoreAbility",False)
+            for hit_weight in _hit_weights(p,d):
+                if not alive(p) or not alive(q): break
+                amount=damage(p,q,mid,field,side,spread,board[ts][1-tj],p.get("_helping",False),_single_hit=True)*hit_weight*(1-protect)
+                if amount<=0: break
+                # Each hit gets its own Sash/Sturdy, berry and contact reaction.
+                # A full-HP Sash cannot block later hits after the first consumes it.
+                if q["hp"]>=.999 and (item(q)=="focussash" or (ability(q)=="sturdy" and not bypass)):
+                    amount=min(amount,q["hp"]-.006)
+                    if amount>=q["hp"]-.007 and item(q)=="focussash": q["item"]=""
+                contact_cost=_contact_cost(p,q,d)
+                before=q["hp"]; q["hp"]=max(0,q["hp"]-amount)
+                hit_dealt=min(before,amount)*q.get("stats",{}).get("hp",180)
+                dealt_this_target+=hit_dealt
+                # Drain recovery precedes Rocky Helmet/Rough Skin. A low-HP
+                # Drain Punch user may survive contact by healing on this hit.
+                if d.get("drain"):
+                    n,den=d["drain"]
+                    p["hp"]=min(1.,p["hp"]+hit_dealt*n/den/p.get("stats",{}).get("hp",180))
+                if alive(q) and item(q)=="sitrusberry" and q["hp"]<=.5 and not _berries_blocked(board[1-ts]):
+                    q["hp"]=min(1.,q["hp"]+.25); q["item"]=""
+                    if ability(q)=="unburden": q["_unburden"]=True
+                if alive(q) and ability(q)=="stamina": _setboost(q,{"def":1})
+                if alive(q) and ability(q)=="weakarmor" and d["category"]==PHYSICAL:
+                    _setboost(q,{"def":-1,"spe":2})
+                p["hp"]=max(0.,p["hp"]-contact_cost*min(1.,hit_weight))
+            total_dealt+=dealt_this_target
+            if not dealt_this_target: continue
             secondaries=item(q)!="covertcloak" and ability(q)!="shielddust"
             if secondaries and mid=="fakeout" and ability(q)!="innerfocus" and "ghost" not in types(q): q["_flinch"]=True
             bypass=ability(p) in {"moldbreaker","teravolt","turboblaze"} or d.get("ignoreAbility",False)
@@ -699,7 +779,8 @@ def _simulate(base, actions, horizon, tie_order):
             if mid=="knockoff": q["item"]=""
             if mid=="clearsmog": q["boosts"]={}
             if mid in {"icespinner","steelroller"}: field["terrain"]=""
-            if secondaries and mid=="nuzzle" and not q.get("status") and "electric" not in types(q): q["status"]="par"
+            if secondaries and mid=="nuzzle" and not q.get("status") and "electric" not in types(q):
+                q["status"]="par"; _activate_cure(q,board[1-ts])
             if secondaries and mid=="saltcure": q["_saltcure"]=True
             if secondaries and mid=="throatchop": q["_taunt"]=True
             if not alive(q) and ability(p) in {"moxie","chillingneigh","grimneigh","asoneglastrier","asonespectrier","beastboost"}:
@@ -708,9 +789,7 @@ def _simulate(base, actions, horizon, tie_order):
         if selfpart.get("boosts"): _setboost(p,selfpart["boosts"])
         if mid=="makeitrain" and not selfpart.get("boosts"): _setboost(p,{"spa":-1})
         if mid in {"overheat","dracometeor","leafstorm","fleurcannon","psychoboost"} and not selfpart.get("boosts"): _setboost(p,{"spa":-2})
-        if total_dealt>0:
-            if d.get("drain"):
-                n,den=d["drain"]; p["hp"]=min(1.,p["hp"]+total_dealt*n/den/p.get("stats",{}).get("hp",180))
+        if total_dealt>0 and alive(p):
             if d.get("recoil"):
                 n,den=d["recoil"]; p["hp"]=max(0.,p["hp"]-total_dealt*n/den/p.get("stats",{}).get("hp",180))
             if item(p)=="lifeorb" and ability(p) not in {"magicguard","sheerforce"}: p["hp"]=max(0,p["hp"]-.1)
@@ -731,6 +810,7 @@ def _simulate(base, actions, horizon, tie_order):
             if item(p)=="toxicorb" and not p.get("status") and not set(types(p)).intersection({"poison","steel"}): p["status"]="tox"
             if terrain(field)=="grassyterrain" and grounded(p): p["hp"]=min(1,p["hp"]+1/16)
             if p.get("_yawn") and not p.get("status"): p["status"]="slp"
+            _activate_cure(p,board[1-side])
             p["hp"]=max(0,p["hp"])
     result=evaluate(board,benches,field,horizon)
     for s in (0,1):

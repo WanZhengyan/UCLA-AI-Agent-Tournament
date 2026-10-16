@@ -1,0 +1,271 @@
+{
+  "analysis_date": "2026-10-16",
+  "analysis_type": "Recorded official HoKOff trajectories; descriptive analysis, not evaluation of this repository agent",
+  "source_project": "https://github.com/tencent-ailab/hokoff",
+  "source_commit": "9b35f7e5891ad98df45a36e3a18f5192a31e72f4",
+  "dataset_index": "https://sites.google.com/view/hok-offline/home/hok-1v1",
+  "paper_supplement": "https://proceedings.neurips.cc/paper_files/paper/2023/file/464fefa022aaefc85d901317bbf13f85-Supplemental-Datasets_and_Benchmarks.pdf",
+  "decoder_source": "https://github.com/tencent-ailab/hokoff/blob/9b35f7e5891ad98df45a36e3a18f5192a31e72f4/hok1v1/offline_train/datasets.py",
+  "config_source": "https://github.com/tencent-ailab/hokoff/blob/9b35f7e5891ad98df45a36e3a18f5192a31e72f4/hok1v1/offline_train/train_eval_config/OneConfig.py",
+  "schema": {
+    "dataset_key": "datas",
+    "columns": 911,
+    "dtype": "float32",
+    "column_intervals_zero_based_end_exclusive": {
+      "observation": [
+        0,
+        725
+      ],
+      "action": [
+        725,
+        731
+      ],
+      "reward": [
+        731,
+        732
+      ],
+      "done": [
+        732,
+        733
+      ],
+      "legal_action": [
+        733,
+        905
+      ],
+      "selected_button_sub_action_mask": [
+        905,
+        911
+      ]
+    },
+    "action_dimensions": [
+      12,
+      16,
+      16,
+      16,
+      16,
+      8
+    ],
+    "legal_mask_components": [
+      12,
+      16,
+      16,
+      16,
+      16,
+      96
+    ],
+    "target_mask_rule": "legal_action[76 + 8 * button + target]"
+  },
+  "limitations": [
+    "The destroy_turret task removes the enemy hero; results cannot establish competitive 1v1 or 5v5 win rates.",
+    "Episode completion is identified by done, not by a winner field; the HDF5 row does not record an explicit winner.",
+    "The dataset has 725 observation features; the pinned current hok_env SDK reports 453. These observations are not directly compatible.",
+    "Action frequencies are descriptive. Lower episode length and different targeting do not prove any individual decision rule causes better results.",
+    "No gamecore match, new policy training, video playback, or platform submission was performed for this analysis.",
+    "Raw HDF5 datasets and downloaded archives are not included in this repository."
+  ],
+  "datasets": {
+    "destroy_turret_expert": {
+      "url": "https://kaiwu-assets-1258344700.cos.ap-shanghai.myqcloud.com/paper/hok-offline/1v1/destroy_turret_expert.zip",
+      "archive_bytes": 5537569,
+      "archive_sha256": "6ecc59dc65e333863f695e0f058185c697b2d68a3c237725e90d491c8b5dd180",
+      "hdf5_bytes": 7576688,
+      "hdf5_sha256": "c79594700b969032ea6d9e7e3aa2aff07d99df7395145786325f49784201ad0e",
+      "rows": 60495,
+      "terminal_markers": 100,
+      "trailing_incomplete_rows": 0,
+      "decisions_per_episode": {
+        "min": 571,
+        "median": 599.5,
+        "mean": 604.95,
+        "max": 768
+      },
+      "button_counts": {
+        "none_0": 0,
+        "none_1": 17224,
+        "move": 14186,
+        "normal_attack": 28286,
+        "skill_1": 106,
+        "skill_2": 38,
+        "skill_3": 73,
+        "heal": 88,
+        "chosen_skill": 494,
+        "recall": 0,
+        "skill_4": 0,
+        "equipment_skill": 0
+      },
+      "normal_attack_target_counts": {
+        "0": 4268,
+        "1": 116,
+        "3": 7116,
+        "4": 2546,
+        "5": 384,
+        "6": 205,
+        "7": 13651
+      },
+      "structure_target_fraction_of_normal_attacks": 0.4826062363006434,
+      "empty_target_fraction_of_normal_attacks": 0.1508873647740932,
+      "button_mask_violations": 0,
+      "conditional_target_mask_violations_all_rows": 0,
+      "active_component_mask_violations": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "adapter_mask_stress": {
+        "unique_masks": 250,
+        "recorded_actions_checked": 60495,
+        "recorded_action_validation_failures": 0,
+        "unique_masks_with_empty_shared_dimension": 0,
+        "safe_checks": 250,
+        "safe_failures": 0,
+        "build_checks": 5163,
+        "build_failures": 0,
+        "requested_directions": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            15,
+            15
+          ]
+        ],
+        "scope": "Only action-mask adapter compatibility. Recorded observation vectors are never passed to the new policy."
+      },
+      "zero_mask_head_rows": {
+        "move_x": 0,
+        "move_z": 0,
+        "skill_x": 0,
+        "skill_z": 0,
+        "recorded_button_target": 0,
+        "any_legal_button_without_a_target": 0
+      }
+    },
+    "destroy_turret_medium": {
+      "url": "https://kaiwu-assets-1258344700.cos.ap-shanghai.myqcloud.com/paper/hok-offline/1v1/destroy_turret_medium.zip",
+      "archive_bytes": 7159760,
+      "archive_sha256": "99aeb52cc1d1dcfc9277fe3db2dbbfebbea3d154b909949dd8ec152c270bd4f2",
+      "hdf5_bytes": 9084120,
+      "hdf5_sha256": "e14fbad45c5c2f1364a657179e9ed5b29c51e5e5d0de8a8ed64b5416822acafd",
+      "rows": 76040,
+      "terminal_markers": 100,
+      "trailing_incomplete_rows": 0,
+      "decisions_per_episode": {
+        "min": 622,
+        "median": 739.0,
+        "mean": 760.4,
+        "max": 918
+      },
+      "button_counts": {
+        "none_0": 0,
+        "none_1": 18929,
+        "move": 13524,
+        "normal_attack": 42937,
+        "skill_1": 199,
+        "skill_2": 1,
+        "skill_3": 0,
+        "heal": 441,
+        "chosen_skill": 9,
+        "recall": 0,
+        "skill_4": 0,
+        "equipment_skill": 0
+      },
+      "normal_attack_target_counts": {
+        "0": 12591,
+        "3": 11918,
+        "4": 5014,
+        "5": 978,
+        "6": 399,
+        "7": 12037
+      },
+      "structure_target_fraction_of_normal_attacks": 0.28034096466916647,
+      "empty_target_fraction_of_normal_attacks": 0.29324358944500084,
+      "button_mask_violations": 0,
+      "conditional_target_mask_violations_all_rows": 0,
+      "active_component_mask_violations": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0
+      },
+      "adapter_mask_stress": {
+        "unique_masks": 277,
+        "recorded_actions_checked": 76040,
+        "recorded_action_validation_failures": 0,
+        "unique_masks_with_empty_shared_dimension": 0,
+        "safe_checks": 277,
+        "safe_failures": 0,
+        "build_checks": 5199,
+        "build_failures": 0,
+        "requested_directions": [
+          [
+            0,
+            0
+          ],
+          [
+            8,
+            8
+          ],
+          [
+            15,
+            15
+          ]
+        ],
+        "scope": "Only action-mask adapter compatibility. Recorded observation vectors are never passed to the new policy."
+      },
+      "zero_mask_head_rows": {
+        "move_x": 0,
+        "move_z": 0,
+        "skill_x": 0,
+        "skill_z": 0,
+        "recorded_button_target": 0,
+        "any_legal_button_without_a_target": 0
+      }
+    }
+  },
+  "comparison": {
+    "expert_to_medium_mean_decision_ratio": 0.7955681220410311
+  },
+  "pretrained_archive_review": {
+    "url": "https://kaiwu-assets-1258344700.cos.ap-shanghai.myqcloud.com/paper/hok-offline/1v1/1v1baselines.zip",
+    "archive_bytes": 269962162,
+    "inspection": "HTTP 206 byte-range central directory and two hero_config.json members only; no model execution",
+    "member_count": 74,
+    "top_level_backends": [
+      "tensorflow"
+    ],
+    "level_names": [
+      "level-0",
+      "level-1",
+      "level-2",
+      "level-3",
+      "level-4",
+      "level-5",
+      "level-6",
+      "level-7",
+      "level-8"
+    ],
+    "license_files": [],
+    "hero_configs": {
+      "1v1baselines/tensorflow/level-7/hero_config.json": "{\n    \"luban\": \"intimidate\"\n}",
+      "1v1baselines/tensorflow/level-8/hero_config.json": "{\n    \"luban\": \"stun\"\n}"
+    },
+    "compatibility": {
+      "published_model_observation_dimensions": 725,
+      "standalone_pinned_sdk_observation_dimensions": 453,
+      "upstream_tensorflow_requirement": "1.15",
+      "upstream_python_version": "3.7.13",
+      "status": "Not integrated or executed; requires compatible observation encoding and independent engine evaluation."
+    }
+  },
+  "adapter_class_source_sha256": "3b82bc2cfb5790ee9a6586c4467c2e899ab8c41a192178fcc0120d68e7573012"
+}

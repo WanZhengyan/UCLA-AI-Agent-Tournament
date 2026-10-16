@@ -34,7 +34,13 @@ function client(dir){
 }
 const clients=dirs.map(client);
 const usedSessions=new Set();
-const pairs=[['balanced','rain'],['rain','balanced'],['trickroom','balanced'],['balanced','offense'],['offense','rain'],['trickroom','offense']];
+const suite=process.env.COMPARE_SUITE||'core';
+const suites={
+ core:[['balanced','rain'],['rain','balanced'],['trickroom','balanced'],['balanced','offense'],['offense','rain'],['trickroom','offense']],
+ regi:[['regi_rain','regi_shadow'],['regi_shadow','regi_room'],['regi_room','regi_rain'],['regi_rain','rain']]
+};
+if(!suites[suite])throw new Error('Unknown COMPARE_SUITE; use core or regi');
+const pairs=suites[suite];
 async function game(pair,swap,n,reverseTeams=false){
   if(reverseTeams)pair=[...pair].reverse();
   const lineup=[teams[pair[swap?1:0]],teams[pair[swap?0:1]]];
@@ -57,7 +63,10 @@ async function game(pair,swap,n,reverseTeams=false){
           ob={phase:'team_preview',your_roster:lineup[position].map(publicCard),opponent_roster:lineup[1-position].map(publicCard)};
           t={type:'select_lineup',roster:lineup[position].map(x=>toID(x.species))};
         }else{t=template(b,side);ob=obs(b,side,seen[position]);}
-        const action=await clients[policy].ask(raw(sid,versions[position]++,ob,t));
+        const action=await clients[policy].ask(raw(sid,versions[position]++,ob,t)).catch(error=>{
+          error.gameContext={policy:policy===0?'A':'B',phase:ob.phase,turn:b.turn,pair,swap,reverseTeams,seed};
+          throw error;
+        });
         decisions.push({turn:b.turn,policy:policy===0?'A':'B',phase:ob.phase,action});
         choices.push([side,command(b,side,action)]);
       }
@@ -77,7 +86,10 @@ async function game(pair,swap,n,reverseTeams=false){
   const after=dirs.map(hashes);
   const latency=clients.map(c=>{const a=[...c.latency].sort((x,y)=>x-y);return {decisions:a.length,median:a[Math.floor(a.length*.5)],p95:a[Math.floor(a.length*.95)],max:a.at(-1)};});
   const summary=results.reduce((s,r)=>(s[r.winner]=(s[r.winner]||0)+1,s),{});
-  const report={dirs,before,after,codeUnchanged:JSON.stringify(before)===JSON.stringify(after),uniqueSessions:usedSessions.size,engine:'pokemon-showdown@0.11.11',results,summary,latency,stderr:clients.map(c=>c.stderr),limitations:['Four handmade rosters, no online matchmaking or draft benchmark.','The same fixed sets are public to both policies.','Seed-paired team and seat swaps, but RNG can diverge after decisions diverge.']};
+  const report={dirs,suite,before,after,codeUnchanged:JSON.stringify(before)===JSON.stringify(after),uniqueSessions:usedSessions.size,engine:'pokemon-showdown@0.11.11',results,summary,latency,stderr:clients.map(c=>c.stderr),limitations:['Handmade rosters, no online matchmaking or draft benchmark.','The same fixed sets are public to both policies; opponent HP is rounded to displayed percent.','Seed-paired team and seat swaps, but RNG can diverge after decisions diverge.','No Tera; the regi suite includes two-restricted archetypes, not the actual platform card pool.']};
   fs.writeFileSync(path.join(output,'report.json'),JSON.stringify(report,null,2));
   console.log(JSON.stringify({summary,latency,codeUnchanged:report.codeUnchanged}));
-})().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>clients.forEach(c=>c.child.kill()));
+})().catch(e=>{
+  fs.writeFileSync(path.join(output,'failure.json'),JSON.stringify({error:e.message,context:e.gameContext||null,before,after:dirs.map(hashes)},null,2));
+  console.error(e);process.exitCode=1;
+}).finally(()=>clients.forEach(c=>c.child.kill()));
