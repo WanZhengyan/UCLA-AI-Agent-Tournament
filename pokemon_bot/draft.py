@@ -79,6 +79,12 @@ _WEATHER_SETTERS = {
     "drizzle": "rain", "drought": "sun", "orichalcumpulse": "sun",
     "sandstream": "sand", "snowwarning": "snow",
 }
+_WEATHER_SPEED_ABILITIES = {
+    "swiftswim": {"rain", "raindance", "primordialsea"},
+    "chlorophyll": {"sun", "sunnyday", "desolateland"},
+    "sandrush": {"sand", "sandstorm"},
+    "slushrush": {"snow", "hail", "snowscape"},
+}
 _SPREAD = {"alladjacentfoes", "alladjacent"}
 _PROTECT = {"protect", "detect", "spikyshield", "kingsshield", "silktrap", "burningbulwark", "banefulbunker"}
 _SETUP = {"swordsdance", "nastyplot", "calmmind", "bulkup", "quiverdance", "dragondance", "irondefense", "bellydrum"}
@@ -222,7 +228,7 @@ def _profile(card: dict) -> Profile:
 
 
 def _effectiveness(typ: str, defender: Profile, attacker: Profile) -> float:
-    bypass = attacker.ability in {"moldbreaker", "teravolt", "turboblaze"}
+    bypass = attacker.ability in {"moldbreaker", "teravolt", "turboblaze"} and defender.item != "abilityshield"
     if not bypass:
         a = defender.ability
         if typ == "ground" and a == "levitate":
@@ -242,6 +248,33 @@ def _effectiveness(typ: str, defender: Profile, attacker: Profile) -> float:
         if defender.ability in {"filter", "solidrock", "prismarmor"} and eff > 1:
             eff *= 0.75
     return float(eff)
+
+
+def _preview_speed(profile: Profile, weather: str = "") -> float:
+    """Effective lead speed under the same weather for either side.
+
+    ``Profile.speed`` already includes Choice Scarf. Comparing an attacker's
+    weather boost to a defender's unboosted speed falsely credits both with
+    moving first, including in rain/sun mirror matchups.
+    """
+    speed = profile.speed
+    effective_weather = weather
+    if profile.item == "utilityumbrella" and weather in {"rain", "raindance", "primordialsea", "sun", "sunnyday", "desolateland"}:
+        effective_weather = ""
+    if effective_weather in _WEATHER_SPEED_ABILITIES.get(profile.ability, ()):
+        speed *= 2
+    paradox_active = (
+        profile.ability in {"protosynthesis", "quarkdrive"} and profile.item == "boosterenergy"
+        or profile.ability == "protosynthesis" and weather in {"sun", "sunnyday"}
+    )
+    if paradox_active:
+        # The public set fixes the unmodified stat and tie order. Scarf is not
+        # part of this comparison; Booster and sunlight activate only once.
+        best = max(("atk", "def", "spa", "spd", "spe"), key=lambda key: profile.stats[key])
+        if best == "spe":
+            speed *= 1.5
+    # Match Gen 9's combined Speed modifier rounding (nearest, half down).
+    return max(1, min(10000, int((speed * 4096 + 2047) // 4096)))
 
 
 def _attack_damage(attacker: Profile, defender: Profile, a: Attack, weather: str = "") -> float:
@@ -434,10 +467,7 @@ class Evaluator:
                         # Earlier pressure is worth more, but don't model all
                         # slow bulky Pokemon as dead before they act.
                         c,d=attackers[i],defenders[t]
-                        speed=c.speed
-                        if weather=="rain" and c.ability=="swiftswim": speed*=2
-                        if weather=="sun" and c.ability=="chlorophyll": speed*=2
-                        if speed>d.speed: tempo+=0.12*min(1,dmg)
+                        if _preview_speed(c,weather)>_preview_speed(d,weather): tempo+=0.12*min(1,dmg)
                     score=sum(min(t,1.25) + (0.65 if t>=1 else 0.0) for t in total)+tempo
                     scores.append(score)
             return max(scores)
@@ -459,8 +489,8 @@ class Evaluator:
             if any(c.moves&_REDIRECT for c in team):
                 if any("trickroom" in c.moves for c in team):
                     value+=sign*0.4
-            ourspeed=sum(c.speed for c in team)/2
-            theirspeed=sum(c.speed for c in enemies)/2
+            ourspeed=sum(_preview_speed(c,weather) for c in team)/2
+            theirspeed=sum(_preview_speed(c,weather) for c in enemies)/2
             if any("tailwind" in c.moves for c in team) and ourspeed<theirspeed*1.4:
                 value+=sign*0.35
             if any("trickroom" in c.moves for c in team) and ourspeed<theirspeed*0.8:

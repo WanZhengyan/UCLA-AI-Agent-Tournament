@@ -4,12 +4,12 @@ A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Do
 
 The repository also includes a **standalone Honor of Kings 1v1 agent** for Tencent's official `hok_env`. It uses a separate Gamecore runtime; Honor of Kings is not currently playable through the AltruAgent tournament interface. See [docs/HOK.md](docs/HOK.md) for requirements and commands.
 
-**Development candidate:** the latest additions are on `improve/werewolf-defenses-v8`, based on the v7 development branch. They add Werewolf and targeted defenses informed by public opponent code and our own adversarial scenarios. They have not replaced `main` or a running tournament agent. The earlier v7 Pokemon comparison scored 19-21; that result does not measure this v8 candidate or establish a winning advantage.
+**Development candidate:** the latest additions are on `improve/pokemon-speed-v9`, based on the v8 Werewolf/defenses branch. They improve Pokemon type-aware speed decisions, informed by three public replay timelines and independent engine checks. They have not replaced `main` or a running tournament agent. The earlier v7 Pokemon comparison scored 19-21; that historical result does not measure v9.
 
 ## What it does
 
 - **Red Alert:** `eco_guard` / `defense_v8` keeps tank-led production and harvesting, limits the force diverted by small raids, and checks known towers before defensive pursuit. `balanced` remains an optional experimental baseline.
-- **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `counterplay_v8` adds conditional Thunderclap/Sucker Punch checks and ability-aware priority denial to the v7 mechanics corrections.
+- **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `type_speed_v9` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. Preview scoring now compares both sides under the same weather. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md).
 - **Werewolf:** `evidence_v1` uses private checks, official reveals, bounded claim evidence, vote history, role-specific night choices, and limited public/private discussion. See [docs/WEREWOLF.md](docs/WEREWOLF.md).
 - **Runtime:** one listener routes all three supported platform games to isolated per-seat workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes. Honor of Kings uses its separate Tencent runtime.
 - **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
@@ -21,7 +21,7 @@ Only information available to the assigned seat is used. Strategy state and obse
 Use Python 3.11 or later and keep the machine connected to the internet.
 
 ```bash
-git clone --branch improve/werewolf-defenses-v8 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
+git clone --branch improve/pokemon-speed-v9 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
 cd UCLA-AI-Agent-Tournament
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
@@ -91,9 +91,11 @@ The Red Alert tests exercise production budgets, harvesting, map geometry, comba
 
 [Public opponent research](docs/OPPONENT_RESEARCH.md) records seven event/platform-related repositories with custom code and one empty Honor of Kings repository. Registration and deployed versions are unverified. The defensive scenarios cover raid/ambush bait, conditional priority moves, untrusted Werewolf claims and message instructions, and unsafe HOK farming. No opponent code was executed, and no head-to-head winning advantage is claimed.
 
-The v8 validation passed 560 tests with the optional Showdown checks enabled, all three platform policy self-tests, spawned runtime imports, and the separate HOK smoke check. [defense_v8.json](reports/defense_v8.json) records the frozen source hashes and evaluation limits.
+The v9 validation passed 642 tests with the optional Showdown checks enabled, all three platform policy self-tests, and spawned runtime imports. [pokemon_type_speed_v9.json](reports/pokemon_type_speed_v9.json) records the source hashes and comparison results. The earlier four-game defense validation is preserved in [defense_v8.json](reports/defense_v8.json).
 
-Pokemon mechanism checks can also run against the pinned Showdown engine. The paired comparison harness accepts `COMPARE_SUITE=core` or `COMPARE_SUITE=regi`; the latter adds hand-built two-restricted archetypes with Tera disabled. Public replay observations and their limits are documented in [docs/POKEMON_RESEARCH.md](docs/POKEMON_RESEARCH.md).
+The frozen v9-versus-v8 comparison finished **14-14** across 28 paired games: 8-8 in speed-control fixtures and 6-6 in two-restricted fixtures. There were no illegal choices, fallbacks, timeouts, or incomplete games. This small handcrafted evaluation shows no overall winning advantage; the v9 candidate is a mechanics correction, not a proven tournament-strength upgrade.
+
+Pokemon mechanism checks can also run against the pinned Showdown engine. The paired comparison harness accepts `COMPARE_SUITE=core`, `COMPARE_SUITE=regi`, or `COMPARE_SUITE=speed`. The latter two add hand-built two-restricted and speed-control archetypes, respectively, with Tera disabled. Public replay observations and their limits are documented in [docs/POKEMON_RESEARCH.md](docs/POKEMON_RESEARCH.md) and the [type/speed review](docs/POKEMON_SPEED_RESEARCH.md).
 
 The complete v7 comparison is in [reports/pokemon_mechanics_v7.json](reports/pokemon_mechanics_v7.json): 14-10 in the core suite and 5-11 in the restricted-legendary suite. All 40 final games completed without illegal actions, fallbacks, or timeouts. Earlier aborted attempts and the replay-driven correction are preserved separately. These are development fixtures, including reused seeds, not a held-out platform win-rate estimate.
 

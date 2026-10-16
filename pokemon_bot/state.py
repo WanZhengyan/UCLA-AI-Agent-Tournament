@@ -118,10 +118,52 @@ def _finite(value, default=None):
 
 def _condition_keys(value):
     if isinstance(value, dict):
-        return {idnorm(k): v for k, v in value.items() if idnorm(k)}
+        return {idnorm(k): v for k, v in value.items() if idnorm(k) and v is not False}
     if isinstance(value, str):
         return {idnorm(value): True} if value else {}
-    return {idnorm(v.get('id', v.get('name', '')) if isinstance(v, dict) else v): True for v in (value or [])}
+    return {idnorm(v.get('id', v.get('name', '')) if isinstance(v, dict) else v): v if isinstance(v, dict) else True
+            for v in (value or [])}
+
+
+def _speed_condition_turns(field, conditions, turn, forced, memory):
+    """Track public speed-control transitions without guessing a bare timer's meaning.
+
+    First seeing an already-active condition does not reveal its age. Only an
+    uninterrupted absent-to-present transition, or explicitly named timer
+    metadata, establishes a start. Forced replacements do not consume a turn.
+    """
+    history = memory.setdefault('_speed_conditions', {})
+    for key, duration in (('own_tailwind', 4), ('foe_tailwind', 4), ('trickroom', 5)):
+        present = bool(field.get(key))
+        previous = history.get(key, {})
+        started = None
+        valid_turn = type(turn) is int and turn >= 1
+        if present and valid_turn:
+            value = conditions.get(key)
+            if isinstance(value, dict):
+                remaining = value.get('turns_remaining')
+                explicit_start = value.get('start_turn')
+                if type(remaining) is int and 1 <= remaining <= duration:
+                    started = turn - (duration - remaining)
+                elif type(explicit_start) is int and 0 <= turn - explicit_start < duration:
+                    started = explicit_start
+            old_turn = previous.get('turn')
+            if started is None and type(old_turn) is int and turn in (old_turn, old_turn + 1):
+                if previous.get('present'):
+                    started = previous.get('started')
+                elif turn == old_turn + 1:
+                    started = old_turn
+                elif forced:
+                    started = turn
+            if started is not None:
+                remaining = duration - (turn - started)
+                if 1 <= remaining <= duration:
+                    field[key + '_turns'] = remaining
+                else:
+                    # The live condition may have been replaced or reapplied
+                    # between observations. Its presence is authoritative.
+                    started = None
+        history[key] = {'present': present, 'turn': turn if valid_turn else None, 'started': started}
 
 
 def normalize_mon(raw, memory, side='own'):
@@ -347,6 +389,10 @@ def build_battle(obs, template, memory):
     for side, conditions in [('own', own_c), ('foe', foe_c)]:
         for condition in ('tailwind', 'reflect', 'lightscreen', 'auroraveil', 'safeguard'):
             field[side + '_' + condition] = condition in conditions
+    _speed_condition_turns(field, {'own_tailwind': own_c.get('tailwind'),
+                                  'foe_tailwind': foe_c.get('tailwind'),
+                                  'trickroom': fields.get('trickroom')},
+                           turn, forced, memory)
     available = obs.get('available_moves') or []
     for i, mon in enumerate(own):
         if mon and i < len(available) and isinstance(available[i], list):
