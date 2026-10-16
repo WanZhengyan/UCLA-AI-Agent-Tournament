@@ -2,6 +2,14 @@
 
 This document preserves the relevant history of the original local builds. It is not a current deployment record. Some referenced experiment outputs were retained only on the original machine and are intentionally absent from GitHub. Use the main [README](../README.md) for current setup commands.
 
+## Red Alert guarded third-refinery growth (v13, 2026-10-16)
+
+`economy_growth_v13` allows progressively financed third-refinery construction one tank earlier when five healthy tanks cover a single home base, four observed miners are active, power is sufficient, no nearby known threat or recent loss recovery contradicts growth, and at least six minutes remain. Supplied terrain must support a reachable screened site and resource hint. Existing emergency, miner recovery, six-tank financing, and expansion-MCV behavior remain in force.
+
+The fixed-income development comparison preserves ten-minute tank counts in all six scenarios. At income 8 per harvester per second, the third refinery completes 27/35 seconds earlier (Allies/Soviets); cumulative income at twenty minutes rises by 432/568 and completed tanks by one for each faction. Income-4 cases do not improve. No own replay was accessible. Another contestant's two seat traces from one public self-play game were inspected as data only; they motivate checking economic stagnation, not a causal or win-rate claim.
+
+Validation: **887 tests passed**, including 42 new growth cases; frozen v12 fails nine new cases. Four-game policy self-tests and spawned runtime checks passed. The branch starts from `cc79a31` on `improve/hok-objectives-v12`, preserving its HOK changes, and does not update a running agent or tournament entry. See [the review](REDALERT_GROWTH_V13.md) and [reproducible production report](../reports/redalert_growth_v13.json).
+
 ## Platform Honor of Kings 5v5 (v11, 2026-10-16)
 
 `hok_team_v1` adds the newly documented platform protocol: one agent commands five heroes through standing macros. This is separate from the Tencent 1v1 implementation. The shared launcher now accepts HOK assignments, sends five legal orders without per-order delays, paces real-time idle reads, preserves lockstep submissions, and interprets signed team results correctly. Sparse team-visible telemetry records objective HP and independent results. Existing game strategy folders remain unchanged.
