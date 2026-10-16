@@ -175,8 +175,8 @@ def run_worker(
 
 # How a game's last line names this agent's result. The game's own result for
 # this player comes first (Werewolf), then the winner (Pokémon, Red Alert),
-# then the score, read the way the platform reads it: above 0.5 a win, below
-# a loss, exactly 0.5 a draw.
+# then the score. Most games use 1/0/0.5; HoK's MCP result instead uses
+# +1/-1/0 and has team winner fields.
 _OUTCOME_WORDS = {"win": "won", "loss": "lost", "draw": "drew", "resigned": "resigned", "timed_out": "timed out"}
 
 
@@ -192,6 +192,24 @@ def _score(final_state, agent_id: str) -> float | None:
     return score
 
 
+def _hok_outcome(final_state, result: dict, agent_id: str) -> str | None:
+    """Honor of Kings reports a team result and signed MCP returns."""
+    reason = result.get("termination_reason") or getattr(final_state, "termination_reason", None)
+    if reason in {"start_failed", "engine_failed", "match_stalled", "cancelled"}:
+        return "no result"
+    winners = result.get("winner_agent_ids")
+    if isinstance(winners, list) and winners and all(isinstance(a, str) for a in winners):
+        return "won" if agent_id in winners else "lost"
+    outcome = result.get("outcome")
+    winner_camp = outcome.get("winner_camp") if isinstance(outcome, dict) else None
+    raw = getattr(final_state, "raw", None) or {}
+    own_camp = raw.get("camp")
+    if type(winner_camp) is int and winner_camp in (1, 2) and type(own_camp) is int and own_camp in (1, 2):
+        return "won" if own_camp == winner_camp else "lost"
+    score = _score(final_state, agent_id)
+    return {1: "won", -1: "lost", 0: "drew"}.get(score)
+
+
 def game_outcome(final_state, agent_id: str) -> str | None:
     """This agent's result in a finished game: ``"won"``, ``"lost"``,
     ``"drew"``, ``"resigned"``, ``"timed out"``, ``"no result"`` (the server
@@ -204,6 +222,10 @@ def game_outcome(final_state, agent_id: str) -> str | None:
         return _OUTCOME_WORDS[mine["outcome"]]
     if result.get("status") == "failed" or result.get("failure_reason"):
         return "no result"
+    raw = getattr(final_state, "raw", None) or {}
+    game_type = raw.get("game_type") or getattr(final_state, "game_name", None)
+    if game_type == "honor_of_kings_5v5":
+        return _hok_outcome(final_state, result, agent_id)
     winner = result.get("winner_agent_id")
     if winner:
         return "won" if winner == agent_id else "lost"

@@ -90,6 +90,33 @@ def test_unknown_game_is_not_assumed_to_be_pokemon():
     assert not bot._policies
 
 
+def test_hok_5v5_route_uses_platform_policy_and_preserves_callback():
+    bot = create_agent()
+    ctx = context("honor_of_kings_5v5")
+    state = SimpleNamespace(raw={"game_type": ctx.game_type}, session_id=ctx.session_id)
+    action = {"seat": 0, "macro": "macro_advance"}
+    result = {"accepted": True}
+    from unittest.mock import Mock
+    policy = Mock(realtime_wait_seconds=1.0)
+    policy.choose_action.return_value = action
+    with patch("hok_platform.agent.create_agent", return_value=policy) as create_hok, \
+         patch("pokemon_bot.agent.PokemonAgent.choose_action") as pokemon:
+        assert bot.choose_action(state, ctx) is action
+        bot.on_action_result(result, ctx)
+        assert bot.realtime_wait_seconds(state, ctx) == 1.0
+        assert bot.choose_message(state, ctx) is __import__("altruagent").TERMINATE_MESSAGING
+    create_hok.assert_called_once_with()
+    policy.choose_action.assert_called_once_with(state, ctx)
+    policy.on_action_result.assert_called_once_with(result, ctx)
+    pokemon.assert_not_called()
+
+
+def test_non_hok_router_keeps_existing_realtime_wait_cadence():
+    bot, state, ctx = create_agent(), red_state(), context()
+    bot.choose_action(state, ctx)
+    assert bot.realtime_wait_seconds(state, ctx) == 0.0
+
+
 def test_assignment_and_observation_game_mismatch_is_rejected():
     bot = create_agent()
     with pytest.raises(ValueError, match="mismatch"):

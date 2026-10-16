@@ -1,0 +1,119 @@
+{
+  "revision": "hok_team_v1",
+  "date": "2026-10-16",
+  "branch": "improve/hok-team-v11",
+  "base_commit": "8375e8a4f7ead6f0bf7e6ac5a5eb364f5f5341eb",
+  "game_type": "honor_of_kings_5v5",
+  "status": "Development platform integration; not deployed; no live match or tournament registration performed.",
+  "sha256": {
+    "hok_platform/agent.py": "d814f31cdfeb96926ef830c8c718a48508c2e3ba6ba73a985ed95f884ad05657",
+    "hok_platform/selftest.py": "739da24807789e7e83a404e4e225437b6d7b4e9f3f240c004a750ef3da78121a",
+    "competition_agent.py": "6dcee1221cbb6a14531be4e5f32541840a9f360cf1a8f605990a6e857eed5b82",
+    "launcher.py": "199ceb0c90d6241509db8a377dc345ef9646ff26b6ea1f53dfe623cfa3cd71ed",
+    "altruagent/runner.py": "8876b0f0735e66be052628fbfcb89b263151854de2311035eb4a23d975349b5c",
+    "altruagent/worker.py": "aa2ea77898e290cebec07ae2e7ddb37a38ec36c9973a686b9ce4ed66a4c95cc1",
+    "match_monitor.py": "594f19f9b33785135bc1bedb3f9b9a8193fe48b5b09644792ba3bcf1c74c09ab",
+    "build.sh": "49b5504fe7a2d1104e175c49f09cab58ae4f706ad39849ab186b1a2ab424cf02",
+    "tests/test_hok_platform.py": "b5a1a88ceed67ce0b63f125b6430a01252cf0785c7411fa378bb0bdb9f1216f8",
+    "tests/test_hok_runtime.py": "45d57c00278377fd8f66a7efa53576a4ff6e9d7694bad7334fe583bc978c4990",
+    "tests/test_hok_monitor.py": "f8b784742d01ca3fbe7eb5a6b7186849aa9ff3438001e09178fed33445c31a75"
+  },
+  "existing_strategy_folders_unchanged": {
+    "pokemon_bot": true,
+    "redalert_bot": true,
+    "werewolf_bot": true,
+    "hok_bot": true
+  },
+  "protocol_sha256": "49168a46a941ceef29f704437c214383ef3b5ebebb67f8aac112901261728ba4",
+  "sources": {
+    "official_guide": "https://api.altruagent-game.com/skill/hok",
+    "official_starter_commit": "686e7560708eaa595a409b330d0d1837d49ba9d5",
+    "opponent_review": {
+      "repository": "Astro-wen/ucla-agent-tournament",
+      "commit": "18856599509a9a234c69e0deb51e950c2ec7af62",
+      "code_executed": false,
+      "code_copied": false,
+      "claimed_results_verified": false
+    },
+    "paper": "https://papers.nips.cc/paper/2020/file/06d5ae105ea1bea4d800bc96491876e9-Paper.pdf"
+  },
+  "validation": {
+    "full_suite": {
+      "passed": 794,
+      "seconds": 14.76,
+      "command": "SHOWDOWN_NODE=node NODE_PATH=<pinned-showdown-modules> python -m pytest tests -q"
+    },
+    "new_hok_test_files": {
+      "total": 129,
+      "files": [
+        "tests/test_hok_platform.py",
+        "tests/test_hok_runtime.py",
+        "tests/test_hok_monitor.py"
+      ],
+      "policy_cases": 74
+    },
+    "self_test": {
+      "command": "python exe_entry.py --self-test",
+      "pokemon": true,
+      "redalert": true,
+      "werewolf": true,
+      "honor_of_kings": true,
+      "spawned_worker": true,
+      "mcp_import": true,
+      "tls_client_construction": true
+    },
+    "review": "Separate policy and runtime reviews; enemy-list parsing and repeated rejected raw-action issues were fixed and covered before the final full gate.",
+    "diff_check": "passed"
+  },
+  "latency": {
+    "calls": 1000,
+    "distinct_synthetic_team_views": 18,
+    "camps": 2,
+    "median_ms": 0.19047049863729626,
+    "p95_ms": 0.6742309924447909,
+    "max_ms": 4.795234010089189,
+    "includes_GameState_parsing": true,
+    "includes_agent_construction": false,
+    "network_or_combat": false,
+    "limitation": "One local measurement, not a deployment latency guarantee or real-time gameplay benchmark."
+  },
+  "protocol_checks": [
+    "Five current legal hero orders across both camps",
+    "Real-time unchanged standing orders followed by paced read",
+    "Lockstep submissions for every pending hero, even if macro unchanged",
+    "Refused actions not acknowledged or repeated indefinitely at same version",
+    "Raw action parameter domains retained and conflicting domains refused",
+    "Native HOK signed returns and no-result failure handling",
+    "Sparse capped telemetry excludes hidden enemy coordinates and credentials"
+  ],
+  "strategy_checks": [
+    "Offered attacks remain usable regardless of guessed skill range",
+    "Healthy objective pressure not vetoed solely by tower distance",
+    "Low-health recovery and new damage escape",
+    "Local health/level advantage versus count-only retreat",
+    "Hidden positions ignored",
+    "Unavailable skills replaced",
+    "Urgent retreat and fair hero dispatch",
+    "Session/team/respawn history isolation"
+  ],
+  "live_validation": {
+    "performed": false,
+    "reasons": [
+      "Available browser session expired",
+      "No Official Agent Key in environment or repository configuration"
+    ],
+    "opponent_games": 0,
+    "wins": null,
+    "losses": null,
+    "draws": null
+  },
+  "limits": [
+    "No competitive winning advantage established.",
+    "Nearest-target macros cannot specify arbitrary targets, lanes, builds, hero picks or jungle objectives.",
+    "Hero-specific skill effects, combat physics and recovery thresholds require actual platform calibration.",
+    "Transport double and synthetic tactical checks are not a game engine.",
+    "No opponent code or private match data executed; no model checkpoint integrated.",
+    "Older listener must restart after active matches finish to load changed game assignment filter.",
+    "Existing Pokemon, Red Alert, Werewolf and Tencent 1v1 strategy folder bytes unchanged."
+  ]
+}

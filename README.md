@@ -1,17 +1,18 @@
 # Gaming
 
-A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Doubles Draft**, and **Werewolf**. All strategy decisions run locally; no OpenAI or other model API key is required.
+A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Doubles Draft**, **Werewolf**, and **Honor of Kings 5v5**. All strategy decisions run locally; no OpenAI or other model API key is required.
 
-The repository also includes a **standalone Honor of Kings 1v1 agent** for Tencent's official `hok_env`. It uses a separate Gamecore runtime; Honor of Kings is not currently playable through the AltruAgent tournament interface. See [docs/HOK.md](docs/HOK.md) for requirements and commands.
+The newly available platform HOK mode uses **one agent per five-hero team**. See [docs/HOK.md](docs/HOK.md) for setup. The older standalone Tencent `hok_env` 1v1 agent remains separate; its licensed-engine instructions are in [HOK_TENCENT_1V1.md](docs/HOK_TENCENT_1V1.md).
 
-**Development candidate:** the latest additions are on `improve/pokemon-paradox-v10`, based on the v9 type/speed branch. They correct non-Speed Protosynthesis/Quark Drive damage modifiers, including consumed Booster Energy. They have not replaced `main` or a running tournament agent. Mechanics correctness is not proof of a tournament win-rate improvement.
+**Development candidate:** `improve/hok-team-v11` adds the platform HOK policy and four-game runtime on top of the v10 Pokemon candidate. The HOK implementation has local protocol/tactical checks but no live match validation. It has not replaced `main` or a running tournament agent; local correctness is not proof of a win-rate improvement.
 
 ## What it does
 
 - **Red Alert:** `eco_guard` / `defense_v8` keeps tank-led production and harvesting, limits the force diverted by small raids, and checks known towers before defensive pursuit. `balanced` remains an optional experimental baseline.
 - **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `paradox_damage_v10` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. It also retains publicly announced offensive and defensive Paradox modifiers after item consumption. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md) and [v10 mechanism checks](docs/POKEMON_PARADOX_V10.md).
 - **Werewolf:** `evidence_v1` uses private checks, official reveals, bounded claim evidence, vote history, role-specific night choices, and limited public/private discussion. See [docs/WEREWOLF.md](docs/WEREWOLF.md).
-- **Runtime:** one listener routes all three supported platform games to isolated per-seat workers. The bundled official SDK handles authentication, seat leases, MCP transport, reconnection, and worker processes. Honor of Kings uses its separate Tencent runtime.
+- **Honor of Kings:** `hok_team_v1` controls five heroes with listed standing orders, objective pressure, health-aware retreat/recovery, local team strength, skill availability checks and fair order scheduling. See [research and limitations](docs/HOK_PLATFORM_RESEARCH.md).
+- **Runtime:** one listener routes all four supported platform games to isolated assignment workers. The bundled SDK handles authentication, leases, MCP transport, reconnection and worker processes. Each HOK assignment controls the five heroes belonging to that team.
 - **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
 
 Only information available to the assigned seat is used. Strategy state and observations are not shared between opposing seats.
@@ -21,7 +22,7 @@ Only information available to the assigned seat is used. Strategy state and obse
 Use Python 3.11 or later and keep the machine connected to the internet.
 
 ```bash
-git clone --branch improve/pokemon-paradox-v10 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
+git clone --branch improve/hok-team-v11 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
 cd UCLA-AI-Agent-Tournament
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
@@ -32,11 +33,11 @@ python3 -m venv .venv
 
 Paste the platform's **Official Agent Key** when prompted. Input is hidden. This is a platform credential, not a GitHub token or model API key. Interactive entry is not saved to disk.
 
-Run only **one listener per Official Agent Key**. The default accepts testing and tournament assignments for all three supported platform games.
+Run only **one listener per Official Agent Key**. The default accepts testing and tournament assignments for all four supported platform games. When upgrading an older listener to add HOK, restart it after active games finish so the new assignment filter loads.
 
 | Command option | Behavior |
 | --- | --- |
-| `--self-test` | Check all three platform policies and spawned worker imports offline; no key required. |
+| `--self-test` | Check platform policies and four-game spawned worker imports offline; no key required. |
 | `--check` | Check authentication and policy loading without accepting matches. |
 | `--match` | Accept testing assignments only. |
 | `--tournament` | Accept tournament assignments only. |
@@ -51,7 +52,7 @@ For unattended use, set `ALTRUAGENT_OFFICIAL_AGENT_KEY` in the environment, or c
 
 Follow [docs/PLATFORM.md](docs/PLATFORM.md) for the full setup and official-tournament workflow. On the [AltruAgent dashboard](https://platform.altruagent-game.com/tournament/dashboard), complete event registration, select **Self Hosted** under **Agent Configuration**, record this public repository URL, and obtain the Official Agent Key. Start the listener using the command above.
 
-For a practice match, use the platform's **Testing** page, choose Red Alert, Pokemon VGC Doubles Draft, or Werewolf, and select **Mine (self-hosted)** for your seat. Werewolf requires seven connected seats. Create the match and leave the listener running while the platform assigns the seat.
+For a practice match, use the platform's **Testing** page, choose Red Alert, Pokemon VGC Doubles Draft, Werewolf, or Honor of Kings, and select **Mine (self-hosted)**. Werewolf requires seven connected seats; HOK assigns five heroes to each team agent. Leave the listener running while the platform assigns the match.
 
 For an official event, open **Dashboard → Tournaments**, choose a supported game, and click **Register my agent**. Each game needs its own entry. Keep Self Hosted selected and run the listener with either its default options or `--tournament`. Starting the program does not register an entry or create a match. Confirm version-lock eligibility before replacing a submitted entry.
 
@@ -61,7 +62,7 @@ See the [official platform guide](https://api.altruagent-game.com/skill.md) for 
 
 ## Analyze recorded matches
 
-Recording is enabled for new Red Alert and Pokemon online workers by default. Red Alert samples are recorded approximately every five game seconds; Pokemon records decision observations. Logs contain selected seat-visible fields, proposed actions, execution verdicts, and independent terminal results. Werewolf private observations and messages are excluded from this general telemetry; its memory remains local to the session and seat.
+Recording is enabled for new Red Alert, Pokemon and HOK workers by default. Red Alert samples approximately every five game seconds; HOK samples every ten state versions; Pokemon records decision observations. Logs contain selected seat/team-visible fields, proposed actions, execution verdicts and independent results. Werewolf private observations and messages remain excluded.
 
 ```bash
 .venv/bin/python -m match_monitor
@@ -89,9 +90,11 @@ Copy the original machine's log directories to the analysis machine first, or pr
 
 The Red Alert tests exercise production budgets, harvesting, map geometry, combat commands, monitoring, and replay analysis using controlled scenarios. These checks detect behavior errors; they do not measure tournament win rate. Routing and combat estimates are heuristics, not the full OpenRA engine.
 
-[Public opponent research](docs/OPPONENT_RESEARCH.md) records seven event/platform-related repositories with custom code and one empty Honor of Kings repository. Registration and deployed versions are unverified. The defensive scenarios cover raid/ambush bait, conditional priority moves, untrusted Werewolf claims and message instructions, and unsafe HOK farming. No opponent code was executed, and no head-to-head winning advantage is claimed.
+[Public opponent research](docs/OPPONENT_RESEARCH.md) preserves the earlier four-game survey. The [new HOK review](docs/HOK_PLATFORM_RESEARCH.md) adds an inspected platform-specific policy and supersedes the earlier empty-repository finding. Registration and deployed versions remain unverified. Defensive scenarios cover raids, conditional priority, untrusted Werewolf claims, HOK tower bait and order delivery. No opponent code was executed and no head-to-head winning advantage is claimed.
 
-The v10 validation passed **663 tests**, including 21 focused regressions and 19 independent engine checks within one of those tests, plus the shared runtime self-test. Its frozen comparison against v9 finished **12-12**: 8-8 in six-member mirror fixtures and 4-4 in a coverage-driven four-member extension. The first suite had no non-Speed Paradox activations; all eight extension games exercised them. No overall winning advantage was demonstrated. [pokemon_paradox_v10.json](reports/pokemon_paradox_v10.json) records source hashes, outcomes, activation coverage, latency, and limitations.
+The current v11 validation passed **794 tests**, including 129 tests in the new HOK policy/runtime/telemetry files, plus four-game self-tests and spawned worker checks. A local 1000-call synthetic measurement including state parsing had 0.19 ms median and 4.80 ms maximum latency. No live HOK game was run and no win-rate improvement is claimed. See [hok_platform_v11.json](reports/hok_platform_v11.json).
+
+The historical v10 validation passed **663 tests**, including 21 focused regressions and 19 independent engine checks within one of those tests, plus the shared runtime self-test. Its frozen comparison against v9 finished **12-12**: 8-8 in six-member mirror fixtures and 4-4 in a coverage-driven four-member extension. The first suite had no non-Speed Paradox activations; all eight extension games exercised them. No overall winning advantage was demonstrated. [pokemon_paradox_v10.json](reports/pokemon_paradox_v10.json) records source hashes, outcomes, activation coverage, latency, and limitations.
 
 The historical v9 validation passed 642 tests with the optional Showdown checks enabled, all three platform policy self-tests, and spawned runtime imports. [pokemon_type_speed_v9.json](reports/pokemon_type_speed_v9.json) records those source hashes and comparison results. The earlier four-game defense validation is preserved in [defense_v8.json](reports/defense_v8.json).
 
@@ -139,7 +142,7 @@ These small synthetic benchmarks do not represent the full platform draft or tou
 
 ## Packaging and provenance
 
-`bash build.sh` builds and self-tests a single executable in `dist/PokemonChampion`. Despite the historical filename, the build includes all three AltruAgent game policies; Tencent HOK remains separate. The target architecture and system-library requirements depend on the build machine. The repository contains no prebuilt binary; previously downloaded binaries do not receive source updates automatically.
+`bash build.sh` builds and self-tests a single executable in `dist/PokemonChampion`. Despite the historical filename, the build includes all four AltruAgent policies, including HOK 5v5; Tencent HOK 1v1 remains separate. Architecture and system-library requirements depend on the build machine. No prebuilt v11 binary is included; previously downloaded binaries do not receive source updates automatically.
 
 The official runtime source and local extensions are documented in [SDK_PROVENANCE.txt](SDK_PROVENANCE.txt). Pokemon static data comes from Pokemon Showdown; provenance and included third-party licenses are under [licenses/](licenses/).
 

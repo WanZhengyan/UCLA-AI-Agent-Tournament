@@ -9,6 +9,7 @@ def test_only_supported_assignments_are_claimed():
     wanted = SimpleNamespace(game_type=launcher.GAME_TYPE)
     redalert = SimpleNamespace(game_type="red_alert")
     werewolf = SimpleNamespace(game_type="werewolf")
+    hok = SimpleNamespace(game_type="honor_of_kings_5v5")
     other = SimpleNamespace(game_type="honor_of_kings")
     with patch.dict("os.environ", {
         launcher.KEY_ENV: "eak_live_" + "a" * 64,
@@ -16,8 +17,8 @@ def test_only_supported_assignments_are_claimed():
     }):
         client = launcher.make_official_client()
         try:
-            with patch.object(OfficialAgentClient, "assignments", return_value=[other, wanted, redalert, werewolf]):
-                assert client.assignments() == [wanted, redalert, werewolf]
+            with patch.object(OfficialAgentClient, "assignments", return_value=[other, wanted, redalert, werewolf, hok]):
+                assert client.assignments() == [wanted, redalert, werewolf, hok]
         finally:
             client.close()
 

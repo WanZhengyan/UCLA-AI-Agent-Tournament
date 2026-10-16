@@ -2,6 +2,14 @@
 
 This document preserves the relevant history of the original local builds. It is not a current deployment record. Some referenced experiment outputs were retained only on the original machine and are intentionally absent from GitHub. Use the main [README](../README.md) for current setup commands.
 
+## Platform Honor of Kings 5v5 (v11, 2026-10-16)
+
+`hok_team_v1` adds the newly documented platform protocol: one agent commands five heroes through standing macros. This is separate from the Tencent 1v1 implementation. The shared launcher now accepts HOK assignments, sends five legal orders without per-order delays, paces real-time idle reads, preserves lockstep submissions, and interprets signed team results correctly. Sparse team-visible telemetry records objective HP and independent results. Existing game strategy folders remain unchanged.
+
+The policy prioritizes listed objective attacks, avoids excessive distance-only retreat, responds to fresh damage and local health/level disadvantage, checks skill availability/labels, and schedules all heroes fairly. Official docs, Tencent research and one inspected custom same-event repository informed independent implementation and adversarial scenarios. No opponent code was copied or executed.
+
+Validation: **794 tests passed**, including 129 in the new HOK files, plus four-game offline self-tests and spawned imports. A 1000-call local synthetic timing check measured median 0.19 ms and maximum 4.80 ms including state parsing. No live match, video review, competitive win rate or formal deployment is claimed: the accessible browser session was expired and no workspace Official Agent Key was configured. See [HOK.md](HOK.md), [research](HOK_PLATFORM_RESEARCH.md) and [source-hashed evidence](../reports/hok_platform_v11.json).
+
 ## Pokemon public Paradox damage modifiers (v10, 2026-10-16)
 
 `paradox_damage_v10` shares the publicly announced Protosynthesis/Quark Drive stat between Speed and damage estimates. It retains consumed-Booster activations, adds defensive modifiers, and checks Body Press and Psyshock modifier-event semantics against the pinned Showdown engine. No search or draft coefficients were tuned. A focused Gholdengo scenario now selects Protect instead of assuming survival against boosted Moonblast; that scenario is not proof of a full-game win.
