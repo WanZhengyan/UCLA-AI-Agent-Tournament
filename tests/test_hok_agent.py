@@ -192,6 +192,40 @@ def test_unknown_hero_does_not_cast_unverified_skill_combo():
     assert HonorOfKingsAgent().act(s)[0] == 3
 
 
+@pytest.mark.parametrize("camp", [1, 2])
+@pytest.mark.parametrize("minion_hp", [100, 1000])
+def test_unfavorable_enemy_pressure_overrides_last_hit_and_farm(camp, minion_hp):
+    enemy = actor(11, 3-camp, 2000, 0, config_id=112, atk_range=6000,
+                  camp_visible=[True, True])
+    s = state(camp=camp, hp=1800, heroes=[enemy],
+              soldiers=[actor(40, 3-camp, 3000, 0, hp=minion_hp)], buttons=[1, 2, 3])
+    agent = HonorOfKingsAgent()
+    action = agent.act(s)
+    assert action[0] == 2
+    assert LegalActions(s).validates(action)
+    assert agent.last_reason == "kite_unfavorable_trade"
+
+
+@pytest.mark.parametrize("friend_position,friend_hp", [((-25000, -25000), 1000), ((1000, 0), 100)])
+def test_distant_or_dying_allied_minion_does_not_suppress_kiting(friend_position, friend_hp):
+    enemy = actor(11, 2, 2000, 0, config_id=112, atk_range=6000, camp_visible=[True, True])
+    s = state(hp=1800, heroes=[enemy],
+              soldiers=[actor(20, 1, *friend_position, hp=friend_hp)], buttons=[1, 2, 3])
+    agent = HonorOfKingsAgent()
+    assert agent.act(s)[0] == 2
+    assert agent.last_reason == "kite_unfavorable_trade"
+
+
+def test_healthy_local_wave_preserves_farm_under_enemy_pressure():
+    enemy = actor(11, 2, 2000, 0, config_id=112, atk_range=6000, camp_visible=[True, True])
+    s = state(hp=1800, heroes=[enemy], soldiers=[actor(20, 1, 1000, 0), actor(40, 2, 3000, 0)],
+              buttons=[1, 2, 3])
+    agent = HonorOfKingsAgent()
+    action = agent.act(s)
+    assert (action[0], action[5]) == (3, 3)
+    assert agent.last_reason == "clear_wave"
+
+
 @pytest.mark.parametrize("bad", [[1] * 84, [1] * 171, [float("nan")] * 172, [0.5] * 172])
 def test_rejects_incompatible_masks(bad):
     s = state()

@@ -44,7 +44,7 @@ Keep the listener, computer, and network available throughout the event. The off
 ## 3. Play a Testing match
 
 1. Open the dashboard's **Testing** page.
-2. Choose **Red Alert** or **Pokemon VGC Doubles Draft**.
+2. Choose **Red Alert**, **Pokemon VGC Doubles Draft**, or **Werewolf**. Werewolf needs seven connected seats and the v8 development branch.
 3. Select **Mine (self-hosted)** for your seat, configure the opponent and match settings, and create the match.
 4. Keep the listener running with default options or `--match`.
 5. Check the platform's match status and the local runtime output to confirm the agent connected. Watch the match and inspect its recorded outcome afterward.
@@ -54,7 +54,7 @@ Testing matches are separate from official tournament entries. Creating or playi
 ## 4. Enter the official tournament
 
 1. Open [Dashboard → Tournaments](https://platform.altruagent-game.com/tournament/dashboard/tournaments).
-2. Select the intended **Red Alert** tournament. Enter Pokemon separately only if you also intend to compete in that game. **Do not enter Werewolf with this repository:** that game is unsupported and its assignments are deliberately ignored.
+2. Select the intended **Red Alert**, **Pokemon**, or **Werewolf** tournament. Register each game separately. The v8 development branch adds Werewolf; older releases do not support it. Werewolf tables require seven connected seats. Read [WEREWOLF.md](WEREWOLF.md) and validate the development version before entering it, subject to the event's version-lock rules.
 3. Click **Register my agent** while registration is open and confirm that the agent appears as registered.
 4. Leave the listener running with default options or `--tournament` before the event starts and between rounds.
 5. Check the dashboard's next-game connection status and the terminal output. The platform automatically pairs opponents and sends each game as a tournament assignment.

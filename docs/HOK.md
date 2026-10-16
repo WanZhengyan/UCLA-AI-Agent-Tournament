@@ -2,7 +2,7 @@
 
 `hok_bot` is a standalone, objective-focused rule agent for Tencent's official **HoK1v1 research environment**. It is separate from this repository's AltruAgent listener. As checked on October 16, 2026, the [AltruAgent event page](https://altruagent-game.com/) marks Honor of Kings as **not playable on the tournament platform yet**. Its announced 5v5 mode is not the protocol implemented here.
 
-This module is currently on the development branch `improve/pokemon-hok-v7` ([PR #2](https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament/pull/2)). Check out that branch before following the commands below; a clone of the unchanged `main` branch does not contain it.
+The latest `hok_objective_v2` module is on the development branch `improve/werewolf-defenses-v8`, based on the original v7 integration. Check out that branch before following the commands below; a clone of the unchanged `main` branch does not contain it. The v2 policy prioritizes retreat from an unfavorable nearby enemy before farming and only counts healthy local allied minions as support. These corrections passed adversarial fixtures, not a live Gamecore tournament.
 
 The policy targets last hits, safe wave clearing, protected tower/crystal pressure, favorable ranged trades, and low-health recovery. It checks the official legal masks before emitting an action and preserves recall channels until completion or interruption. Current hero profiles are **112 (Lu Ban No.7)** and **133 (Di Renjie)**; the runner restricts the controlled hero to those profiles.
 

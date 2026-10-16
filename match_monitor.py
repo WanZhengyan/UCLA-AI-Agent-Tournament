@@ -50,7 +50,10 @@ def strategy_hash(game):
 
 def make_monitor(context, policy=None):
     sid = getattr(context, 'session_id', '')
-    if (not sid or sid.startswith(('offline', 'test', 'selftest'))
+    # Werewolf observations carry private roles and investigations. Until a
+    # dedicated redacted schema exists, never send them to Pokemon telemetry.
+    if (getattr(context, 'game_type', None) not in {'red_alert', 'pokemon_vgc_doubles_draft'}
+            or not sid or sid.startswith(('offline', 'test', 'selftest'))
             or os.environ.get('COMPETITION_MONITOR_DISABLED') == '1'
             or os.environ.get('POKEMON_BOT_NO_CACHE') == '1'):
         return None
@@ -62,7 +65,8 @@ class MatchMonitor:
         self.game = context.game_type
         self.sid = context.session_id
         self.agent_id = context.agent_id
-        stem = hashlib.sha256(json.dumps([self.game, self.sid, self.agent_id]).encode()).hexdigest()[:24]
+        stem = hashlib.sha256(json.dumps([self.game, self.sid, self.agent_id,
+                                          getattr(context, 'seat_position', None)]).encode()).hexdigest()[:24]
         self.path = root / (stem + '.jsonl')
         self.latest = root / (stem + '-latest.json')
         self.final = root / (stem + '-final.json')

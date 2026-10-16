@@ -16,8 +16,8 @@ from competition_agent import create_agent
 from redalert_bot.selftest import sample
 
 
-def context(game="red_alert", session="offline-router", seat="one"):
-    return DecisionContext(session, None, game, seat, 0, game_config={"rules": {}})
+def context(game="red_alert", session="offline-router", seat="one", position=0):
+    return DecisionContext(session, None, game, seat, position, game_config={"rules": {}})
 
 
 def red_state():
@@ -62,7 +62,7 @@ def test_fresh_factories_have_no_shared_policy_memory():
 def test_result_callback_reaches_original_policy_and_releases_failed_order():
     bot, state, ctx = create_agent(), red_state(), context()
     bot.choose_action(state, ctx)
-    key = ("red_alert", ctx.session_id, ctx.agent_id)
+    key = ("red_alert", ctx.session_id, ctx.agent_id, ctx.seat_position)
     policy = bot._policies[key]
     bot.on_action_result({"error": "INVALID_ACTION", "detail": "[0] deploy: invalid"}, ctx)
     memory = policy.sessions[ctx.session_id]
@@ -83,7 +83,7 @@ def test_callback_for_another_seat_cannot_modify_existing_memory():
 
 def test_unknown_game_is_not_assumed_to_be_pokemon():
     bot = create_agent()
-    ctx = context("werewolf")
+    ctx = context("honor_of_kings")
     state = SimpleNamespace(raw={"game_type": ctx.game_type}, session_id=ctx.session_id)
     with pytest.raises(ValueError, match="Unsupported game"):
         bot.choose_action(state, ctx)
@@ -116,14 +116,16 @@ def test_offline_unwraps_reasoned_actions():
     assert launcher._offline_action(sample(), lambda *_: WithReasoning(action, "Deploy.")) == action
 
 
-def test_launcher_selftest_checks_both_games_without_authentication():
+def test_launcher_selftest_checks_three_games_without_authentication():
     with patch("pokemon_bot.selftest.run", return_value=0) as pokemon, \
          patch("redalert_bot.selftest.run", return_value=0) as redalert, \
+         patch("werewolf_bot.selftest.run", return_value=0) as werewolf, \
          patch.object(launcher, "runtime_self_test", return_value={"worker": True}), \
          patch.object(launcher, "load_configuration") as auth:
         assert launcher.main(["--self-test"]) == 0
     pokemon.assert_called_once_with()
     redalert.assert_called_once_with()
+    werewolf.assert_called_once_with()
     auth.assert_not_called()
 
 

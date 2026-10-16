@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "researched_on": "2026-10-16",
+  "event": "UCLA AltruAgent AI Agent Gaming Tournament 2026",
+  "method": {
+    "public_only": true,
+    "opponent_code_executed": false,
+    "opponent_services_contacted": false,
+    "opponent_code_copied_into_repository": false,
+    "head_to_head_games_run": 0,
+    "registration_claims_verified_with_organizers": false
+  },
+  "search_coverage": {
+    "web_queries": [
+      "\"AltruAgent\" \"github\"",
+      "\"UCLA\" \"AI Agent\" \"tournament\" \"github\"",
+      "\"altruagent-game\" \"github\"",
+      "site:github.com \"AltruAgent\" \"Honor of Kings\"",
+      "site:github.com \"AltruAgent\" \"werewolf\" \"agent\"",
+      "site:github.com \"AltruAgent\" \"pokemon\" \"tournament\""
+    ],
+    "github_repository_queries": [
+      "altruagent",
+      "\"UCLA\" \"tournament\" agent",
+      "\"altruagent\" pokemon",
+      "\"altruagent\" werewolf",
+      "\"altruagent\" \"hok\""
+    ],
+    "broad_altruagent_result_count": 18,
+    "broad_altruagent_result_names": [
+      "UCLA-Trustworthy-AI-Lab/altruagent-starter",
+      "siIverfish/altruagent",
+      "alinaliu18/altruagent-werewolf",
+      "Khuongtdm/altruagent-entry",
+      "omarcano23/altruagent-omarcanoc23",
+      "ryanxxhuang/altruagent-redalert",
+      "WilliamChenTW1209/altruagent-agent",
+      "sandrapan620/ai-tournament-homepage",
+      "jerryhuang-math/hok-agent",
+      "yeet302/altruagent-starter",
+      "iamitiwari/altruagent-game",
+      "JenBeFlat/altruagent-starter",
+      "wu-warren/altruagent-starter",
+      "jas8n/pokemon-vgc-agent",
+      "traffichaos01/altruagent-rhartshorne-2026",
+      "koichiio/altruagent-starter",
+      "aliceblee/altruagent-starter",
+      "abubakarsiddik31/quicksilver"
+    ],
+    "exhaustive_entrant_roster": false
+  },
+  "candidates": [
+    {
+      "repository": "jas8n/pokemon-vgc-agent",
+      "url": "https://github.com/jas8n/pokemon-vgc-agent",
+      "commit": "3f4fc562864a9e554aa4e14a33a88c67da2d8b2c",
+      "games": [
+        "pokemon"
+      ],
+      "event_relation": "declared_event_entry",
+      "event_evidence": "README explicitly identifies an AltruAgent tournament entry.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "README.md",
+          "url": "https://github.com/jas8n/pokemon-vgc-agent/blob/3f4fc562864a9e554aa4e14a33a88c67da2d8b2c/README.md"
+        },
+        {
+          "path": "pokeagent/search.py",
+          "url": "https://github.com/jas8n/pokemon-vgc-agent/blob/3f4fc562864a9e554aa4e14a33a88c67da2d8b2c/pokeagent/search.py"
+        },
+        {
+          "path": "pokeagent/data/cards.json",
+          "url": "https://github.com/jas8n/pokemon-vgc-agent/blob/3f4fc562864a9e554aa4e14a33a88c67da2d8b2c/pokeagent/data/cards.json"
+        }
+      ],
+      "observed_patterns": [
+        "paired_action_search",
+        "protect_and_switch_priors",
+        "worst_case_guard",
+        "armor_tail_farigiraf_catalog"
+      ]
+    },
+    {
+      "repository": "holmjames/ace-trainer-claude",
+      "url": "https://github.com/holmjames/ace-trainer-claude",
+      "commit": "c636ec06211859508067055b489a08a9a24135ec",
+      "games": [
+        "pokemon"
+      ],
+      "event_relation": "declared_event_entry",
+      "event_evidence": "README names the UCLA tournament and self-reports a submitted Pokemon entry; organizer confirmation unavailable.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "README.md",
+          "url": "https://github.com/holmjames/ace-trainer-claude/blob/c636ec06211859508067055b489a08a9a24135ec/README.md"
+        },
+        {
+          "path": "agent/pokemon/replies.py",
+          "url": "https://github.com/holmjames/ace-trainer-claude/blob/c636ec06211859508067055b489a08a9a24135ec/agent/pokemon/replies.py"
+        },
+        {
+          "path": "agent/pokemon/battle.py",
+          "url": "https://github.com/holmjames/ace-trainer-claude/blob/c636ec06211859508067055b489a08a9a24135ec/agent/pokemon/battle.py"
+        }
+      ],
+      "observed_patterns": [
+        "reply_matrix",
+        "conditional_protect_switch_model",
+        "mixed_near_tie_choices"
+      ]
+    },
+    {
+      "repository": "ryanxxhuang/altruagent-redalert",
+      "url": "https://github.com/ryanxxhuang/altruagent-redalert",
+      "commit": "412082f43183d8b7b6b753cbf818bb299bb9a025",
+      "games": [
+        "red_alert"
+      ],
+      "event_relation": "declared_event_entry",
+      "event_evidence": "Repository description names UCLA AI Agent Gaming Tournament and Red Alert; custom agent identifies itself as tournament agent.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "agent/agent.py",
+          "url": "https://github.com/ryanxxhuang/altruagent-redalert/blob/412082f43183d8b7b6b753cbf818bb299bb9a025/agent/agent.py"
+        },
+        {
+          "path": "agent/playbook.md",
+          "url": "https://github.com/ryanxxhuang/altruagent-redalert/blob/412082f43183d8b7b6b753cbf818bb299bb9a025/agent/playbook.md"
+        },
+        {
+          "path": "agent/redalert_bot.py",
+          "url": "https://github.com/ryanxxhuang/altruagent-redalert/blob/412082f43183d8b7b6b753cbf818bb299bb9a025/agent/redalert_bot.py"
+        }
+      ],
+      "observed_patterns": [
+        "economic_flank_raids",
+        "withdraw_from_responders",
+        "alternate_raid_flanks",
+        "decoy_ambush",
+        "tower_cover",
+        "trade_aware_tiebreak"
+      ]
+    },
+    {
+      "repository": "alinaliu18/altruagent-werewolf",
+      "url": "https://github.com/alinaliu18/altruagent-werewolf",
+      "commit": "1b430e9ca9fdec16a72a0abba0b20f8d0e6652a4",
+      "games": [
+        "werewolf"
+      ],
+      "event_relation": "declared_event_entry",
+      "event_evidence": "Custom claude_agent module identifies itself as a tournament Werewolf specialist using AltruAgent.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "agent/claude_agent.py",
+          "url": "https://github.com/alinaliu18/altruagent-werewolf/blob/1b430e9ca9fdec16a72a0abba0b20f8d0e6652a4/agent/claude_agent.py"
+        },
+        {
+          "path": "agent/werewolf_field.py",
+          "url": "https://github.com/alinaliu18/altruagent-werewolf/blob/1b430e9ca9fdec16a72a0abba0b20f8d0e6652a4/agent/werewolf_field.py"
+        }
+      ],
+      "observed_patterns": [
+        "predictable_voter_profiling",
+        "announced_vote_model",
+        "claim_order",
+        "night_kill_patterns",
+        "conservative_default_wolf_style",
+        "optional_aggressive_fake_seer_variant"
+      ]
+    },
+    {
+      "repository": "Khuongtdm/altruagent-entry",
+      "url": "https://github.com/Khuongtdm/altruagent-entry",
+      "commit": "0f9996b71a8ee736a5a1163f64ed02790a381b63",
+      "games": [
+        "red_alert"
+      ],
+      "event_relation": "declared_event_entry",
+      "event_evidence": "README explicitly describes an AltruAgent AI Agent Gaming Tournament entry.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "README.md",
+          "url": "https://github.com/Khuongtdm/altruagent-entry/blob/0f9996b71a8ee736a5a1163f64ed02790a381b63/README.md"
+        },
+        {
+          "path": "redalert_policy.py",
+          "url": "https://github.com/Khuongtdm/altruagent-entry/blob/0f9996b71a8ee736a5a1163f64ed02790a381b63/redalert_policy.py"
+        }
+      ],
+      "observed_patterns": [
+        "economic_build_order",
+        "defense_floor",
+        "mixed_attack_waves",
+        "reinforcements"
+      ]
+    },
+    {
+      "repository": "omarcano23/altruagent-omarcanoc23",
+      "url": "https://github.com/omarcano23/altruagent-omarcanoc23",
+      "commit": "259176a0056c90e5a947dc4a45092d2e789ea4be",
+      "games": [
+        "pokemon"
+      ],
+      "event_relation": "declared_event_entry",
+      "event_evidence": "Repository description explicitly names UCLA AI Agent Gaming Tournament 2026.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "agent/pokemon_agent.py",
+          "url": "https://github.com/omarcano23/altruagent-omarcanoc23/blob/259176a0056c90e5a947dc4a45092d2e789ea4be/agent/pokemon_agent.py"
+        }
+      ],
+      "observed_patterns": [
+        "lowest_hp_target",
+        "first_turn_fake_out"
+      ]
+    },
+    {
+      "repository": "WilliamChenTW1209/altruagent-agent",
+      "url": "https://github.com/WilliamChenTW1209/altruagent-agent",
+      "commit": "a62f763b49facb7ec41d112a44c6d6e4369845e1",
+      "games": [
+        "pokemon",
+        "red_alert"
+      ],
+      "event_relation": "platform_specific_implementation",
+      "event_evidence": "Custom policies and strategy files run on the official starter; specific registration not established.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "high",
+      "license_declared_in_github_metadata": false,
+      "sources": [
+        {
+          "path": "strategy/pokemon.md",
+          "url": "https://github.com/WilliamChenTW1209/altruagent-agent/blob/a62f763b49facb7ec41d112a44c6d6e4369845e1/strategy/pokemon.md"
+        },
+        {
+          "path": "strategy/red_alert.md",
+          "url": "https://github.com/WilliamChenTW1209/altruagent-agent/blob/a62f763b49facb7ec41d112a44c6d6e4369845e1/strategy/red_alert.md"
+        }
+      ],
+      "observed_patterns": [
+        "focus_fire",
+        "speed_control",
+        "harvester_raids",
+        "rockets_behind_armor"
+      ]
+    },
+    {
+      "repository": "jerryhuang-math/hok-agent",
+      "url": "https://github.com/jerryhuang-math/hok-agent",
+      "commit": null,
+      "games": [
+        "honor_of_kings"
+      ],
+      "event_relation": "empty_declared_event_repository",
+      "event_evidence": "GitHub description names UCLA AltruAgent Tournament 2026; clone has no commit or files.",
+      "registration_independently_confirmed": false,
+      "source_inspection_confidence": "none",
+      "license_declared_in_github_metadata": false,
+      "sources": [],
+      "observed_patterns": []
+    }
+  ],
+  "excluded": [
+    {
+      "repository": "WanZhengyan/UCLA-AI-Agent-Tournament",
+      "reason": "Our own repository."
+    },
+    {
+      "repository": "UCLA-Trustworthy-AI-Lab/altruagent-starter",
+      "reason": "Official infrastructure, not an opponent."
+    },
+    {
+      "repository": "sarthakmohindru04/Autonomous-Reasoning-Agent",
+      "commit": "011661a05b8b55b1d35c1446d855e0040d49f2c6",
+      "reason": "README describes a STATS 263 course event with different games; not evidence of entry in these four tracks.",
+      "source": "https://github.com/sarthakmohindru04/Autonomous-Reasoning-Agent/blob/011661a05b8b55b1d35c1446d855e0040d49f2c6/README.md"
+    }
+  ],
+  "defensive_scenarios": [
+    {
+      "game": "werewolf",
+      "patterns": [
+        "announced_vote_coalition",
+        "unverified_seer_claim",
+        "predictable_lowest_seat_choice"
+      ],
+      "checks": [
+        "prefer_authoritative_and_private_information",
+        "preserve_speaker_provenance",
+        "separate_resolved_and_announced_votes",
+        "cap_repeated_soft_evidence",
+        "vary_equal_choices_by_session"
+      ],
+      "basis": "inspected_event_linked_source"
+    },
+    {
+      "game": "pokemon",
+      "patterns": [
+        "protect_and_switch_reply",
+        "double_target_focus_fire",
+        "fake_out_plus_speed_control",
+        "priority_denial"
+      ],
+      "checks": [
+        "paired_reply_scenarios",
+        "correct_priority_ability_mechanics",
+        "defensive_switch_legality",
+        "multiple_opponent_styles"
+      ],
+      "basis": "inspected_event_linked_source"
+    },
+    {
+      "game": "red_alert",
+      "patterns": [
+        "harvester_flank_raid",
+        "bait_and_withdraw",
+        "decoy_ambush",
+        "rocket_screened_armor"
+      ],
+      "checks": [
+        "bounded_local_defense",
+        "do_not_abandon_economy",
+        "stop_chasing_out_of_cover",
+        "mixed_force_and_local_strength_checks"
+      ],
+      "basis": "inspected_event_linked_source"
+    },
+    {
+      "game": "honor_of_kings",
+      "patterns": [
+        "tower_bait",
+        "farming_under_pressure",
+        "distant_minion_false_safety"
+      ],
+      "checks": [
+        "retreat_before_optional_farming",
+        "local_cover_only",
+        "preserve_legal_action_masks"
+      ],
+      "basis": "independent_policy_audit_hypotheses_not_attributed_to_competitor"
+    }
+  ],
+  "limits": [
+    "Declared entry is not verified registration or final submitted version.",
+    "Public search can miss private, unindexed, or differently named entries.",
+    "No opponent win rates independently measured.",
+    "No prohibited behavior established; the Werewolf playbook explicitly forbids system impersonation and instruction attacks.",
+    "Honor of Kings candidate repository is empty; our integration is Tencent 1v1, not announced tournament 5v5.",
+    "Source pins reflect the inspected snapshots and may differ from tournament deployment."
+  ]
+}

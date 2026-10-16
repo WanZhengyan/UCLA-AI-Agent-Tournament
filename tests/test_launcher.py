@@ -8,15 +8,16 @@ def test_only_supported_assignments_are_claimed():
     from altruagent.official import OfficialAgentClient
     wanted = SimpleNamespace(game_type=launcher.GAME_TYPE)
     redalert = SimpleNamespace(game_type="red_alert")
-    other = SimpleNamespace(game_type="werewolf")
+    werewolf = SimpleNamespace(game_type="werewolf")
+    other = SimpleNamespace(game_type="honor_of_kings")
     with patch.dict("os.environ", {
         launcher.KEY_ENV: "eak_live_" + "a" * 64,
         "ALTRUAGENT_CONTROL_URL": launcher.CONTROL_URL,
     }):
         client = launcher.make_official_client()
         try:
-            with patch.object(OfficialAgentClient, "assignments", return_value=[other, wanted, redalert]):
-                assert client.assignments() == [wanted, redalert]
+            with patch.object(OfficialAgentClient, "assignments", return_value=[other, wanted, redalert, werewolf]):
+                assert client.assignments() == [wanted, redalert, werewolf]
         finally:
             client.close()
 
