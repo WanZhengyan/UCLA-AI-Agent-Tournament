@@ -1,0 +1,18 @@
+Imported from the user-provided RedAlertChampion.zip archive.
+Archive SHA-256: 83639faf881b85af5c0b5d9d3b37d0d07cf22a2c5329c47aa46fa098eb4ab906
+Integration date: 2026-10-15
+The six redalert_bot Python modules were initially imported unmodified.
+On 2026-10-15, agent.py, combat.py and economy.py were updated for balanced
+economy/defense/selective pressure; strategy.py was added. Original versions
+are backed up in validation/redalert_before_balance_20261015/.
+See validation/redalert_balance_20261015.json for validation and limitations.
+The archive's official SDK files are identical to the existing project's SDK;
+no SDK replacement or new authentication implementation was required.
+
+SDK upstream: https://github.com/UCLA-Trustworthy-AI-Lab/altruagent-starter
+SDK commit recorded in archive: 951f4f74b008c6aa7f40bec09e741aa67d3c45cc
+Live protocol reviewed: https://api.altruagent-game.com/skill/redalert
+The protocol and per-match game_config remain authoritative.
+
+54 original offline tests passed in this environment.
+Offline checks are not an OpenRA simulation or a measured live win rate.

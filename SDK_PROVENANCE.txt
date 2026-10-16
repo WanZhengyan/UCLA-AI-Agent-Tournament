@@ -1,0 +1,19 @@
+Bundled transport/runtime source:
+https://github.com/UCLA-Trustworthy-AI-Lab/altruagent-starter
+Commit: 951f4f74b008c6aa7f40bec09e741aa67d3c45cc
+Retrieved: 2026-10-15
+The altruagent/ package was originally copied without behavioral modifications.
+Local extension (2026-10-15): altruagent/worker.py now has two optional,
+failure-isolated experiment callbacks. Before a Red Alert Testing match,
+on_match_start receives a self-play attestation derived from this agent's own
+assignments (both seats must be owned); on_game_end receives the terminal result.
+No credential/client object is passed to policy callbacks. Authentication,
+lease renewal, gameplay transport and server scoring are unchanged.
+
+Live protocol guide used:
+https://api.altruagent-game.com/skill/pokemon
+Retrieved: 2026-10-15
+
+Public dashboard configuration confirms control URL:
+https://api.altruagent-game.com
+Runtime game-server locations come from authenticated official seat grants.

@@ -1,0 +1,8 @@
+{
+  "name": "pokemonchampion-offline-validation",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "pokemon-showdown": "0.11.11"
+  }
+}

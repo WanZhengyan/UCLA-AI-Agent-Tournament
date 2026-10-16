@@ -1,0 +1,34 @@
+# Authentication and local-only configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*credentials*.json
+*secrets*.json
+
+# Environments, caches and builds
+.venv/
+.build-venv/
+venv/
+node_modules/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.spec
+.DS_Store
+
+# Private match state, local reports, archives and replays
+*.log
+*.jsonl
+*.tar.gz
+*.zip
+.cache/
+validation/*
+!validation/redalert_selfplay/
+validation/redalert_selfplay/*
+!validation/redalert_selfplay/settings.json

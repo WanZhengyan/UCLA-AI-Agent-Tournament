@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-15",
+  "profile": "eco_guard",
+  "revision": "armor_guard_v4",
+  "previous_revision": "map_guard_v3",
+  "changes": [
+    "Prioritize service depot and tank production budget over repeated infantry and extra barracks",
+    "Cap supporting infantry while preserving early emergency defense, a minimum rocket contingent, power and harvester recovery",
+    "Prefer a second factory over additional barracks when the economy supports it",
+    "Require three healthy tanks in the actual attacking wave; do not allocate all tanks to home reserve",
+    "Discount anti-infantry units against visible armor in conservative strength checks",
+    "Do not disable unfavorable-engagement checks at the end of a losing game",
+    "Retain map adaptation, safe expansion, anti-fortification checks and conditional siege support"
+  ],
+  "comparison_method": {
+    "function": "tests/test_redalert_policy.py:mock_production_progression",
+    "seconds": 600,
+    "starting_cash": 5000,
+    "income_per_harvester_per_second": [8, 16],
+    "payment": "Progressive production cost with short category queues",
+    "no_battles": true,
+    "not_a_real_OpenRA_engine": true,
+    "map_income_and_factory_speed": "Simplified synthetic assumptions, not calibrated live-map estimates"
+  },
+  "results": [
+    {"faction": "allies", "income": 8, "before": {"rifles": 21, "rockets": 10, "tanks": 0, "harvesters": 6}, "after": {"rifles": 10, "rockets": 5, "light_tanks": 1, "medium_tanks": 3, "tanks": 4, "harvesters": 6}},
+    {"faction": "soviets", "income": 8, "before": {"rifles": 21, "rockets": 10, "tanks": 0, "harvesters": 6}, "after": {"rifles": 10, "rockets": 5, "heavy_tanks": 3, "tanks": 3, "harvesters": 6}},
+    {"faction": "allies", "income": 16, "before": {"rifles": 60, "rockets": 29, "tanks": 10, "harvesters": 6}, "after": {"rifles": 10, "rockets": 5, "light_tanks": 1, "medium_tanks": 13, "tanks": 14, "harvesters": 6}},
+    {"faction": "soviets", "income": 16, "before": {"rifles": 61, "rockets": 29, "tanks": 7, "harvesters": 6}, "after": {"rifles": 10, "rockets": 5, "heavy_tanks": 11, "tanks": 11, "harvesters": 6}}
+  ],
+  "verification": {"regression_tests": 304, "both_game_policy_selftests": "passed", "spawn_mcp_entry_tls": "passed"},
+  "limitations": [
+    "Production-direction evidence only; no claim of increased real match win rate",
+    "Type weights, cash thresholds and three-tank requirement are heuristic",
+    "No fresh real-engine map/faction/duration sweep for this revision",
+    "Existing matches retain their already-loaded version; new workers load this revision",
+    "Pokemon tactical source is unchanged"
+  ]
+}

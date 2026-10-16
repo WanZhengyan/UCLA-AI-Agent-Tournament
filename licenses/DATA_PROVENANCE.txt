@@ -1,0 +1,9 @@
+Offline Pokemon metadata source: Pokemon Showdown, official npm package pokemon-showdown@0.11.11.
+Upstream: https://github.com/smogon/pokemon-showdown
+Package: https://www.npmjs.com/package/pokemon-showdown
+Retrieved 2026-10-15; tarball SHA-1 2b2f877df641a231a0078512505c9a84a39084a7.
+Data extracted from Dex.mod('gen9'): species, moves, natures, items, abilities, types, aliases.
+Only static JSON-serializable metadata is included. Battle callback functions are not included.
+Pokemon Showdown source/data license: MIT (included).
+Pokemon names and game concepts are associated with Nintendo, Game Freak, and The Pokemon Company.
+This is an independent tournament agent; no affiliation or endorsement is claimed.
