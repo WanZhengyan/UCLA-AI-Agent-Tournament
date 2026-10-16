@@ -1,0 +1,249 @@
+{
+  "revision": "v14",
+  "date": "2026-10-16",
+  "branch": "improve/friendly-defense-v14",
+  "base_commit": "b6be880f8877bd74bbec9b12fa6235ac7526d78f",
+  "status": "development_candidate",
+  "strategy_versions": {
+    "redalert": "economy_guard_v14",
+    "hok": "hok_team_guard_v14",
+    "pokemon": "paradox_damage_v10",
+    "werewolf": "evidence_v1"
+  },
+  "integrated_revisions": {
+    "protected_mining": "b6be880f8877bd74bbec9b12fa6235ac7526d78f",
+    "hok_tower_defense": "1817737c50e2aebf03e6f1e5527e9543fb54bd6c",
+    "guarded_growth": "ebd78e4dd81a14599816b29e35f12f3a47dd5979"
+  },
+  "source_sha256": {
+    "redalert_bot/agent.py": "c29d451128683d190dd2468b6a24b8edaf02248243e40cbd4f5f6d654e48fb9e",
+    "redalert_bot/combat.py": "83fded8684cc9d6b40bf53a230db8a020a29f53a44581925b2c64cbe8c846ad4",
+    "redalert_bot/economy.py": "788c7f6694bc7f78a6025103cbddc2604eee672f1823048f2fdf925243a28cdb",
+    "redalert_bot/harvesters.py": "53e5857fab1561984f881be45827584e7ce5a472e3e4d0ff789fa70951292e65",
+    "redalert_bot/mining.py": "c11795d94464ea5387cec832af3a01f87e4a00d6ff86dd7374097da1c77810ef",
+    "hok_platform/agent.py": "18a906a0ea6e20bf34e211dfabaea3332c848a145ae93f126d09025170f98da1",
+    "tests/test_redalert_defensive_posture.py": "39bc40c9095ef16b2cd29186619c4132bda280d9cd8bce0c2628a627170e4e7a",
+    "tests/test_redalert_artillery_safety.py": "f429028a6404cdb70375c57fa41d320b3da5976bd45a7d39a48c057744ff3f31",
+    "tests/test_redalert_raid_safety.py": "b406782dcafc61b2fb4b10331a73363f21008a76827fa807a07140e750785854",
+    "tests/test_redalert_power_commitments.py": "ee52129ea38175c4082a778632751cb2aad8f21f8e456597fad3deebf56fc465",
+    "tests/test_redalert_growth_integration.py": "469086debb74acfb44360f126cb65bf80b872efb2235d6440012012259aa351e",
+    "tests/test_hok_team_contacts.py": "2d44cbacdeedbc6c0bc50494bfc1f550292fcc043609a9f98f31476e3c37d5a0",
+    "tests/test_redalert_growth.py": "5a62f4d3f87820e103e30c4c427c90df31362519f7d941209d92203dde41d617",
+    "tests/test_redalert_mining_guard.py": "6d14c002302f752d9a95ebf2ec1e0c9f8cf7b2c947ad1aea0f1d4965bbb72d19",
+    "tests/redalert_economy_compare.py": "a47926346fe44d26ce497aba5f515c676dc81fa1e78ea6df93f34462e52d89c8",
+    "tests/test_redalert_policy.py": "3cf661a75cda3a579f26968c020f7040ea4a9cebf0de8c72026e8f4dfca7b0e1",
+    "reports/redalert_economy_v14.json": "dfb19566f63b26a0fbb3a016f5b0acd54dd70f3fa7e3ebb76450e57f79b42daf"
+  },
+  "policy_changes": [
+    "At nonnegative own kill/loss cost balance, cancel voluntary Red Alert attack waves and retain local invasion defense; deficit counterattacks keep trade, armor and known-tower gates.",
+    "Recall optional forward scouts on a positive own balance; at a tie retain the existing bounded cheap warning scout.",
+    "Share terrain-screened recall across home guards, mining escorts and artillery; explicit stop cancels unsafe movement when no safe return is known.",
+    "Track defensive artillery target IDs and stop stale pursuit when a safe retarget is refused; only accepted emits change order history.",
+    "Allow short bounded productive-miner escape after fresh damage and a currently visible nearby armed threat.",
+    "Reserve power for observed Building/Defense queues and accepted construction in the current batch; never credit an unplaced generator.",
+    "Integrate the five-tank third-refinery exception with the actual protected-mining placement/resource hint and projected power.",
+    "Use one bounded current owned-team contact set for HOK defense allocation and individual danger, siege and blocker decisions; keep safe objective pressure."
+  ],
+  "validation": {
+    "full_suite": {
+      "command": "SHOWDOWN_NODE=node python -m pytest tests -q",
+      "passed": 1108,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 19.63,
+      "environment_note": "Pinned Pokemon Showdown installed externally; validation used NODE_PATH=/workspace/scratch/1c100e393a01/showdown_modules. A normal checkout can use npm install."
+    },
+    "runtime_self_test": {
+      "command": "python exe_entry.py --self-test",
+      "passed": true,
+      "checks": [
+        "Pokemon policy",
+        "Red Alert policy",
+        "Werewolf policy",
+        "Honor of Kings 5v5 policy",
+        "spawned worker",
+        "MCP import",
+        "entry import",
+        "TLS initialization"
+      ]
+    },
+    "new_v14_scenarios": {
+      "total": 138,
+      "harvester_raid_safety": 39,
+      "power_commitments": 13,
+      "defensive_posture": 22,
+      "artillery_safety": 7,
+      "growth_integration": 14,
+      "hok_team_contacts": 43
+    },
+    "frozen_baseline_checks": [
+      {
+        "component": "productive_harvester_escape",
+        "baseline": {
+          "revision": "1817737c50e2aebf03e6f1e5527e9543fb54bd6c",
+          "path": "redalert_bot/harvesters.py",
+          "sha256": "5d0be78fc19d3a9b8a35c9329a7df7c207c4fc67859bc3be3ef843f5fb3446ae"
+        },
+        "selected_positive_cases": 10,
+        "baseline_failed": 10,
+        "method": "Swap only our own frozen harvester module; fresh-damage and active-worker regression cases."
+      },
+      {
+        "component": "hok_team_contacts",
+        "baseline": {
+          "revision": "1817737c50e2aebf03e6f1e5527e9543fb54bd6c",
+          "path": "hok_platform/agent.py",
+          "sha256": "c7deab61295bd319c8be8bb5ef1342edff6e65f2a8bf91aa634f482a7dd132c4"
+        },
+        "selected_positive_cases": 6,
+        "baseline_failed": 6,
+        "method": "Swap only our own frozen HOK module; mirrored 1v3/defended siege, lane blocker and bait-with-backup cases."
+      },
+      {
+        "component": "power_commitments",
+        "baseline": {
+          "revision": "ebd78e4dd81a14599816b29e35f12f3a47dd5979",
+          "path": "redalert_bot/economy.py",
+          "sha256": "18563dab5f018b425855f4389b58ff99a4e87694d7c9bf205a06e571d81a12dd"
+        },
+        "cases": 13,
+        "baseline_failed": 6,
+        "baseline_passed": 7,
+        "method": "Own v13 economy before queued/same-batch power fix; zero-drain fixture later uses two tanks to isolate the gate from inherited mining-defense selection."
+      },
+      {
+        "component": "defensive_posture_and_artillery",
+        "baseline": {
+          "revision": "b6be880f8877bd74bbec9b12fa6235ac7526d78f",
+          "path": "redalert_bot/combat.py",
+          "sha256": "ddef8c0f9b097bd4946a96ac245c2ccabe1eb672e6fc3c203758bea2c2b4b103"
+        },
+        "baseline_failed": 15,
+        "baseline_passed": 2,
+        "deselected": 12,
+        "selection": "tie_or_lead or new_nonnegative or optional_warning_scout or existing_warning_scout or unsafe_short_hold or disconnected_guard or immediately_retargets or refused_retarget_cancels or refused_retarget_and_hold or retired_target_cooldown or refused_artillery_retarget_stops",
+        "method": "Swap only our own frozen combat module into current fixtures; candidate passes all 29 new posture/artillery cases."
+      }
+    ],
+    "independent_review": {
+      "blocking_findings_remaining": 0,
+      "resolved_findings": [
+        "covered terrain detour during recall",
+        "stale short-distance hold",
+        "disconnected local hold projected across water",
+        "artillery old-target pursuit",
+        "mapped financing blocked before its discount gate",
+        "actual mining-site validation"
+      ],
+      "unchanged_components": [
+        "Pokemon strategy",
+        "Werewolf strategy",
+        "shared runtime",
+        "entrypoint"
+      ]
+    },
+    "diff_check_passed": true
+  },
+  "production_comparison": {
+    "report": "reports/redalert_economy_v14.json",
+    "baseline_revision": "b6be880f8877bd74bbec9b12fa6235ac7526d78f",
+    "duration_seconds": 1200,
+    "paired_cases": 6,
+    "all_six_600_second_tank_counts_unchanged": true,
+    "case_deltas": [
+      {
+        "faction": "allies",
+        "income_per_harvester_second": 4,
+        "delta": {
+          "income": 0.0,
+          "spending": 0.0,
+          "cash": 0.0,
+          "tanks": 0,
+          "harvesters": 0
+        }
+      },
+      {
+        "faction": "allies",
+        "income_per_harvester_second": 8,
+        "delta": {
+          "income": 432.0,
+          "spending": 225.0,
+          "cash": 207.0,
+          "tanks": 1,
+          "harvesters": 0
+        }
+      },
+      {
+        "faction": "allies",
+        "income_per_harvester_second": 16,
+        "delta": {
+          "income": 480.0,
+          "spending": 0.0,
+          "cash": 480.0,
+          "tanks": 0,
+          "harvesters": 0
+        }
+      },
+      {
+        "faction": "soviets",
+        "income_per_harvester_second": 4,
+        "delta": {
+          "income": 0.0,
+          "spending": 0.0,
+          "cash": 0.0,
+          "tanks": 0,
+          "harvesters": 0
+        }
+      },
+      {
+        "faction": "soviets",
+        "income_per_harvester_second": 8,
+        "delta": {
+          "income": 568.0,
+          "spending": 316.67,
+          "cash": 251.33,
+          "tanks": 1,
+          "harvesters": 0
+        }
+      },
+      {
+        "faction": "soviets",
+        "income_per_harvester_second": 16,
+        "delta": {
+          "income": 0.0,
+          "spending": 0.0,
+          "cash": 0.0,
+          "tanks": 0,
+          "harvesters": 0
+        }
+      }
+    ],
+    "interpretation": "Retains the earlier guarded-growth effect in a fixed-income fixture; not new evidence of real-map mining throughput or win rate."
+  },
+  "research": {
+    "repository": "https://github.com/lukemt/friendly-fighter",
+    "revision": "a11f1624609646d5dcbf0f6033677ee0f9fee244",
+    "identity_evidence": "Repository README explicitly describes a UCLA AltruAgent Red Alert agent.",
+    "platform_account_identity_verified": false,
+    "deployed_revision_verified": false,
+    "hok_implementation_verified": false,
+    "searched_scope": "Repository dispatcher, main branch, owner public repositories and scoped public search.",
+    "opponent_code_executed": false,
+    "opponent_code_copied": false,
+    "document": "docs/FRIENDLY_FIGHTER_REVIEW.md",
+    "official_rules": [
+      "https://api.altruagent-game.com/skill/redalert",
+      "https://api.altruagent-game.com/skill/hok"
+    ]
+  },
+  "limitations": [
+    "No live v14 match, own replay review for v14, opponent head-to-head or tournament win-rate estimate.",
+    "Defending at nonnegative own trade balance does not reveal the opponent complete score or guarantee a win; assets break ties after trade balance.",
+    "Synthetic economy comparison omits combat, enemy economy, terrain travel, unloading congestion, ore depletion and power slowdown.",
+    "Power projection cannot see earlier submitted orders missing from the observation; runtime in-flight state is separate from the economy planner.",
+    "Initial ore and placement coordinates remain hints; actual placement and remaining ore are not guaranteed.",
+    "Combat strength and route safety are bounded heuristics; unknown enemies and threats not yet observed remain unknown.",
+    "HOK uses listed nearest-target macros; no arbitrary path, lane, target selection or hidden information is added.",
+    "No main merge, running-listener replacement or formal tournament submission was performed by this revision."
+  ]
+}

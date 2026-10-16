@@ -1,7 +1,9 @@
-# Red Alert: protected mining (`mining_guard_v9`)
+# Red Alert: defensive economy (`economy_guard_v14`)
 
-The deployed default remains `eco_guard`. Only Red Alert policy modules change;
-Pokemon, Werewolf and both Honor of Kings implementations are preserved.
+The default profile remains `eco_guard`. This development candidate combines
+the inherited protected-mining revision with score-aware defense, productive
+miner protection and combined construction-power budgeting. The related HOK
+team-contact correction is documented separately in [HOK.md](HOK.md).
 
 ## Objective and platform constraints
 
@@ -32,14 +34,19 @@ yard instead. Static map resources are initial hints, not current ore reserves.
   three tanks, four miners, operating cash and roughly three productive minutes
   after construction. Once six tanks exist, use progressive-payment growth
   rather than waiting indefinitely for the entire purchase price in cash.
+  A narrower third-refinery financing exception is available with five healthy
+  home tanks, four explicitly active miners, six minutes remaining, sufficient
+  projected power and screened infrastructure/placement. See [the growth
+  review](REDALERT_GROWTH_V13.md); its earlier fixed-income results are historical.
 - Observe where each refinery actually appeared. A fallback to home does not
   count as successful remote expansion; back off the same patch for 180 seconds.
   If a completed refinery's location becomes unsafe, place it at home to free
   the construction queue. Actual building positions govern subsequent choices.
 - At most six refineries; the eight-miner ceiling can rise to 10–12 only with
   five/six actual refineries, an armored screen, observable mining activity,
-  sufficient remaining time, and no genuinely idle miners. Never cancel active
-  harvest/return/unload activity to micromanage miners.
+  sufficient remaining time, and no genuinely idle miners. Active harvesting,
+  return and unloading remain uninterrupted unless fresh observed damage and
+  a currently visible nearby armed threat justify a short bounded escape.
 - Preserve conservative MCV timing, terrain/fortification checks and withdrawal.
   An MCV already moving away from home receives a bounded tank escort.
 
@@ -51,6 +58,8 @@ yard instead. Static map resources are initial hints, not current ore reserves.
 - Place affordable ground defenses near uncovered mining areas, globally capped
   at three, with power and tank-budget checks. Prefer anti-tank defenses once the
   tank core exists or hostile armor is visible. Placement remains an engine hint.
+  Reserve power for observed construction queues and accepted new construction
+  in the current batch; an unplaced generator grants no future power credit.
 - After five tanks, add roughly one artillery unit per five tanks, at most three,
   even without visible enemy towers. Never replace the first tanks; if artillery
   is unaffordable, continue affordable tank production instead of idling.
@@ -58,10 +67,13 @@ yard instead. Static map resources are initial hints, not current ore reserves.
   only currently visible enemies already within firing range, with two healthy
   nearby tanks ahead. Otherwise reposition behind the line; never attack-move
   artillery toward a fleeing raider. Close threats trigger withdrawal.
-- Retain small-raid response, major-incursion response, known-tower avoidance,
-  recovery after bad exchanges and selective attacks on exposed economic targets.
-  A positive own trade balance suppresses optional new attacks in the last
-  90 seconds; it is not treated as omniscient knowledge of the opponent's score.
+- Retain small-raid and major-incursion responses while guarding the economy.
+  At zero or positive own kill/loss balance, cancel voluntary attack waves and
+  recall them through terrain- and tower-screened holds. A positive balance
+  also recalls the optional forward scout; at a tie its bounded warning role
+  remains. A deficit permits only counterattacks passing the existing armor,
+  trade and fortification gates. The clock does not override those safeguards.
+  Own balance is not omniscient knowledge of the opponent's complete score.
 
 ## Validation and limitations
 
@@ -69,7 +81,7 @@ yard instead. Static map resources are initial hints, not current ore reserves.
 delivery routes, hostile/depleted hints, placement fallback, budget/timing gates,
 miner caps, mine/MCV guards, artillery range/screen/retreat and legal action batches.
 The full suite also checks unchanged games and production/transport regressions.
-Validation on 2026-10-16: **928 tests passed**, including 46 new mining-guard
+Historical validation for `mining_guard_v9` on 2026-10-16: **928 tests passed**, including 46 new mining-guard
 scenarios; four-game offline self-tests and spawned runtime/TLS checks passed.
 A 500-decision synthetic policy check measured 0.338 ms median and 5.986 ms
 maximum. A frozen-code comparison confirmed that the old four-refinery fixture
@@ -79,7 +91,13 @@ These are deterministic behavior checks, **not an OpenRA match simulation or a
 measured improvement in tournament win rate**. Economic thresholds and strength
 estimates remain heuristics requiring live comparison.
 
-The pre-change Sidestep formal replay inspected locally ended with a time-limit
+Current v14 validation and source hashes are in
+[friendly_defense_v14.json](../reports/friendly_defense_v14.json), with the
+[public-code review and reproduced gaps](FRIENDLY_FIGHTER_REVIEW.md). No live
+match or head-to-head win-rate comparison was run for v14.
+
+The inherited `mining_guard_v9` review records a pre-change Sidestep formal replay
+ending with a time-limit
 loss: 8 miners, 4 refineries, 45 medium tanks, zero recorded kill/loss costs and
 68,950 assets in the last sample. This motivates removing fixed mining limits
 and improving placement, but does not establish the opponent's exact economy or

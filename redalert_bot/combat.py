@@ -103,20 +103,24 @@ def _issue(v, state, emit, actors, destination, mode, urgent=False, command='att
     """Return IDs actually submitted. Never assume a refused emit succeeded."""
     if not actors:
         return set()
-    destination = _walkable(v, destination)
+    destination = tuple(v.clamp(destination)) if command == 'stop' else _walkable(v, destination)
     history = state.setdefault('unit_orders', {})
     eligible = []
     for actor in actors:
         ident = actor['id']
         previous = history.get(str(ident))
         age = v.now - previous['at'] if previous else 10_000
-        changed = previous is None or previous['mode'] != mode or distance(previous['goal'], destination) > 8
+        changed = (previous is None or previous['mode'] != mode
+                   or distance(previous['goal'], destination) > 8
+                   or mode == 'hold-safe' and previous['goal'] != list(destination)
+                   or command == 'stop' and previous.get('command') != 'stop'
+                   or command == 'attack' and previous.get('target') != target)
         # Active orders normally continue without interference. The 40 s rescue
         # handles a unit stuck in a stale engine activity or an old objective.
-        safety_change = changed and mode in {'contain', 'retreat', 'regroup', 'defend', 'hold', 'siege-screen'}
+        safety_change = changed and mode in {'contain', 'retreat', 'regroup', 'defend', 'hold', 'hold-safe', 'siege-screen'}
         if previous is None or safety_change or (urgent and age >= 3) or (actor.get('idle', False) and age >= 6) or (changed and age >= 12) or age >= 40:
             # Do not repeatedly rally units already at the gathering point.
-            if mode in {'gather', 'hold', 'reserve', 'contain', 'siege-screen'} and distance(cell(actor), destination) <= 2 and not changed:
+            if mode in {'gather', 'hold', 'hold-safe', 'reserve', 'contain', 'siege-screen'} and distance(cell(actor), destination) <= 2 and not changed:
                 continue
             eligible.append(actor)
     submitted = set()
@@ -125,15 +129,20 @@ def _issue(v, state, emit, actors, destination, mode, urgent=False, command='att
         group = eligible[offset:offset + group_size]
         ids = [a['id'] for a in group]
         key = 'combat:' + mode + ':' + ','.join(str(x) for x in ids)
+        if command == 'attack':
+            key += ':target:' + str(target)
+        elif mode == 'hold-safe':
+            key += ':' + command + ':at:' + ','.join(map(str, destination))
         order = {'cmd': command, 'units': ids}
         if command == 'attack' and target is not None:
             order['target'] = target
-        else:
+        elif command != 'stop':
             order['to'] = list(destination)
         if not emit(order, key=key, cooldown=3.0):
             break
         for actor in group:
-            history[str(actor['id'])] = {'at': v.now, 'goal': list(destination), 'mode': mode}
+            history[str(actor['id'])] = {'at': v.now, 'goal': list(destination), 'mode': mode,
+                                         'command': command, 'target': target if command == 'attack' else None}
             submitted.add(actor['id'])
     return submitted
 
@@ -257,7 +266,8 @@ def _contain(v, state, emit, active, blocked):
 def _warning_scout(v, state, emit, army, threats):
     """One cheap forward lookout; the defensive policy must not remain blind."""
     goal = getattr(v, 'map_plan', {}).get('scout_cell')
-    if not goal or v.now < 40 or len(army) < 8 or v.enemy_buildings:
+    balance = float(v.military.get('kills_cost', 0)) - float(v.military.get('deaths_cost', 0))
+    if not goal or v.now < 40 or len(army) < 8 or v.enemy_buildings or balance > 0:
         state.pop('warning_scout_id', None)
         return set()
     scout = next((a for a in army if a['id'] == state.get('warning_scout_id')), None)
@@ -332,21 +342,51 @@ def _hold_outside_towers(v, state, emit, actors, known):
                 break
         groups.setdefault(tuple(goal), []).append(actor)
     for goal, group in groups.items():
-        _issue(v, state, emit, group, goal, 'hold', command='move')
+        _issue(v, state, emit, group, goal, 'hold-safe', command='move')
 
 
-def _keep_home_cover(v, state, emit, army, used, wave_ids):
+def _guard_hold(v, state, emit, actors, goal):
+    """Recall a group only along a clear approach to its defensive position."""
+    if getattr(v, 'navigation', {}).get('parents'):
+        from .maps import route_safe
+        from .harvesters import _escape
+        by_start, returning = {}, []
+        for actor in actors:
+            by_start.setdefault(cell(actor), []).append(actor)
+        zones = [(cell(b), radius(v, b)) for b in fortifications(v)]
+        for index, (start, group) in enumerate(by_start.items()):
+            # Bound distinct route searches, reusing the map's 32-entry cache.
+            # A safe straight segment can still detour through a covered bridge.
+            if index < 32 and not blockers(v, start, goal) and route_safe(v, goal, start=start):
+                returning.extend(group)
+                continue
+            local = start
+            if index < 32 and not safe_cell(v, start):
+                local = _escape(v, start, zones, goal) or start
+            # A distinct safety mode cancels an old active hold even if its
+            # unsafe destination lies within the normal 8-cell change margin.
+            # Stop by ID when no safe route is proven. Sending our current
+            # cell through _walkable could project an isolated unit across
+            # water onto the home component and recreate the unsafe journey.
+            _issue(v, state, emit, group, local, 'hold-safe',
+                   command='stop' if local == start else 'move')
+        _issue(v, state, emit, returning, goal, 'hold', command='move')
+        return
+    blocked = {b['id']: b for a in actors for b in blockers(v, cell(a), goal)}
+    if blocked:
+        _hold_outside_towers(v, state, emit, actors, list(blocked.values()))
+    else:
+        _issue(v, state, emit, actors, goal, 'hold', command='move')
+
+
+def _keep_home_cover(v, state, emit, army, used, wave_ids, *, recall_wave=False):
     """Release obsolete raid assignments without moving the other flank."""
-    idle_cover = [a for a in army if a['id'] not in used | wave_ids]
+    idle_cover = [a for a in army if a['id'] not in used | (set() if recall_wave else wave_ids)]
     recalled = [a for a in idle_cover
-                if state.get('unit_orders', {}).get(str(a['id']), {}).get('mode')
+                if recall_wave or state.get('unit_orders', {}).get(str(a['id']), {}).get('mode')
                 in {None, 'defend'}]
     goal = _stage(v)
-    blocked = {b['id']: b for a in recalled for b in blockers(v, cell(a), goal)}
-    if blocked:
-        _hold_outside_towers(v, state, emit, recalled, list(blocked.values()))
-    else:
-        _issue(v, state, emit, recalled, goal, 'hold', command='move')
+    _guard_hold(v, state, emit, recalled, goal)
     _defensive_stance(v, emit, idle_cover)
 
 
@@ -360,23 +400,8 @@ def _defensive_stance(v, emit, actors):
 
 
 def _garrison_move(v, state, emit, actors, destination):
-    """Do not cross a known tower line on the way to an economic guard post."""
-    goal = _walkable(v, destination)
-    clear = []
-    for actor in actors:
-        blocked = blockers(v, cell(actor), goal)
-        if blocked:
-            _hold_outside_towers(v, state, emit, [actor], blocked)
-            continue
-        if getattr(v, 'map_plan', {}).get('active'):
-            from .maps import route_safe
-            if not route_safe(v, goal, start=cell(actor)):
-                # Static connectivity is unknown from this actor's cell.
-                # Cancel an obsolete movement without inventing a route.
-                _issue(v, state, emit, [actor], cell(actor), 'hold', command='move')
-                continue
-        clear.append(actor)
-    _issue(v, state, emit, clear, goal, 'hold', command='move')
+    """Mine escorts and artillery share the same protected recall controller."""
+    _guard_hold(v, state, emit, actors, _walkable(v, destination))
 
 
 def _rear_artillery(v, state, emit, guns, screen, anchor, enemies=()):
@@ -391,8 +416,14 @@ def _rear_artillery(v, state, emit, guns, screen, anchor, enemies=()):
         danger = any(distance(cell(gun), cell(e)) < 5 for e in enemies)
         if targets and not danger and safe_cell(v, cell(gun)):
             target = min(targets, key=lambda e: (e.get('hp', 100), distance(cell(e), cell(gun))))
-            _issue(v, state, emit, [gun], cell(target), 'defend', urgent=True,
-                   command='attack', target=target['id'])
+            previous = state.get('unit_orders', {}).get(str(gun['id']), {})
+            submitted = _issue(v, state, emit, [gun], cell(target), 'defend', urgent=True,
+                               command='attack', target=target['id'])
+            if (not submitted and previous.get('command') == 'attack'
+                    and previous.get('target') not in {e['id'] for e in targets}):
+                # A refused retarget must not leave an obsolete attack chasing
+                # a target out of range. Only accepted emits update history.
+                _issue(v, state, emit, [gun], cell(gun), 'hold-safe', command='stop')
         else:
             direction = cell(min(enemies, key=lambda e: distance(cell(e), anchor))) if enemies else v.enemy_base
             length = max(1, distance(anchor, direction))
@@ -479,6 +510,7 @@ def plan(v, memory: dict, emit) -> None:
                 state.update(mode='defend against aircraft', last_mode='anti-air')
                 return
     balance = float(v.military.get('kills_cost', 0)) - float(v.military.get('deaths_cost', 0))
+    preserve_trade = getattr(v, 'profile', 'balanced') == 'eco_guard' and balance >= 0
     if (0 < v.remaining <= 75 and balance > 0 and not home_threats
             and getattr(v, 'profile', 'balanced') != 'eco_guard'):
         state['mode'] = 'protect lead'
@@ -516,9 +548,9 @@ def plan(v, memory: dict, emit) -> None:
                 _defensive_stance(v, emit, local)
                 state['mode'] = 'defend outside fortifications'
                 used = {a['id'] for a in local}
-                wave_ids -= used
+                wave_ids = set() if preserve_trade else wave_ids-used
                 state['wave_ids'] = list(wave_ids)
-                _keep_home_cover(v, state, emit, army, used, wave_ids)
+                _keep_home_cover(v, state, emit, army, used, wave_ids, recall_wave=preserve_trade)
                 return
         if armor_focus:
             guns = [a for a in army if a.get('type') in SIEGE
@@ -532,20 +564,21 @@ def plan(v, memory: dict, emit) -> None:
         else:
             _issue(v, state, emit, local, goal, 'defend', urgent=True, command=command)
         used = {a['id'] for a in local}
-        wave_ids -= used
+        wave_ids = set() if preserve_trade else wave_ids-used
         state['wave_ids'] = list(wave_ids)
         state['mode'] = 'defend economy'
         state['last_mode'] = 'defend'
         if armor_focus:
-            _keep_home_cover(v, state, emit, army, used, wave_ids)
-        # Preserve the rest of an already advancing army's current orders.
+            _keep_home_cover(v, state, emit, army, used, wave_ids, recall_wave=preserve_trade)
+        # Only a score-deficit counterattack may retain the distant wave.
         return
     state.pop('raid_response', None)
-    if (getattr(v,'strategy',{}) or {}).get('recover_until',0) > v.now and v.remaining > 45:
+    if (not preserve_trade and (getattr(v,'strategy',{}) or {}).get('recover_until',0) > v.now
+            and v.remaining > 45):
         state.update(mode='recover after bad exchange',wave_ids=[])
         _issue(v,state,emit,army,_stage(v),'regroup',command='move')
         return
-    if state.get('retreat_until', -1) > v.now:
+    if not preserve_trade and state.get('retreat_until', -1) > v.now:
         state['mode'] = 'regroup'
         _issue(v, state, emit, army, state.get('retreat_goal', _stage(v)), 'regroup', command='move')
         return
@@ -561,13 +594,14 @@ def plan(v, memory: dict, emit) -> None:
                             and distance(cell(a), v.base) < 35
                             and not blockers(v, _centre(army), cell(a))]
         nearby_hostiles = [a for a in threats if distance(cell(a), _centre(army)) < 18]
-        opportunity = bool(economic_targets) and armor_ready and _matchup_value(v, army, nearby_hostiles) > max(1800, _matchup_value(v, nearby_hostiles, army) * 1.8)
-        if balance > 0 and v.remaining <= 90:
-            opportunity = False  # Preserve efficient trades near the cutoff.
+        opportunity = balance < 0 and bool(economic_targets) and armor_ready and _matchup_value(v, army, nearby_hostiles) > max(1800, _matchup_value(v, nearby_hostiles, army) * 1.8)
         if not (desperate and armor_ready) and not opportunity:
             # Cover separate refineries with nearby defenders; keep the bulk
             # behind a single front instead of scattering across every miner.
             state.update(mode='guard economy', wave_ids=[], last_mode='hold')
+            if preserve_trade:
+                state.pop('retreat_until', None)
+                state.pop('retreat_goal', None)
             scouting = _warning_scout(v, state, emit, army, threats)
             remaining_army = [a for a in army if a['id'] not in scouting]
             _guard_economy(v, state, emit, remaining_army)

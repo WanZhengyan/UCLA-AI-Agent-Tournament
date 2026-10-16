@@ -78,7 +78,7 @@ class HeroMemory:
 
 
 class HokPlatformAgent:
-    strategy_version = 'hok_guard_v4'
+    strategy_version = 'hok_team_guard_v14'
     profile = 'defend_and_push'
     realtime_wait_seconds = .6
 
@@ -94,9 +94,56 @@ class HokPlatformAgent:
         self._buildings = {}
         self._defense = {}
 
-    def _assign_defense(self, raw, own, now):
+    def _team_contacts(self, raw, owned):
+        """Deduplicate this snapshot's visible enemies, never unseen history.
+
+        At most five owned views with ten records each are inspected. Runtime
+        identity takes precedence; a hero identity can join its unambiguous
+        runtime identity or stand alone when that field is absent.
+        """
+        camp = raw['camp']
+        rows, runtime_heroes, hero_runtimes, invalid = [], {}, {}, set()
+        for seat in owned:
+            for enemy in records(summary(raw, seat).get('other_heroes'), 10):
+                if (enemy.get('visible') is not True or type(enemy.get('camp')) is not int
+                        or enemy['camp'] != 3 - camp
+                        or number(enemy.get('x')) is None or number(enemy.get('z')) is None
+                        or hp_fraction(enemy) is None or not alive(enemy)
+                        or number(enemy.get('revive_time', 0)) != 0
+                        or number(enemy.get('level', 1)) is None
+                        or number(enemy.get('level', 1)) < 1):
+                    continue
+                rid, hid = enemy.get('runtime_id'), enemy.get('hero_id')
+                if any(value is not None and (type(value) is not int or value < 0)
+                       for value in (rid, hid)) or (rid is None and hid is None):
+                    continue
+                key = (enemy['camp'], rid)
+                if rid is not None and hid is not None:
+                    old = runtime_heroes.setdefault(key, hid)
+                    if old != hid:
+                        invalid.add(key)  # Contradictory identities are not enemies to count twice.
+                    hero_runtimes.setdefault((enemy['camp'], hid), set()).add(rid)
+                rows.append((rid, hid, enemy))
+        contacts = {}
+        for rid, hid, enemy in rows:
+            if rid is None:
+                aliases = hero_runtimes.get((enemy['camp'], hid), set())
+                if len(aliases) > 1:
+                    continue  # A missing runtime ID cannot distinguish these heroes.
+                rid = next(iter(aliases), None)
+            if (enemy['camp'], rid) in invalid:
+                continue
+            key = (enemy['camp'], 'runtime', rid) if rid is not None else (enemy['camp'], 'hero', hid)
+            previous = contacts.get(key)
+            # Conflicting health samples must not turn a known healthy enemy
+            # into several opponents or a convenient low-health bait target.
+            if previous is None or strength(enemy) > strength(previous):
+                contacts[key] = enemy
+        return tuple(contacts.values())
+
+    def _assign_defense(self, raw, own, now, contacts):
         """Use only owned team views; never infer a hidden attacker or aggro."""
-        buildings, contacts = {}, {}
+        buildings = {}
         camp = raw['camp']
         for seat in own:
             view = summary(raw, seat)
@@ -111,13 +158,6 @@ class HokPlatformAgent:
                 # Multiple owned views of one building are one observation.
                 if key not in buildings or s['hp'] < buildings[key]['hp']:
                     buildings[key] = s
-            for e in records(view.get('other_heroes'), 10):
-                if (e.get('visible') is not True or e.get('camp') != 3 - camp or not alive(e)
-                        or number(e.get('x')) is None or number(e.get('z')) is None):
-                    continue
-                rid = number(e.get('runtime_id'))
-                key = ('id', rid) if rid is not None else ('position', number(e.get('hero_id')), e['x'], e['z'])
-                contacts.setdefault(key, e)
         threats = []
         for key, building in buildings.items():
             previous = self._buildings.get(key)
@@ -132,7 +172,7 @@ class HokPlatformAgent:
             if not alive(building):
                 continue
             recent = 0 <= now - hit <= 4
-            attackers = [e for e in contacts.values() if distance(e, building) <= 9000]
+            attackers = [e for e in contacts if distance(e, building) <= 9000]
             if not recent and not attackers:
                 continue  # Old low HP by itself does not call everybody home.
             crystal = 'CRYSTAL' in key[1]
@@ -317,7 +357,7 @@ class HokPlatformAgent:
             memory.recovering = False
         return memory, loss
 
-    def _plan_hero(self, seat, raw, offers, own, now):
+    def _plan_hero(self, seat, raw, offers, own, now, visible):
         view = summary(raw, seat)
         me = view.get('my_hero')
         macros = offers['macros']
@@ -328,9 +368,6 @@ class HokPlatformAgent:
             return None, 'dead', False
         hp = hp_fraction(me)
         camp = raw['camp']
-        visible = [e for e in records(view.get('other_heroes'), 10)
-                   if e.get('visible') is True and e.get('camp') in (1, 2)
-                   and e.get('camp') != camp and alive(e)]
         enemies = [e for e in visible if distance(me, e) <= 10000]
         allies = [a for a in own.values() if alive(a) and distance(me, a) <= 10000]
         friendly = sum(strength(a) for a in allies) or strength(me)
@@ -474,14 +511,15 @@ class HokPlatformAgent:
         standing = simultaneous.get('standing_orders') or {}
         own = {s: summary(raw, s).get('my_hero', {}) for s in owned}
         own = {s: h for s, h in own.items() if isinstance(h, dict)}
-        self._assign_defense(raw, own, now)
+        contacts = self._team_contacts(raw, owned)
+        self._assign_defense(raw, own, now, contacts)
         self._rejected = {r for r in self._rejected if r[0] == version}
         for seat in owned:
             offers[seat]['macros'] = {m: label for m, label in offers[seat]['macros'].items()
                                      if (version, seat, m) not in self._rejected}
         choices = []
         for seat in owned:
-            want, reason, urgent = self._plan_hero(seat, raw, offers[seat], own, now)
+            want, reason, urgent = self._plan_hero(seat, raw, offers[seat], own, now, contacts)
             if seat not in pending:
                 continue
             memory = self._memory.setdefault(seat, HeroMemory())

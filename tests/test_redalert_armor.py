@@ -135,7 +135,7 @@ def test_unarmored_late_deficit_does_not_force_attack():
 
 def test_armored_wave_can_attack_an_exposed_economic_target():
     army = [actor(i, x=35, y=20) for i in range(1, 7)] + [actor(100+i, '3tnk', 35, 20) for i in range(3)]
-    v = view(units=army, forts=[actor(500, 'proc', 40, 20)])
+    v = view(units=army, forts=[actor(500, 'proc', 40, 20)], military={'deaths_cost': 100})
     v.profile = 'eco_guard'
     out, memory = combat(v)
     assert memory['combat']['mode'] == 'pressure enemy'

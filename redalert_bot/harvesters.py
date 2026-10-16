@@ -1,4 +1,4 @@
-"""Bounded recovery of genuinely idle harvesters from public observations.
+"""Bounded harvester recovery and observed-damage escape.
 
 The protocol exposes ``idle``/``act`` and ``harvest`` with optional ``to``.
 It does not expose live resource-cell reserves or cargo. Initial-map patches
@@ -6,15 +6,23 @@ are search hints only; persistent idle at a destination temporarily lowers our
 confidence in that patch, never establishes that it is actually exhausted.
 """
 from collections import Counter, deque
+from math import isfinite
 
 from .common import cell, distance
 from .maps import _route_from, route_safe
-from .strategy import fortifications, radius
+from .strategy import STATIC, fortifications, radius, weapon_range
 
 
 RETRY_SECONDS = 12
 PATCH_RECHECK_SECONDS = 120
 MAX_TARGET_ORDERS = 4
+DAMAGE_SAMPLE_SECONDS = 8
+DAMAGE_RETRY_SECONDS = 4
+ARMED_UNITS = frozenset({
+    'e1', 'e2', 'e3', 'e4', 'e7', 'shok', '1tnk', '2tnk', '3tnk', '4tnk',
+    'ttnk', 'stnk', 'ctnk', 'qtnk', 'jeep', 'apc', 'ftrk', 'arty', 'v2rl',
+    'mig', 'yak', 'heli', 'hind', 'dd', 'ca', 'pt',
+})
 
 
 def _idle(unit):
@@ -74,6 +82,37 @@ def _safe_route(v, start, destination, hostiles):
 
 def _danger_zones(v, hostiles):
     return [(cell(b), radius(v, b)) for b in fortifications(v)] + [(cell(u), 12.) for u in hostiles]
+
+
+def _observe_health(v, unit, record):
+    """Only distinct, recent public snapshots can establish fresh damage."""
+    hp = unit.get('hp')
+    if (isinstance(hp, bool) or not isinstance(hp, (int, float))
+            or not isfinite(hp) or not 0 < hp <= 100 or not isfinite(v.now)):
+        for key in ('last_hp', 'last_hp_at', 'damage_until'):
+            record.pop(key, None)
+        return
+    previous, at = record.get('last_hp'), record.get('last_hp_at')
+    if (previous is not None and at is not None
+            and 0 < v.now-at <= DAMAGE_SAMPLE_SECONDS and hp < previous):
+        record['damage_until'] = v.now+DAMAGE_RETRY_SECONDS
+    elif at is not None and (v.now < at or v.now-at > DAMAGE_SAMPLE_SECONDS):
+        record.pop('damage_until', None)
+    if record.get('damage_until', -1) < v.now:
+        record.pop('damage_until', None)
+    record.update(last_hp=hp, last_hp_at=v.now)
+
+
+def _active_threat_zones(v, hostiles):
+    # Remembered towers still constrain the escape route, but only a CURRENTLY
+    # visible armed contact can justify interrupting productive work. Live
+    # range data wins; missing data uses the existing conservative 12-cell
+    # mobile threat estimate. The one-cell margin covers actor footprints.
+    armed = [u for u in hostiles if u.get('type') in ARMED_UNITS
+             or v.item_rule(u.get('type')).get('weapon')]
+    return ([(cell(b), radius(v, b)) for b in v.enemy_buildings
+             if b.get('type') in STATIC]
+            + [(cell(u), weapon_range(v, u.get('type'), 12.)+1.) for u in armed])
 
 
 def _escape(v, current, zones, preferred):
@@ -154,11 +193,12 @@ def _choose(v, unit, record, refs, patches, memory, loads, hostiles):
 
 
 def plan(v, memory, emit):
-    """Resume idle miners; preserve all moving/harvesting/unloading activity.
+    """Resume idle miners and rescue active miners with fresh visible risk.
 
     Call with a dedicated per-match memory dictionary. ``emit`` returning true
     records only a submitted order; actual progress is inferred later from
     observation, never from the transport's pending acknowledgement.
+    Healthy productive work and old wounds never trigger a safety move.
     """
     miners = [u for u in v.units if u.get('type') == 'harv']
     live_ids = {str(u['id']) for u in miners}
@@ -171,9 +211,11 @@ def plan(v, memory, emit):
     patches = _patches(v, memory)
     hostiles = _hostiles(v)
     danger_zones = _danger_zones(v, hostiles)
+    active_threats = _active_threat_zones(v, hostiles)
     loads = {'patch': Counter(), 'ref': Counter()}
     for unit in miners:
         record = records.setdefault(str(unit['id']), {})
+        _observe_health(v, unit, record)
         if not _idle(unit):
             record['idle_since'] = None
             if record.get('active_since') is None:
@@ -196,27 +238,37 @@ def plan(v, memory, emit):
                 record['idle_since'] = v.now
     generic, targeted, escape_checks = [], 0, 0
     for unit in sorted(miners, key=lambda u: u['id']):
-        if not _idle(unit):
-            continue
         record = records[str(unit['id'])]
         current = cell(unit)
-        if any(distance(current, centre) <= r for centre, r in danger_zones):
+        idle = _idle(unit)
+        damaged_active = (not idle and record.get('damage_until', -1) >= v.now
+                          and any(distance(current, centre) <= r
+                                  for centre, r in active_threats))
+        if not idle and not damaged_active:
+            continue
+        zones = danger_zones + active_threats if damaged_active else danger_zones
+        if any(distance(current, centre) <= r for centre, r in zones):
             # A normal safe-route gate rejects its starting cell when the
-            # miner is already under attack. Escape must run first; this
-            # deliberately affects only idle units, never an active return
-            # or unload trip. Failed searches are throttled as well.
+            # miner is already under attack. Escape must run first. Active
+            # work is interrupted only after observed damage and a current
+            # visible threat; failed searches are throttled as well.
             if v.now >= record.get('escape_retry', -1) and escape_checks < 4 and targeted < MAX_TARGET_ORDERS:
                 escape_checks += 1
                 preferred = cell(min(refs, key=lambda b: distance(current, cell(b)))) if refs else v.base
-                target = _escape(v, current, danger_zones, preferred)
+                target = _escape(v, current, zones, preferred)
                 if target is None:
                     record['escape_retry'] = v.now+12
                 elif emit({'cmd': 'move', 'units': [unit['id']], 'to': list(target)},
                           key=f'harvester-safety-{unit["id"]}', cooldown=2):
                     record.update(escape_retry=v.now+2, next_retry=v.now+2)
+                    record.pop('damage_until', None)
                     targeted += 1
                     for key in ('target', 'patch', 'refinery'):
                         record.pop(key, None)
+                elif damaged_active:
+                    # A refused batch does not consume the observed-damage
+                    # window, but retrying route search every frame is wasteful.
+                    record['escape_retry'] = v.now+2
             continue
         if not refs:
             continue

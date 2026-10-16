@@ -4,14 +4,14 @@ A self-hosted AltruAgent contestant for **Red Alert (OpenRA)**, **Pokemon VGC Do
 
 The newly available platform HOK mode uses **one agent per five-hero team**. See [docs/HOK.md](docs/HOK.md) for setup. The older standalone Tencent `hok_env` 1v1 agent remains separate; its licensed-engine instructions are in [HOK_TENCENT_1V1.md](docs/HOK_TENCENT_1V1.md).
 
-**Development candidate:** `improve/hok-team-v11` adds the platform HOK policy and four-game runtime on top of the v10 Pokemon candidate. The HOK implementation has local protocol/tactical checks but no live match validation. It has not replaced `main` or a running tournament agent; local correctness is not proof of a win-rate improvement.
+**Development candidate:** `improve/friendly-defense-v14` combines protected economic growth with score-aware Red Alert defense, productive-miner escape, shared power budgeting, and consistent HOK team-visible threat assessment. See [the Friendly Fighter review](docs/FRIENDLY_FIGHTER_REVIEW.md) for public-code findings, independent fixes and evaluation limits. This revision has not replaced `main` or a running tournament agent; local correctness is not proof of a win-rate improvement.
 
 ## What it does
 
-- **Red Alert:** `eco_guard` / `mining_guard_v9` adds screened near-mine refineries, bounded mining-area defenses, tank escorts and rear artillery while retaining efficient-trade and anti-bait safeguards. See [Red Alert strategy](docs/REDALERT.md). `balanced` remains an optional experimental baseline.
+- **Red Alert:** `eco_guard` / `economy_guard_v14` prioritizes tanks, protected mining, escorts and rear artillery. A nonnegative own kill/loss balance stops voluntary attack waves; a deficit permits only guarded counterattacks. See [Red Alert strategy](docs/REDALERT.md). `balanced` remains an optional experimental baseline.
 - **Pokemon:** draft selection, four-of-six team selection, and joint doubles search. `paradox_damage_v10` combines type-aware damage with move priority, effective Speed, weather/Booster Energy, Unburden, and known Tailwind/Trick Room expiry. It also retains publicly announced offensive and defensive Paradox modifiers after item consumption. See [the replay review](docs/POKEMON_SPEED_RESEARCH.md) and [v10 mechanism checks](docs/POKEMON_PARADOX_V10.md).
 - **Werewolf:** `evidence_v1` uses private checks, official reveals, bounded claim evidence, vote history, role-specific night choices, and limited public/private discussion. See [docs/WEREWOLF.md](docs/WEREWOLF.md).
-- **Honor of Kings:** `hok_team_v1` controls five heroes with listed standing orders, objective pressure, health-aware retreat/recovery, local team strength, skill availability checks and fair order scheduling. See [research and limitations](docs/HOK_PLATFORM_RESEARCH.md).
+- **Honor of Kings:** `hok_team_guard_v14` controls five heroes with listed standing orders, safe objective pressure, bounded tower defense, health-aware retreat/recovery and fair scheduling. Owned-team visible contacts inform both defense allocation and individual safety decisions. See [setup and limitations](docs/HOK.md).
 - **Runtime:** one listener routes all four supported platform games to isolated assignment workers. The bundled SDK handles authentication, leases, MCP transport, reconnection and worker processes. Each HOK assignment controls the five heroes belonging to that team.
 - **Review:** local observations, proposed actions, order verdicts, and terminal results support offline analysis by map, source version, faction, seat, and match duration.
 
@@ -22,7 +22,7 @@ Only information available to the assigned seat is used. Strategy state and obse
 Use Python 3.11 or later and keep the machine connected to the internet.
 
 ```bash
-git clone --branch improve/hok-team-v11 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
+git clone --branch improve/friendly-defense-v14 https://github.com/WanZhengyan/UCLA-AI-Agent-Tournament.git
 cd UCLA-AI-Agent-Tournament
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
@@ -92,7 +92,11 @@ The Red Alert tests exercise production budgets, harvesting, map geometry, comba
 
 [Public opponent research](docs/OPPONENT_RESEARCH.md) preserves the earlier four-game survey. The [new HOK review](docs/HOK_PLATFORM_RESEARCH.md) adds an inspected platform-specific policy and supersedes the earlier empty-repository finding. Registration and deployed versions remain unverified. Defensive scenarios cover raids, conditional priority, untrusted Werewolf claims, HOK tower bait and order delivery. No opponent code was executed and no head-to-head winning advantage is claimed.
 
-The current v11 validation passed **794 tests**, including 129 tests in the new HOK policy/runtime/telemetry files, plus four-game self-tests and spawned worker checks. A local 1000-call synthetic measurement including state parsing had 0.19 ms median and 4.80 ms maximum latency. No live HOK game was run and no win-rate improvement is claimed. See [hok_platform_v11.json](reports/hok_platform_v11.json).
+The current v14 validation passed **1108 tests**, plus four-game self-tests and spawned runtime checks. [friendly_defense_v14.json](reports/friendly_defense_v14.json) records the source hashes and checks for defense-first decisions, miner protection, combined power commitments and HOK team visibility. No live match or head-to-head win-rate comparison was run for this revision.
+
+The historical v13 validation passed **887 tests**, including 42 new Red Alert growth scenarios, plus four-game self-tests and spawned worker checks. See [the economy review](docs/REDALERT_GROWTH_V13.md). No live match was run for that revision.
+
+The historical v11 validation passed **794 tests**, including 129 tests in the new HOK policy/runtime/telemetry files, plus four-game self-tests and spawned worker checks. A local 1000-call synthetic measurement including state parsing had 0.19 ms median and 4.80 ms maximum latency. No live HOK game was run for that revision and no win-rate improvement was claimed. See [hok_platform_v11.json](reports/hok_platform_v11.json).
 
 The historical v10 validation passed **663 tests**, including 21 focused regressions and 19 independent engine checks within one of those tests, plus the shared runtime self-test. Its frozen comparison against v9 finished **12-12**: 8-8 in six-member mirror fixtures and 4-4 in a coverage-driven four-member extension. The first suite had no non-Speed Paradox activations; all eight extension games exercised them. No overall winning advantage was demonstrated. [pokemon_paradox_v10.json](reports/pokemon_paradox_v10.json) records source hashes, outcomes, activation coverage, latency, and limitations.
 
@@ -104,7 +108,7 @@ Pokemon mechanism checks can also run against the pinned Showdown engine. The pa
 
 The complete v7 comparison is in [reports/pokemon_mechanics_v7.json](reports/pokemon_mechanics_v7.json): 14-10 in the core suite and 5-11 in the restricted-legendary suite. All 40 final games completed without illegal actions, fallbacks, or timeouts. Earlier aborted attempts and the replay-driven correction are preserved separately. These are development fixtures, including reused seeds, not a held-out platform win-rate estimate.
 
-The current production comparison is available in [reports/redalert_armor_economy_v6.json](reports/redalert_armor_economy_v6.json). In the 600-second low-income fixture, completed Allied tanks increased from 4 to 6 and Soviet tanks from 3 to 5, while economic expansion was delayed. It uses fixed income without combat and must not be read as a live win-rate result. Earlier revisions and their evaluation limits are summarized in [docs/HISTORY.md](docs/HISTORY.md).
+The latest Red Alert production comparison is [redalert_economy_v14.json](reports/redalert_economy_v14.json), comparing the integrated candidate against `b6be880`. It retains the guarded-growth gains from [v13](reports/redalert_growth_v13.json). See [replay sources, decision guards and evaluation limits](docs/REDALERT_GROWTH_V13.md). These fixed-income fixtures omit combat and must not be read as live win-rate results. Earlier revisions are summarized in [docs/HISTORY.md](docs/HISTORY.md).
 
 Optional self-play is **disabled** in `validation/redalert_selfplay/settings.json`. When explicitly enabled, it applies only to Red Alert Testing matches for which official assignments confirm that both seats belong to this account. It compares `balanced` and `eco_guard`, alternates seats on successive compatible matches, and does not share either seat's observations. Read existing experiment summaries with:
 
