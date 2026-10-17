@@ -1,0 +1,3339 @@
+{
+  "strategy": "economy_growth_v13",
+  "baseline_revision": "cc79a31fc8a5c433495deb9de484c86ecec27556",
+  "baseline_economy_sha256": "05ad197411428fbe8d25d868bfb7c67829312fb911bc458264d70d1076a33c96",
+  "candidate_economy_sha256": "18563dab5f018b425855f4389b58ff99a4e87694d7c9bf205a06e571d81a12dd",
+  "harness_sha256": "3cf661a75cda3a579f26968c020f7040ea4a9cebf0de8c72026e8f4dfca7b0e1",
+  "comparison_sha256": "007e91ba72f5d74a204e8b7b41c99fac17f2a377066be3554eafefd953dacf10",
+  "method": "Our baseline economy.plan versus candidate economy.plan; all other code fixed.",
+  "assumptions": {
+    "duration_seconds": 1200,
+    "starting_cash": 5000,
+    "per_harvester_income": [
+      4,
+      8,
+      16
+    ],
+    "progressive_payment": true,
+    "map": "No topology; stationary actors at home; independent category queues"
+  },
+  "limitations": [
+    "Development fixtures informed threshold selection; not held-out evaluation.",
+    "No actual replay of our agent, enemy economy, combat, casualties or match result.",
+    "No travel, unloading congestion, ore exhaustion, power slowdown or factory-speed model.",
+    "Actor positions never move; safety gates require separate scenario tests.",
+    "Income is a fixed modeling assumption, not measured map income or guaranteed payback.",
+    "No win-rate improvement or promise of surviving 20 minutes can be inferred."
+  ],
+  "cases": [
+    {
+      "faction": "allies",
+      "income_per_harvester_second": 4,
+      "baseline": {
+        "income": 14576.0,
+        "spending": 19250.0,
+        "cash": 326.0,
+        "tanks": 7,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 2,
+          "tent": 1,
+          "proc": 3,
+          "weap": 1,
+          "fix": 1
+        },
+        "pending": [],
+        "milestones": {
+          "third_refinery": 1104,
+          "six_harvesters": 1187
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 12.0,
+            "spending": 2883.33,
+            "cash": 2128.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 364.0,
+            "spending": 5364.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 844.0,
+            "spending": 5608.33,
+            "cash": 235.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 1324.0,
+            "spending": 6324.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 1804.0,
+            "spending": 6804.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 2284.0,
+            "spending": 7284.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 2764.0,
+            "spending": 7733.33,
+            "cash": 30.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 3244.0,
+            "spending": 8244.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 3836.0,
+            "spending": 8625.0,
+            "cash": 211.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 4556.0,
+            "spending": 9556.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 5500.0,
+            "spending": 10500.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 6460.0,
+            "spending": 11258.33,
+            "cash": 201.67,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 7420.0,
+            "spending": 12358.33,
+            "cash": 61.67,
+            "tanks": 1,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 8380.0,
+            "spending": 13350.0,
+            "cash": 30.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 900,
+            "income": 9340.0,
+            "spending": 14200.0,
+            "cash": 140.0,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 960,
+            "income": 10300.0,
+            "spending": 15050.0,
+            "cash": 250.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 1020,
+            "income": 11260.0,
+            "spending": 15900.0,
+            "cash": 360.0,
+            "tanks": 6,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 1080,
+            "income": 12220.0,
+            "spending": 17220.0,
+            "cash": 0.0,
+            "tanks": 6,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "proc",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 13324.0,
+            "spending": 18150.0,
+            "cash": 174.0,
+            "tanks": 7,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": []
+          },
+          {
+            "seconds": 1200,
+            "income": 14576.0,
+            "spending": 19250.0,
+            "cash": 326.0,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": []
+          }
+        ]
+      },
+      "candidate": {
+        "income": 14576.0,
+        "spending": 19250.0,
+        "cash": 326.0,
+        "tanks": 7,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 2,
+          "tent": 1,
+          "proc": 3,
+          "weap": 1,
+          "fix": 1
+        },
+        "pending": [],
+        "milestones": {
+          "third_refinery": 1104,
+          "six_harvesters": 1187
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 12.0,
+            "spending": 2883.33,
+            "cash": 2128.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 364.0,
+            "spending": 5364.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 844.0,
+            "spending": 5608.33,
+            "cash": 235.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 1324.0,
+            "spending": 6324.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 1804.0,
+            "spending": 6804.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 2284.0,
+            "spending": 7284.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 2764.0,
+            "spending": 7733.33,
+            "cash": 30.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 3244.0,
+            "spending": 8244.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 3836.0,
+            "spending": 8625.0,
+            "cash": 211.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 4556.0,
+            "spending": 9556.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 5500.0,
+            "spending": 10500.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 6460.0,
+            "spending": 11258.33,
+            "cash": 201.67,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 7420.0,
+            "spending": 12358.33,
+            "cash": 61.67,
+            "tanks": 1,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 8380.0,
+            "spending": 13350.0,
+            "cash": 30.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 900,
+            "income": 9340.0,
+            "spending": 14200.0,
+            "cash": 140.0,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 960,
+            "income": 10300.0,
+            "spending": 15050.0,
+            "cash": 250.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 1020,
+            "income": 11260.0,
+            "spending": 15900.0,
+            "cash": 360.0,
+            "tanks": 6,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 1080,
+            "income": 12220.0,
+            "spending": 17220.0,
+            "cash": 0.0,
+            "tanks": 6,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "proc",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 13324.0,
+            "spending": 18150.0,
+            "cash": 174.0,
+            "tanks": 7,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": []
+          },
+          {
+            "seconds": 1200,
+            "income": 14576.0,
+            "spending": 19250.0,
+            "cash": 326.0,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": []
+          }
+        ]
+      },
+      "delta": {
+        "income": 0.0,
+        "spending": 0.0,
+        "cash": 0.0,
+        "tanks": 0,
+        "harvesters": 0
+      }
+    },
+    {
+      "faction": "allies",
+      "income_per_harvester_second": 8,
+      "baseline": {
+        "income": 41480.0,
+        "spending": 44591.67,
+        "cash": 1888.33,
+        "tanks": 32,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 3,
+          "tent": 1,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1,
+          "dome": 1
+        },
+        "pending": [
+          "2tnk"
+        ],
+        "milestones": {
+          "third_refinery": 593,
+          "six_harvesters": 639
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 24.0,
+            "spending": 2883.33,
+            "cash": 2140.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 728.0,
+            "spending": 5728.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3",
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 1688.0,
+            "spending": 6688.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 2648.0,
+            "spending": 7400.0,
+            "cash": 248.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 300,
+            "income": 3656.0,
+            "spending": 8500.0,
+            "cash": 156.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 360,
+            "income": 5256.0,
+            "spending": 9933.33,
+            "cash": 322.67,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 7176.0,
+            "spending": 11691.67,
+            "cash": 484.33,
+            "tanks": 1,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 9096.0,
+            "spending": 13683.33,
+            "cash": 412.67,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 11016.0,
+            "spending": 15675.0,
+            "cash": 341.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 12992.0,
+            "spending": 17992.0,
+            "cash": 0.0,
+            "tanks": 6,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 15560.0,
+            "spending": 19958.33,
+            "cash": 601.67,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 18440.0,
+            "spending": 22383.33,
+            "cash": 1056.67,
+            "tanks": 10,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 21320.0,
+            "spending": 24975.0,
+            "cash": 1345.0,
+            "tanks": 13,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk",
+              "powr"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 24200.0,
+            "spending": 28533.33,
+            "cash": 666.67,
+            "tanks": 16,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 27080.0,
+            "spending": 30958.33,
+            "cash": 1121.67,
+            "tanks": 19,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 29960.0,
+            "spending": 33383.33,
+            "cash": 1576.67,
+            "tanks": 22,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 32840.0,
+            "spending": 37291.67,
+            "cash": 548.33,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 35720.0,
+            "spending": 39716.67,
+            "cash": 1003.33,
+            "tanks": 27,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 38600.0,
+            "spending": 42141.67,
+            "cash": 1458.33,
+            "tanks": 30,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 41480.0,
+            "spending": 44591.67,
+            "cash": 1888.33,
+            "tanks": 32,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "income": 41912.0,
+        "spending": 44816.67,
+        "cash": 2095.33,
+        "tanks": 33,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 3,
+          "tent": 1,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1,
+          "dome": 1
+        },
+        "pending": [
+          "2tnk"
+        ],
+        "milestones": {
+          "third_refinery": 566,
+          "six_harvesters": 612
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 24.0,
+            "spending": 2883.33,
+            "cash": 2140.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 728.0,
+            "spending": 5728.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3",
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 1688.0,
+            "spending": 6688.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 2648.0,
+            "spending": 7400.0,
+            "cash": 248.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 300,
+            "income": 3656.0,
+            "spending": 8500.0,
+            "cash": 156.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 360,
+            "income": 5256.0,
+            "spending": 9933.33,
+            "cash": 322.67,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 7176.0,
+            "spending": 11691.67,
+            "cash": 484.33,
+            "tanks": 1,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 9096.0,
+            "spending": 13683.33,
+            "cash": 412.67,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 11016.0,
+            "spending": 16016.0,
+            "cash": 0.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "proc",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 13208.0,
+            "spending": 17925.0,
+            "cash": 283.0,
+            "tanks": 6,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 15992.0,
+            "spending": 20141.67,
+            "cash": 850.33,
+            "tanks": 8,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 18872.0,
+            "spending": 22591.67,
+            "cash": 1280.33,
+            "tanks": 10,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 21752.0,
+            "spending": 25316.67,
+            "cash": 1435.33,
+            "tanks": 13,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 24632.0,
+            "spending": 28741.67,
+            "cash": 890.33,
+            "tanks": 16,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 27512.0,
+            "spending": 31166.67,
+            "cash": 1345.33,
+            "tanks": 19,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 30392.0,
+            "spending": 34716.67,
+            "cash": 675.33,
+            "tanks": 22,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "weap",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 33272.0,
+            "spending": 37541.67,
+            "cash": 730.33,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 36152.0,
+            "spending": 39966.67,
+            "cash": 1185.33,
+            "tanks": 27,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 39032.0,
+            "spending": 42391.67,
+            "cash": 1640.33,
+            "tanks": 30,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 41912.0,
+            "spending": 44816.67,
+            "cash": 2095.33,
+            "tanks": 33,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          }
+        ]
+      },
+      "delta": {
+        "income": 432.0,
+        "spending": 225.0,
+        "cash": 207.0,
+        "tanks": 1,
+        "harvesters": 0
+      }
+    },
+    {
+      "faction": "allies",
+      "income_per_harvester_second": 16,
+      "baseline": {
+        "income": 93280.0,
+        "spending": 55300.0,
+        "cash": 42980.0,
+        "tanks": 44,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 4,
+          "tent": 2,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1,
+          "dome": 1
+        },
+        "pending": [
+          "2tnk"
+        ],
+        "milestones": {
+          "third_refinery": 385,
+          "six_harvesters": 432
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 48.0,
+            "spending": 2883.33,
+            "cash": 2164.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 1456.0,
+            "spending": 6150.0,
+            "cash": 306.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 3376.0,
+            "spending": 8275.0,
+            "cash": 101.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 6512.0,
+            "spending": 10925.0,
+            "cash": 587.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 10352.0,
+            "spending": 14225.0,
+            "cash": 1127.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "dome",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 14192.0,
+            "spending": 17475.0,
+            "cash": 1717.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk",
+              "proc"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 18592.0,
+            "spending": 22050.0,
+            "cash": 1542.0,
+            "tanks": 8,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "weap",
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 24160.0,
+            "spending": 26150.0,
+            "cash": 3010.0,
+            "tanks": 10,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 29920.0,
+            "spending": 28575.0,
+            "cash": 6345.0,
+            "tanks": 13,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 35680.0,
+            "spending": 31000.0,
+            "cash": 9680.0,
+            "tanks": 16,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 41440.0,
+            "spending": 33450.0,
+            "cash": 12990.0,
+            "tanks": 18,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 47200.0,
+            "spending": 35875.0,
+            "cash": 16325.0,
+            "tanks": 21,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 52960.0,
+            "spending": 38300.0,
+            "cash": 19660.0,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 58720.0,
+            "spending": 40725.0,
+            "cash": 22995.0,
+            "tanks": 27,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 64480.0,
+            "spending": 43150.0,
+            "cash": 26330.0,
+            "tanks": 30,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 70240.0,
+            "spending": 45575.0,
+            "cash": 29665.0,
+            "tanks": 33,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 76000.0,
+            "spending": 48000.0,
+            "cash": 33000.0,
+            "tanks": 36,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 81760.0,
+            "spending": 50450.0,
+            "cash": 36310.0,
+            "tanks": 38,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 87520.0,
+            "spending": 52875.0,
+            "cash": 39645.0,
+            "tanks": 41,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 93280.0,
+            "spending": 55300.0,
+            "cash": 42980.0,
+            "tanks": 44,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "income": 93760.0,
+        "spending": 55300.0,
+        "cash": 43460.0,
+        "tanks": 44,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 4,
+          "tent": 2,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1,
+          "dome": 1
+        },
+        "pending": [
+          "2tnk"
+        ],
+        "milestones": {
+          "third_refinery": 376,
+          "six_harvesters": 411
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 48.0,
+            "spending": 2883.33,
+            "cash": 2164.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 1456.0,
+            "spending": 6150.0,
+            "cash": 306.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 3376.0,
+            "spending": 8275.0,
+            "cash": 101.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 6512.0,
+            "spending": 10925.0,
+            "cash": 587.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 10352.0,
+            "spending": 14225.0,
+            "cash": 1127.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "dome",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 14192.0,
+            "spending": 17850.0,
+            "cash": 1342.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "proc",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 18880.0,
+            "spending": 22175.0,
+            "cash": 1705.0,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "weap",
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 24640.0,
+            "spending": 26150.0,
+            "cash": 3490.0,
+            "tanks": 10,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 30400.0,
+            "spending": 28575.0,
+            "cash": 6825.0,
+            "tanks": 13,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 36160.0,
+            "spending": 31000.0,
+            "cash": 10160.0,
+            "tanks": 16,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 41920.0,
+            "spending": 33450.0,
+            "cash": 13470.0,
+            "tanks": 18,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 47680.0,
+            "spending": 35875.0,
+            "cash": 16805.0,
+            "tanks": 21,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 53440.0,
+            "spending": 38300.0,
+            "cash": 20140.0,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 59200.0,
+            "spending": 40725.0,
+            "cash": 23475.0,
+            "tanks": 27,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 64960.0,
+            "spending": 43150.0,
+            "cash": 26810.0,
+            "tanks": 30,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 70720.0,
+            "spending": 45575.0,
+            "cash": 30145.0,
+            "tanks": 33,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 76480.0,
+            "spending": 48000.0,
+            "cash": 33480.0,
+            "tanks": 36,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 82240.0,
+            "spending": 50450.0,
+            "cash": 36790.0,
+            "tanks": 38,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 88000.0,
+            "spending": 52875.0,
+            "cash": 40125.0,
+            "tanks": 41,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 93760.0,
+            "spending": 55300.0,
+            "cash": 43460.0,
+            "tanks": 44,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "2tnk"
+            ]
+          }
+        ]
+      },
+      "delta": {
+        "income": 480.0,
+        "spending": 0.0,
+        "cash": 480.0,
+        "tanks": 0,
+        "harvesters": 0
+      }
+    },
+    {
+      "faction": "soviets",
+      "income_per_harvester_second": 4,
+      "baseline": {
+        "income": 14140.0,
+        "spending": 18850.0,
+        "cash": 290.0,
+        "tanks": 7,
+        "harvesters": 4,
+        "buildings": {
+          "fact": 1,
+          "powr": 2,
+          "barr": 1,
+          "proc": 2,
+          "weap": 1,
+          "fix": 1
+        },
+        "pending": [],
+        "milestones": {},
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 12.0,
+            "spending": 2883.33,
+            "cash": 2128.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 364.0,
+            "spending": 5364.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 844.0,
+            "spending": 5608.33,
+            "cash": 235.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 1324.0,
+            "spending": 6324.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 1804.0,
+            "spending": 6804.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 2284.0,
+            "spending": 7284.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 2764.0,
+            "spending": 7733.33,
+            "cash": 30.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 3244.0,
+            "spending": 8244.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 3836.0,
+            "spending": 8625.0,
+            "cash": 211.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 4556.0,
+            "spending": 9556.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 5500.0,
+            "spending": 10500.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 6460.0,
+            "spending": 10925.0,
+            "cash": 535.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 7420.0,
+            "spending": 11950.0,
+            "cash": 470.0,
+            "tanks": 1,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 840,
+            "income": 8380.0,
+            "spending": 13100.0,
+            "cash": 280.0,
+            "tanks": 2,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 900,
+            "income": 9340.0,
+            "spending": 14250.0,
+            "cash": 90.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 960,
+            "income": 10300.0,
+            "spending": 15300.0,
+            "cash": 0.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 11260.0,
+            "spending": 16066.67,
+            "cash": 193.33,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 12220.0,
+            "spending": 16716.67,
+            "cash": 503.33,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 13180.0,
+            "spending": 17700.0,
+            "cash": 480.0,
+            "tanks": 6,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 1200,
+            "income": 14140.0,
+            "spending": 18850.0,
+            "cash": 290.0,
+            "tanks": 7,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          }
+        ]
+      },
+      "candidate": {
+        "income": 14140.0,
+        "spending": 18850.0,
+        "cash": 290.0,
+        "tanks": 7,
+        "harvesters": 4,
+        "buildings": {
+          "fact": 1,
+          "powr": 2,
+          "barr": 1,
+          "proc": 2,
+          "weap": 1,
+          "fix": 1
+        },
+        "pending": [],
+        "milestones": {},
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 12.0,
+            "spending": 2883.33,
+            "cash": 2128.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 364.0,
+            "spending": 5364.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 844.0,
+            "spending": 5608.33,
+            "cash": 235.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 1324.0,
+            "spending": 6324.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 1804.0,
+            "spending": 6804.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 2284.0,
+            "spending": 7284.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 2764.0,
+            "spending": 7733.33,
+            "cash": 30.67,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 3244.0,
+            "spending": 8244.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 3836.0,
+            "spending": 8625.0,
+            "cash": 211.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 4556.0,
+            "spending": 9556.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 5500.0,
+            "spending": 10500.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 6460.0,
+            "spending": 10925.0,
+            "cash": 535.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 7420.0,
+            "spending": 11950.0,
+            "cash": 470.0,
+            "tanks": 1,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 840,
+            "income": 8380.0,
+            "spending": 13100.0,
+            "cash": 280.0,
+            "tanks": 2,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 900,
+            "income": 9340.0,
+            "spending": 14250.0,
+            "cash": 90.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 960,
+            "income": 10300.0,
+            "spending": 15300.0,
+            "cash": 0.0,
+            "tanks": 3,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 11260.0,
+            "spending": 16066.67,
+            "cash": 193.33,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 12220.0,
+            "spending": 16716.67,
+            "cash": 503.33,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 13180.0,
+            "spending": 17700.0,
+            "cash": 480.0,
+            "tanks": 6,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 1200,
+            "income": 14140.0,
+            "spending": 18850.0,
+            "cash": 290.0,
+            "tanks": 7,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": []
+          }
+        ]
+      },
+      "delta": {
+        "income": 0.0,
+        "spending": 0.0,
+        "cash": 0.0,
+        "tanks": 0,
+        "harvesters": 0
+      }
+    },
+    {
+      "faction": "soviets",
+      "income_per_harvester_second": 8,
+      "baseline": {
+        "income": 40496.0,
+        "spending": 43133.33,
+        "cash": 2362.67,
+        "tanks": 23,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 3,
+          "barr": 1,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1
+        },
+        "pending": [
+          "3tnk"
+        ],
+        "milestones": {
+          "third_refinery": 652,
+          "six_harvesters": 703
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 24.0,
+            "spending": 2883.33,
+            "cash": 2140.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 728.0,
+            "spending": 5728.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3",
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 1688.0,
+            "spending": 6688.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 2648.0,
+            "spending": 7400.0,
+            "cash": 248.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 300,
+            "income": 3656.0,
+            "spending": 8500.0,
+            "cash": 156.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 360,
+            "income": 5256.0,
+            "spending": 9933.33,
+            "cash": 322.67,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 7176.0,
+            "spending": 11800.0,
+            "cash": 376.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 9096.0,
+            "spending": 13600.0,
+            "cash": 496.0,
+            "tanks": 2,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 11016.0,
+            "spending": 15400.0,
+            "cash": 616.0,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 12936.0,
+            "spending": 17550.0,
+            "cash": 386.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 14920.0,
+            "spending": 19920.0,
+            "cash": 0.0,
+            "tanks": 6,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 17456.0,
+            "spending": 21766.67,
+            "cash": 689.33,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 20336.0,
+            "spending": 24233.33,
+            "cash": 1102.67,
+            "tanks": 9,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 23216.0,
+            "spending": 26700.0,
+            "cash": 1516.0,
+            "tanks": 11,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 26096.0,
+            "spending": 29633.33,
+            "cash": 1462.67,
+            "tanks": 13,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk",
+              "weap"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 28976.0,
+            "spending": 33266.67,
+            "cash": 709.33,
+            "tanks": 15,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 31856.0,
+            "spending": 35733.33,
+            "cash": 1122.67,
+            "tanks": 17,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 34736.0,
+            "spending": 38200.0,
+            "cash": 1536.0,
+            "tanks": 19,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 37616.0,
+            "spending": 40666.67,
+            "cash": 1949.33,
+            "tanks": 21,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 40496.0,
+            "spending": 43133.33,
+            "cash": 2362.67,
+            "tanks": 23,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "income": 41064.0,
+        "spending": 43450.0,
+        "cash": 2614.0,
+        "tanks": 24,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 3,
+          "barr": 1,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1
+        },
+        "pending": [
+          "3tnk"
+        ],
+        "milestones": {
+          "third_refinery": 617,
+          "six_harvesters": 667
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 24.0,
+            "spending": 2883.33,
+            "cash": 2140.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 728.0,
+            "spending": 5728.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "e3",
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 1688.0,
+            "spending": 6688.0,
+            "cash": 0.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 2648.0,
+            "spending": 7400.0,
+            "cash": 248.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 300,
+            "income": 3656.0,
+            "spending": 8500.0,
+            "cash": 156.0,
+            "tanks": 0,
+            "harvesters": 3,
+            "refineries": 2,
+            "pending": []
+          },
+          {
+            "seconds": 360,
+            "income": 5256.0,
+            "spending": 9933.33,
+            "cash": 322.67,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "fix"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 7176.0,
+            "spending": 11800.0,
+            "cash": 376.0,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 9096.0,
+            "spending": 13600.0,
+            "cash": 496.0,
+            "tanks": 2,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 11016.0,
+            "spending": 15400.0,
+            "cash": 616.0,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 12936.0,
+            "spending": 17936.0,
+            "cash": 0.0,
+            "tanks": 5,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "proc",
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 15200.0,
+            "spending": 19933.33,
+            "cash": 266.67,
+            "tanks": 6,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 18024.0,
+            "spending": 22100.0,
+            "cash": 924.0,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 20904.0,
+            "spending": 24566.67,
+            "cash": 1337.33,
+            "tanks": 9,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 23784.0,
+            "spending": 27333.33,
+            "cash": 1450.67,
+            "tanks": 11,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 26664.0,
+            "spending": 31325.0,
+            "cash": 339.0,
+            "tanks": 14,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 29544.0,
+            "spending": 33600.0,
+            "cash": 944.0,
+            "tanks": 15,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 32424.0,
+            "spending": 36066.67,
+            "cash": 1357.33,
+            "tanks": 17,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 35304.0,
+            "spending": 38533.33,
+            "cash": 1770.67,
+            "tanks": 19,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 38184.0,
+            "spending": 40983.33,
+            "cash": 2200.67,
+            "tanks": 22,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 41064.0,
+            "spending": 43450.0,
+            "cash": 2614.0,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          }
+        ]
+      },
+      "delta": {
+        "income": 568.0,
+        "spending": 316.67,
+        "cash": 251.33,
+        "tanks": 1,
+        "harvesters": 0
+      }
+    },
+    {
+      "faction": "soviets",
+      "income_per_harvester_second": 16,
+      "baseline": {
+        "income": 93184.0,
+        "spending": 55766.67,
+        "cash": 42417.33,
+        "tanks": 33,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 4,
+          "barr": 2,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1,
+          "dome": 1
+        },
+        "pending": [
+          "3tnk"
+        ],
+        "milestones": {
+          "third_refinery": 389,
+          "six_harvesters": 434
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 48.0,
+            "spending": 2883.33,
+            "cash": 2164.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 1456.0,
+            "spending": 6150.0,
+            "cash": 306.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 3376.0,
+            "spending": 8275.0,
+            "cash": 101.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 6512.0,
+            "spending": 10841.67,
+            "cash": 670.33,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 10352.0,
+            "spending": 14100.0,
+            "cash": 1252.0,
+            "tanks": 2,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "dome",
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 14192.0,
+            "spending": 17283.33,
+            "cash": 1908.67,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk",
+              "proc"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 18528.0,
+            "spending": 21983.33,
+            "cash": 1544.67,
+            "tanks": 6,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "weap",
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 24064.0,
+            "spending": 26200.0,
+            "cash": 2864.0,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 29824.0,
+            "spending": 28666.67,
+            "cash": 6157.33,
+            "tanks": 9,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 35584.0,
+            "spending": 31133.33,
+            "cash": 9450.67,
+            "tanks": 11,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 41344.0,
+            "spending": 33583.33,
+            "cash": 12760.67,
+            "tanks": 14,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 47104.0,
+            "spending": 36050.0,
+            "cash": 16054.0,
+            "tanks": 16,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 52864.0,
+            "spending": 38516.67,
+            "cash": 19347.33,
+            "tanks": 18,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 58624.0,
+            "spending": 40983.33,
+            "cash": 22640.67,
+            "tanks": 20,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 64384.0,
+            "spending": 43450.0,
+            "cash": 25934.0,
+            "tanks": 22,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 70144.0,
+            "spending": 45916.67,
+            "cash": 29227.33,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 75904.0,
+            "spending": 48383.33,
+            "cash": 32520.67,
+            "tanks": 26,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 81664.0,
+            "spending": 50833.33,
+            "cash": 35830.67,
+            "tanks": 29,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 87424.0,
+            "spending": 53300.0,
+            "cash": 39124.0,
+            "tanks": 31,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 93184.0,
+            "spending": 55766.67,
+            "cash": 42417.33,
+            "tanks": 33,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "income": 93184.0,
+        "spending": 55766.67,
+        "cash": 42417.33,
+        "tanks": 33,
+        "harvesters": 6,
+        "buildings": {
+          "fact": 1,
+          "powr": 4,
+          "barr": 2,
+          "proc": 3,
+          "weap": 2,
+          "fix": 1,
+          "dome": 1
+        },
+        "pending": [
+          "3tnk"
+        ],
+        "milestones": {
+          "third_refinery": 389,
+          "six_harvesters": 434
+        },
+        "timeline": [
+          {
+            "seconds": 0,
+            "income": 0.0,
+            "spending": 0.0,
+            "cash": 5000.0,
+            "tanks": 0,
+            "harvesters": 0,
+            "refineries": 0,
+            "pending": []
+          },
+          {
+            "seconds": 60,
+            "income": 48.0,
+            "spending": 2883.33,
+            "cash": 2164.67,
+            "tanks": 0,
+            "harvesters": 1,
+            "refineries": 1,
+            "pending": [
+              "proc"
+            ]
+          },
+          {
+            "seconds": 120,
+            "income": 1456.0,
+            "spending": 6150.0,
+            "cash": 306.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "weap"
+            ]
+          },
+          {
+            "seconds": 180,
+            "income": 3376.0,
+            "spending": 8275.0,
+            "cash": 101.0,
+            "tanks": 0,
+            "harvesters": 2,
+            "refineries": 2,
+            "pending": [
+              "harv"
+            ]
+          },
+          {
+            "seconds": 240,
+            "income": 6512.0,
+            "spending": 10841.67,
+            "cash": 670.33,
+            "tanks": 0,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 300,
+            "income": 10352.0,
+            "spending": 14100.0,
+            "cash": 1252.0,
+            "tanks": 2,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "dome",
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 360,
+            "income": 14192.0,
+            "spending": 17283.33,
+            "cash": 1908.67,
+            "tanks": 4,
+            "harvesters": 4,
+            "refineries": 2,
+            "pending": [
+              "3tnk",
+              "proc"
+            ]
+          },
+          {
+            "seconds": 420,
+            "income": 18528.0,
+            "spending": 21983.33,
+            "cash": 1544.67,
+            "tanks": 6,
+            "harvesters": 5,
+            "refineries": 3,
+            "pending": [
+              "weap",
+              "harv"
+            ]
+          },
+          {
+            "seconds": 480,
+            "income": 24064.0,
+            "spending": 26200.0,
+            "cash": 2864.0,
+            "tanks": 7,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 540,
+            "income": 29824.0,
+            "spending": 28666.67,
+            "cash": 6157.33,
+            "tanks": 9,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 600,
+            "income": 35584.0,
+            "spending": 31133.33,
+            "cash": 9450.67,
+            "tanks": 11,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 660,
+            "income": 41344.0,
+            "spending": 33583.33,
+            "cash": 12760.67,
+            "tanks": 14,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 720,
+            "income": 47104.0,
+            "spending": 36050.0,
+            "cash": 16054.0,
+            "tanks": 16,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 780,
+            "income": 52864.0,
+            "spending": 38516.67,
+            "cash": 19347.33,
+            "tanks": 18,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 840,
+            "income": 58624.0,
+            "spending": 40983.33,
+            "cash": 22640.67,
+            "tanks": 20,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 900,
+            "income": 64384.0,
+            "spending": 43450.0,
+            "cash": 25934.0,
+            "tanks": 22,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 960,
+            "income": 70144.0,
+            "spending": 45916.67,
+            "cash": 29227.33,
+            "tanks": 24,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1020,
+            "income": 75904.0,
+            "spending": 48383.33,
+            "cash": 32520.67,
+            "tanks": 26,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1080,
+            "income": 81664.0,
+            "spending": 50833.33,
+            "cash": 35830.67,
+            "tanks": 29,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1140,
+            "income": 87424.0,
+            "spending": 53300.0,
+            "cash": 39124.0,
+            "tanks": 31,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          },
+          {
+            "seconds": 1200,
+            "income": 93184.0,
+            "spending": 55766.67,
+            "cash": 42417.33,
+            "tanks": 33,
+            "harvesters": 6,
+            "refineries": 3,
+            "pending": [
+              "3tnk"
+            ]
+          }
+        ]
+      },
+      "delta": {
+        "income": 0.0,
+        "spending": 0.0,
+        "cash": 0.0,
+        "tanks": 0,
+        "harvesters": 0
+      }
+    }
+  ]
+}

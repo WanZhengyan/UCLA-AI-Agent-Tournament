@@ -36,7 +36,7 @@ def mining_view(now=350, cash=5000, tanks=6):
 
 
 def test_new_version_is_selected():
-    assert create_agent().strategy_version == 'mining_guard_v9'
+    assert create_agent().strategy_version == 'economy_guard_v14_search1'
 
 
 def test_refinery_hint_shortens_delivery_inside_owned_construction_area():

@@ -6,7 +6,7 @@ availability and prices always take precedence over the upstream build order.
 from __future__ import annotations
 
 from collections import Counter, deque
-from math import hypot
+from math import hypot, isfinite
 from .strategy import TANKS, fortifications, blockers, radius, safe_cell
 
 
@@ -30,6 +30,31 @@ def _enemies(v):
 def _queued(v, item):
     return sum(int(p.get("count", 1) or 1) for p in v.production
                if str(p.get("item", "")).lower() == item)
+
+
+def _power_drain(v, item):
+    """Consumer load, with runtime rules ahead of the policy's fallbacks."""
+    power = v.item_rule(item).get('power')
+    if type(power) in (int, float) and isfinite(power):
+        return max(0, -float(power))
+    defaults = {'powr': 0, 'apwr': 0, 'fact': 0, 'tent': 20, 'barr': 20,
+                'proc': 30, 'weap': 30, 'fix': 30, 'dome': 40,
+                'gun': 40, 'ftur': 40, 'tsla': 150}
+    return defaults.get(item, 30 if v.queue(item) == 'Building' else 0)
+
+
+def _queued_power_drain(v):
+    """Reserve observed unfinished and ready-but-unplaced consumers once.
+
+    Placed structures are already in power_drained. Queued generators do
+    not supply power until placed. Orders absent from this observation are
+    unavailable here; the caller adds accepted construction from this batch.
+    """
+    return sum(_power_drain(v, str(p.get('item', '')).lower())
+               * max(0, int(p.get('count', 1) or 1))
+               for p in v.production
+               if p.get('queue', v.queue(str(p.get('item', '')).lower()))
+               in {'Building', 'Defense'})
 
 
 def _near_base(v):
@@ -155,6 +180,65 @@ def _place_at(v, item):
         return v.clamp((round(v.base[0]+7*(direction[0]-v.base[0])/length),
                         round(v.base[1]+7*(direction[1]-v.base[1])/length)))
     return None
+
+
+def _guarded_third_refinery(v, power_margin, growth_site=None):
+    """A narrow financing exception, not a guarantee of safety or payback.
+
+    Existing six-tank financing remains unchanged. Before that point, only
+    invest behind healthy home armor with a long remaining working window.
+    Missing terrain retains the native-placement fallback; supplied terrain
+    must not contradict a reachable, screened site and nearby resource hint.
+    Initial resource cells do not establish that any ore remains there.
+    On an adapted map, the mining planner must first supply a supported site;
+    screen that actual placement and resource hint rather than a legacy hint.
+    """
+    facts = [b for b in v.buildings if _type(b) == 'fact']
+    refs = [b for b in v.buildings if _type(b) == 'proc']
+    if (getattr(v, 'profile', 'balanced') != 'eco_guard'
+            or len(facts) != 1 or len(refs) != 2 or v.remaining < 360
+            or sum(_type(u) == 'harv' and u.get('idle') is False for u in v.units) < 4
+            or (getattr(v, 'strategy', {}) or {}).get('recover_until', 0) > v.now):
+        return False
+    # Explicit activity avoids financing growth while the current ore line
+    # is idle. Activity alone still does not prove successful ore deliveries.
+    anchor = v.cell(facts[0])
+    cover = [u for u in v.units if _type(u) in TANKS
+             and u.get('hp', 0) >= 70 and _dist(v.cell(u), anchor) <= 22]
+    if len(cover) < 5:
+        return False
+    raw_power = v.item_rule('proc').get('power')
+    drain = max(0, -float(raw_power)) if isinstance(raw_power, (int, float)) else 30
+    if not power_margin >= drain + 10:
+        return False
+    if getattr(v, 'map_plan', {}).get('active') and not growth_site:
+        return False
+    site = growth_site['at'] if growth_site else _place_at(v, 'proc')
+    protected = [anchor] + [v.cell(b) for b in refs]
+    if site is not None:
+        protected.append(tuple(site))
+    # Engineers can capture and MCVs can establish forward production. They
+    # are support elsewhere, but still deny this discounted growth window.
+    growth_support = SUPPORT - {'e6', 'mcv'}
+    if any(_type(e) not in growth_support and any(_dist(v.cell(e), p) <= 30 for p in protected)
+           for e in v.enemies):
+        return False
+    if any(not safe_cell(v, p) or blockers(v, anchor, p) for p in protected):
+        return False
+    if v.map_info.get('layout') is not None:
+        # Adaptation validates and bounds the supplied terrain. No new BFS is
+        # needed on maps without known towers; at most eight resource routes
+        # are inspected when remembered towers require detailed screening.
+        from .maps import route_safe
+        ground = getattr(v, 'navigation', {}).get('parents', {})
+        if site is None or tuple(site) not in ground or not route_safe(v, site, start=anchor):
+            return False
+        resource_hints = [growth_site['ore']] if growth_site else v.ore_cells
+        ore = sorted((p for p in resource_hints if tuple(p) in ground and _dist(p, site) <= 12),
+                     key=lambda p: (_dist(p, site), p))[:8]
+        if not any(safe_cell(v, p) and route_safe(v, p, start=site) for p in ore):
+            return False
+    return True
 
 
 def _expansion_window(v, memory):
@@ -334,15 +418,17 @@ def plan(v, memory: dict, emit) -> None:
     power_provided = float(v.econ.get("power_provided", 0) or 0)
     power_drained = float(v.econ.get("power_drained", 0) or 0)
     power_margin = power_provided - power_drained
+    planned_power_margin = power_margin - _queued_power_drain(v) if armor_focus else power_margin
     tank_start = (max(250, min(500, v.cost(tank_item) * .45)) if harvesters >= 2 else v.cost(tank_item)) if tank_item else 0
     tank_budget = tank_start + 100 if armor_focus and tank_item else 0
+    guarded_growth = tanks < 6 and _guarded_third_refinery(v, planned_power_margin, growth_site)
     construction = None
 
     # Stable two-refinery opening. Avoid researching everything before making
     # a sustainable army. Power reserve covers the next production building.
     if not buildings["powr"] and not buildings["apwr"]:
         construction = "powr"
-    elif power_margin < (0 if not rax_count else 30):
+    elif planned_power_margin < (0 if not rax_count else 30):
         construction = "apwr" if "apwr" in available and cash > 650 else "powr"
     elif rax_count == 0:
         construction = barracks
@@ -362,7 +448,8 @@ def plan(v, memory: dict, emit) -> None:
     elif (armor_focus and growth_site and refs < 6 and tanks >= 3
           and harvesters >= 4 and not urgent
           and v.remaining > float(v.item_rule('proc').get('build_time_s', 33.6)) + map_plan.get('productive_window', 180)
-          and cash >= (v.cost('proc') + tank_budget if tanks < 6 else tank_budget + 200)):
+          and cash >= (tank_budget if guarded_growth else
+                       v.cost('proc') + tank_budget if tanks < 6 else tank_budget + 200)):
         # A useful near-mine drop-off precedes optional tech/factories and
         # costs less than a new MCV. Never count a placement hint as success.
         construction = 'proc'
@@ -396,10 +483,12 @@ def plan(v, memory: dict, emit) -> None:
                              or (construction == 'dome' and not fortified)
                              or (construction in {'tent', 'barr'} and rax_count > 0))
     optional_budget = v.cost(construction) + tank_budget
-    if construction == 'proc' and tanks >= 6:
+    if construction == 'proc' and (tanks >= 6 or guarded_growth):
         # After establishing the tank core, let a refinery use progressive
         # payment again. Otherwise a low-income base could postpone growth
-        # forever while every deposit funds its next tank.
+        # forever while every deposit funds its next tank. A screened third
+        # refinery may start one tank earlier; all other growth keeps the
+        # original full-cost reserve until the six-tank core is established.
         optional_budget = tank_budget
     if (armor_focus and tank_item and optional_construction
             and cash < optional_budget):
@@ -411,7 +500,9 @@ def plan(v, memory: dict, emit) -> None:
         raw_power = v.item_rule(construction).get("power")
         next_drain = max(0,-float(raw_power)) if isinstance(raw_power,(int,float)) else (
             40 if construction=="dome" else 20 if construction in {"tent","barr"} else 30)
-        if power_margin < next_drain+10:
+        if armor_focus:
+            next_drain = _power_drain(v, construction)
+        if planned_power_margin < next_drain+10:
             construction = "apwr" if "apwr" in available and cash>650 else "powr"
     recovering = refs > 0 and harvesters == 0 and "harv" in available
     if recovering and power_margin >= 0:
@@ -430,6 +521,8 @@ def plan(v, memory: dict, emit) -> None:
             if emit({"cmd": "build", "item": construction}, key=f"build-{construction}", cooldown=4):
                 build_budget = min(price, max(0, cash-300))
                 building_reserve = 0
+                if armor_focus:
+                    planned_power_margin -= _power_drain(v, construction)
 
     # Cover distinct mining areas, not just the construction yard. Keep a
     # small global cap and tank/power reserves instead of spamming towers.
@@ -441,9 +534,10 @@ def plan(v, memory: dict, emit) -> None:
         defense_types = ('gun', 'tsla') if armor_focus and (enemy_tanks or tanks >= 3) else ('pbox', 'ftur', 'hbox', 'gun', 'tsla')
         candidate = next((t for t in defense_types if t in available), None)
         if armor_focus and candidate:
-            live_power = v.item_rule(candidate).get('power')
-            drain = max(0, -live_power) if isinstance(live_power, (int, float)) else {'tsla': 150, 'gun': 40, 'ftur': 40}.get(candidate, 0)
-            if power_margin < drain + 10:
+            drain = _power_drain(v, candidate)
+            # Both queues share the same grid. A zero-load emergency defense
+            # remains useful even while existing consumers await more power.
+            if drain > 0 and planned_power_margin < drain + 10:
                 candidate = None
         defense_budget = min(350, v.cost(candidate)) if candidate else 0
         if armor_focus and tank_item and not urgent and candidate:

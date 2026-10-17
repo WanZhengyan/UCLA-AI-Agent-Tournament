@@ -2,6 +2,24 @@
 
 This document preserves the relevant history of the original local builds. It is not a current deployment record. Some referenced experiment outputs were retained only on the original machine and are intentionally absent from GitHub. Use the main [README](../README.md) for current setup commands.
 
+## Defensive economy and shared team contacts (v14, 2026-10-16)
+
+`economy_guard_v14` combines the existing protected-mining, tank-escort and rear-artillery revision with a stronger defensive preference. At zero or positive own kill/loss balance, it cancels voluntary economic raids and recalls old waves while still defending local incursions. A deficit allows only guarded counterattacks. Recall orders check known towers and supplied terrain; stale movement must be canceled when no safe return route exists. Existing safe mining growth remains available behind the tank screen.
+
+Fresh damage plus a currently visible nearby armed threat now allows a productive harvester to take a short escape. Old wounds or healthy mining alone do not interrupt work. The economy planner also reserves power across observed construction queues and accepted construction in the same batch. The earlier five-tank third-refinery financing exception is integrated with the actual protected-mining placement hint.
+
+`hok_team_guard_v14` uses the same current owned-team visible contacts for defense allocation and each hero's danger assessment. This corrects an isolated hero attacking several enemies already seen by a teammate. Safe structure damage, wave clearing, bounded tower defense and legal macro constraints remain; the Red Alert defensive preference is not imposed on HOK's different timed objective.
+
+Public-code research inspected `lukemt/friendly-fighter` at `a11f162`; its README identifies a UCLA Red Alert agent, but its deployed version and a HOK implementation were not verified. No opponent code was executed or copied. The candidate incorporates our remote `b6be880` mining revision, `1817737` HOK tower defense and `ebd78e4` growth work. Pokemon and Werewolf strategies are unchanged. See [the review](FRIENDLY_FIGHTER_REVIEW.md) and [source-hashed validation](../reports/friendly_defense_v14.json). No v14 live match, tournament deployment or measured win-rate improvement is claimed.
+
+## Red Alert guarded third-refinery growth (v13, 2026-10-16)
+
+`economy_growth_v13` allows progressively financed third-refinery construction one tank earlier when five healthy tanks cover a single home base, four observed miners are active, power is sufficient, no nearby known threat or recent loss recovery contradicts growth, and at least six minutes remain. Supplied terrain must support a reachable screened site and resource hint. Existing emergency, miner recovery, six-tank financing, and expansion-MCV behavior remain in force.
+
+The fixed-income development comparison preserves ten-minute tank counts in all six scenarios. At income 8 per harvester per second, the third refinery completes 27/35 seconds earlier (Allies/Soviets); cumulative income at twenty minutes rises by 432/568 and completed tanks by one for each faction. Income-4 cases do not improve. No own replay was accessible. Another contestant's two seat traces from one public self-play game were inspected as data only; they motivate checking economic stagnation, not a causal or win-rate claim.
+
+Validation: **887 tests passed**, including 42 new growth cases; frozen v12 fails nine new cases. Four-game policy self-tests and spawned runtime checks passed. The branch starts from `cc79a31` on `improve/hok-objectives-v12`, preserving its HOK changes, and does not update a running agent or tournament entry. See [the review](REDALERT_GROWTH_V13.md) and [reproducible production report](../reports/redalert_growth_v13.json).
+
 ## Platform Honor of Kings 5v5 (v11, 2026-10-16)
 
 `hok_team_v1` adds the newly documented platform protocol: one agent commands five heroes through standing macros. This is separate from the Tencent 1v1 implementation. The shared launcher now accepts HOK assignments, sends five legal orders without per-order delays, paces real-time idle reads, preserves lockstep submissions, and interprets signed team results correctly. Sparse team-visible telemetry records objective HP and independent results. Existing game strategy folders remain unchanged.

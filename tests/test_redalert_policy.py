@@ -255,7 +255,25 @@ def mock_production_progression(faction, end_seconds, income_per_miner=8):
     raw, agent = fixture(faction=faction), create_agent()
     obs, hints = raw["observation"], raw["legal_actions"]
     cash, next_id, batch, trained = 5000., 10, 0, []
+    income_total, spending_total = 0., 0.
     pending = []
+    timeline, milestones = [], {}
+
+    def record(seconds):
+        from collections import Counter
+        from redalert_bot.strategy import TANKS
+        units = Counter(u['type'] for u in obs['units'])
+        buildings = Counter(b['type'] for b in obs['buildings'])
+        for name, reached in [('third_refinery', buildings['proc'] >= 3),
+                              ('six_harvesters', units['harv'] >= 6)]:
+            if reached:
+                milestones.setdefault(name, seconds)
+        if seconds % 60 == 0 or seconds == end_seconds:
+            timeline.append(dict(seconds=seconds, income=round(income_total, 2),
+                                 spending=round(spending_total, 2), cash=round(cash, 2),
+                                 tanks=sum(units[t] for t in TANKS),
+                                 harvesters=units['harv'], refineries=buildings['proc'],
+                                 pending=[p['item'] for p in pending]))
 
     def add(type, building=False):
         nonlocal next_id
@@ -266,7 +284,9 @@ def mock_production_progression(faction, end_seconds, income_per_miner=8):
     for seconds in range(end_seconds + 1):
         types = {a["type"] for a in obs["buildings"]}
         harvesters = sum(a["type"] == "harv" for a in obs["units"])
-        cash += income_per_miner * harvesters
+        income = income_per_miner * harvesters
+        cash += income
+        income_total += income
         # Each category progresses independently; purchases are paid gradually,
         # as in the documented server, with no free completion when cash is low.
         handled = set()
@@ -279,6 +299,7 @@ def mock_production_progression(faction, end_seconds, income_per_miner=8):
             expense = DEFAULT_COSTS[row["item"]] / duration[row["item"]]
             fraction = min(1., row["remaining_s"], cash / expense)
             cash -= expense * fraction
+            spending_total += expense * fraction
             row["remaining_s"] = max(0., row["remaining_s"] - fraction)
             row["progress"] = 1. - row["remaining_s"] / duration[row["item"]]
             if row["remaining_s"] < 1e-6:
@@ -317,6 +338,7 @@ def mock_production_progression(faction, end_seconds, income_per_miner=8):
         raw["state_version"] = obs["tick"] = seconds*25
         orders = decide(agent, raw)
         if not orders:
+            record(seconds)
             continue
         batch += 1
         rows = []
@@ -350,10 +372,13 @@ def mock_production_progression(faction, end_seconds, income_per_miner=8):
             rows.append(dict(index=index, cmd=cmd, status="ok"))
         agent.on_action_result({"accepted": True, "batch": batch, "results": rows}, context(raw))
         raw["last_orders"] = dict(batch=batch, state_version=raw["state_version"], pending=False, results=rows)
+        record(seconds)
 
     built = [b["type"] for b in obs["buildings"]]
     return dict(buildings=built, trained=trained, cash=round(cash, 2),
                 units=[u['type'] for u in obs['units']],
+                income=round(income_total, 2), spending=round(spending_total, 2),
+                timeline=timeline, milestones=milestones,
                 pending=[p['item'] for p in pending])
 
 

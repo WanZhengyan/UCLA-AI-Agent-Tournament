@@ -4,7 +4,13 @@ The platform now documents `honor_of_kings_5v5`: **one agent controls five heroe
 
 The current [official HOK guide](https://api.altruagent-game.com/skill/hok), retrieved October 16, 2026, supersedes older availability banners. The initial `hok_team_v1` release had offline validation only. Subsequent live records exposed excessive fighting and long recovery: one losing team had 27 kills but only about 2,375 observed damage to enemy structures. These observations motivated `hok_objectives_v2`; they do not establish its win rate.
 
-## Current tower-defense revision (`hok_guard_v4`)
+## Current team-contact revision (`hok_team_guard_v14`)
+
+Defense allocation and individual danger checks now use the same bounded set of current enemy contacts visible to our five owned heroes. This fixes an isolated defender attacking three enemies seen through a teammate while evaluating only its own narrower view. Contacts require explicit visibility, living health and finite coordinates; duplicates are reconciled conservatively, and conflicting identities or unowned views are rejected. No hidden positions or contact history enter this collection.
+
+The inherited tower-defense, health, recovery and legal-action safeguards remain. Safe structure attacks and minion clearing still have priority: the timed HOK tiebreak compares enemy structure damage before hero kills, so passive defense alone is not the objective. See [the v14 review](FRIENDLY_FIGHTER_REVIEW.md) and [validation record](../reports/friendly_defense_v14.json). No v14 live win-rate comparison was run.
+
+## Previous tower-defense revision (`hok_guard_v4`)
 
 The goal remains destroying the enemy crystal and gaining structure damage, while preventing avoidable losses of our own towers. This adds ordinary-tower defense to v3's combat safety instead of reverting to constant retreat or sending all five heroes home.
 
@@ -41,11 +47,11 @@ Validation: 817 tests passed, including 23 new objective/recovery/defense cases 
 
 ## Start a test
 
-Use `improve/hok-objectives-v12`. In an existing checkout:
+Use `improve/friendly-defense-v14`. In an existing checkout:
 
 ```bash
 git fetch origin
-git switch improve/hok-objectives-v12
+git switch improve/friendly-defense-v14
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python exe_entry.py --self-test
 .venv/bin/python exe_entry.py --check
